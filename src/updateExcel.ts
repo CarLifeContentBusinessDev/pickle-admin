@@ -130,3 +130,73 @@ export async function addMissingRows(allData: usingDataProps[], token: string) {
     }
   }
 }
+
+export async function updateNewEpisodes(allData: usingDataProps[], token: string) {
+  const existingData = await getExcelData(token);
+
+  const missingRows = allData.filter(
+    (item) => !existingData.some((row) => row.episodeId === item.episodeId)
+  );
+
+  if (missingRows.length === 0) {
+    console.log("추가할 누락 데이터 없음");
+    return;
+  }
+
+  const batchSize = 1000;
+
+  for (let i = 0; i < missingRows.length; i += batchSize) {
+    const batch = missingRows.slice(i, i + batchSize);
+    const values = batch.map((row) => [
+      row.episodeId,
+      row.usageYn,
+      row.channelName,
+      row.episodeName,
+      formatDateString(row.dispDtime),
+      formatDateString(row.createdAt),
+      row.playTime,
+      row.likeCnt,
+      row.listenCnt,
+      row.tags,
+      row.tagsAdded,
+    ]);
+
+    const startRow = existingData.length + i + 4;
+    const endRow = startRow + batch.length - 1;
+    const rangeAddress = `A${startRow}:K${endRow}`;
+
+    try {
+      await axios.patch(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
+        { values },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        const refreshedToken = await getGraphToken();
+        if (!refreshedToken)
+          throw new Error("토큰 재발급 실패, 엑셀 업데이트 중단");
+
+        token = refreshedToken;
+
+        await axios.patch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
+          { values },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } else {
+        throw err;
+      }
+    }
+  }
+}
