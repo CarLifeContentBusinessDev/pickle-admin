@@ -18,6 +18,7 @@ function App() {
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [excelLoading, setExcelLoading] = useState(false);
 
   useEffect(() => {
     loginToken = localStorage.getItem("loginToken");
@@ -54,14 +55,16 @@ function App() {
     const result = window.confirm("엑셀 파일에 누락된 데이터를 추가합니다.");
     if (result) {
       const allData = await fetchAllData(accessToken);
-      console.log("showdata: ", allData)
+      console.log("showdata: ", allData);
       await addMissingRows(allData, token);
     }
   };
 
   const handleSyncExcel = async () => {
     if (!token) return toast.warn("로그인을 먼저 해주세요!");
+    setExcelLoading(true);
     await syncNewEpisodesToExcel(newEpi, token);
+    setExcelLoading(false);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
@@ -122,6 +125,11 @@ function App() {
               <span className="font-extrabold">{newEpi.length}</span>개
             </h3>
             <div className="flex gap-8 items-center">
+              {excelLoading && (
+                <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border bg-black/30">
+                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               <button
                 onClick={() => handleSearchNew(token, accessToken)}
                 className="mb-3 cursor-pointer"
