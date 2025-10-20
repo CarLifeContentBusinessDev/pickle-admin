@@ -1,13 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getGraphToken } from './utils/auth';
 import { fetchAllData } from './utils/fetchAllData';
 import { addMissingRows } from './utils/updateExcel';
 import { getNewEpisodes } from './utils/getNewEpisodes';
-import type { LoginResponseData, usingDataProps } from './type';
+import type { usingDataProps } from './type';
 import EpisodeList from './feature/EpisodeList';
 import syncNewEpisodesToExcel from './utils/syncNewEpisodesToExcel';
 import { toast } from 'react-toastify';
-import LoginPopup from './feature/Login';
 import Header from './layout/Header';
 import Button from './components/Button';
 import LoadingOverlay from './components/LoadingOverlay';
