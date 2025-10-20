@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { usingDataProps } from './type';
+import type { usingDataProps } from '../type';
 import formatDateString from './formatDateString';
 import { getGraphToken } from './auth';
 import { toast } from 'react-toastify';

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { usingDataProps } from './type';
+import type { usingDataProps } from '../type';
 import { getExcelData } from './updateExcel';
 
 function excelDateToJSDate(serial: number): Date {
