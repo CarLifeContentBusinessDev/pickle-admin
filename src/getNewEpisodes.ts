@@ -1,6 +1,6 @@
-import axios from "axios";
-import type { usingDataProps } from "./type";
-import { getExcelData } from "./updateExcel";
+import axios from 'axios';
+import type { usingDataProps } from './type';
+import { getExcelData } from './updateExcel';
 
 function excelDateToJSDate(serial: number): Date {
   const millisPerDay = 24 * 60 * 60 * 1000;

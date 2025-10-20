@@ -1,4 +1,4 @@
-import { InteractionRequiredAuthError } from "@azure/msal-browser";
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
 
 // auth.ts
 export async function getGraphToken(): Promise<string | null> {
@@ -13,7 +13,7 @@ export async function getGraphToken(): Promise<string | null> {
       },
     };
     const msalInstance = new (
-      await import("@azure/msal-browser")
+      await import('@azure/msal-browser')
     ).PublicClientApplication(msalConfig);
     await msalInstance.initialize();
 
@@ -22,7 +22,7 @@ export async function getGraphToken(): Promise<string | null> {
 
     if (!account) {
       const loginResponse = await msalInstance.loginPopup({
-        scopes: ["Files.ReadWrite"],
+        scopes: ['Files.ReadWrite'],
       });
       account = loginResponse.account;
     }
@@ -30,24 +30,24 @@ export async function getGraphToken(): Promise<string | null> {
     let tokenResponse;
     try {
       tokenResponse = await msalInstance.acquireTokenSilent({
-        scopes: ["Files.ReadWrite"],
+        scopes: ['Files.ReadWrite'],
         account,
       });
     } catch (err: unknown) {
       if (err instanceof InteractionRequiredAuthError) {
         tokenResponse = await msalInstance.acquireTokenPopup({
-          scopes: ["Files.ReadWrite"],
+          scopes: ['Files.ReadWrite'],
         });
       } else {
         throw err;
       }
     }
 
-    localStorage.setItem("loginToken", tokenResponse.accessToken);
+    localStorage.setItem('loginToken', tokenResponse.accessToken);
 
     return tokenResponse.accessToken;
   } catch (err) {
-    console.error("Graph 로그인 실패:", err);
+    console.error('Graph 로그인 실패:', err);
     return null;
   }
 }

@@ -1,8 +1,8 @@
-import axios from "axios";
-import type { usingDataProps } from "./type";
-import formatDateString from "./formatDateString";
-import { getGraphToken } from "./auth";
-import { toast } from "react-toastify";
+import axios from 'axios';
+import type { usingDataProps } from './type';
+import formatDateString from './formatDateString';
+import { getGraphToken } from './auth';
+import { toast } from 'react-toastify';
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
@@ -24,28 +24,31 @@ export async function getUsedRange(token: string): Promise<number | null> {
         values[i] &&
         values[i].length > 0 &&
         values[i][0] !== null &&
-        values[i][0] !== ""
+        values[i][0] !== ''
       ) {
         lastDataRow = i + 1;
         break;
       }
     }
-    
+
     return Math.max(lastDataRow, 4);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       console.error(
-        "A열 기반 마지막 행 조회 실패:",
+        'A열 기반 마지막 행 조회 실패:',
         err.response?.data || err.message
       );
     } else {
-      console.error("A열 기반 마지막 행 조회 실패:", err);
+      console.error('A열 기반 마지막 행 조회 실패:', err);
     }
     return null;
   }
 }
 
-export async function getExcelData(token: string, setProgress?: (message: string) => void): Promise<usingDataProps[]> {
+export async function getExcelData(
+  token: string,
+  setProgress?: (message: string) => void
+): Promise<usingDataProps[]> {
   const batchSize = 10000;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
@@ -63,7 +66,7 @@ export async function getExcelData(token: string, setProgress?: (message: string
     const rangeAddress = `A${startRow}:K${endRow}`;
 
     try {
-      setProgress?.(`${Math.round(i / totalBatches * 100)}%`);
+      setProgress?.(`${Math.round((i / totalBatches) * 100)}%`);
       const res = await axios.get(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -74,7 +77,7 @@ export async function getExcelData(token: string, setProgress?: (message: string
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();
         if (!refreshedToken)
-          throw new Error("토큰 재발급 실패, 엑셀 조회 중단");
+          throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
 
         const retryRes = await axios.get(
           `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
@@ -84,29 +87,33 @@ export async function getExcelData(token: string, setProgress?: (message: string
         const retryValues = retryRes.data.values as (string | number)[][];
         if (retryValues && retryValues.length > 0) allRows.push(...retryValues);
       } else {
-        console.error("엑셀 조회 실패:", err);
+        console.error('엑셀 조회 실패:', err);
       }
     }
   }
 
   return allRows
-    .filter((row) => row[0] !== null && row[0] !== undefined && row[0] !== "")
+    .filter((row) => row[0] !== null && row[0] !== undefined && row[0] !== '')
     .map((row) => ({
       episodeId: Number(row[0] ?? 0),
-      usageYn: String(row[1] ?? ""),
-      channelName: String(row[2] ?? ""),
-      episodeName: String(row[3] ?? ""),
-      dispDtime: String(row[4] ?? ""),
-      createdAt: String(row[5] ?? ""),
+      usageYn: String(row[1] ?? ''),
+      channelName: String(row[2] ?? ''),
+      episodeName: String(row[3] ?? ''),
+      dispDtime: String(row[4] ?? ''),
+      createdAt: String(row[5] ?? ''),
       playTime: Number(row[6] ?? 0),
       likeCnt: Number(row[7] ?? 0),
       listenCnt: Number(row[8] ?? 0),
-      tags: String(row[9] ?? ""),
-      tagsAdded: String(row[10] ?? ""),
+      tags: String(row[9] ?? ''),
+      tagsAdded: String(row[10] ?? ''),
     }));
 }
 
-export async function addMissingRows(allData: usingDataProps[], token: string, setProgress: (message: string) => void) {
+export async function addMissingRows(
+  allData: usingDataProps[],
+  token: string,
+  setProgress: (message: string) => void
+) {
   const existingData = await getExcelData(token);
 
   const missingRows = allData.filter(
@@ -141,14 +148,14 @@ export async function addMissingRows(allData: usingDataProps[], token: string, s
     const rangeAddress = `A${startRow}:K${endRow}`;
 
     try {
-      setProgress(`${Math.round(i / missingRows.length * 100)}%`);
+      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
         { values },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
@@ -156,7 +163,7 @@ export async function addMissingRows(allData: usingDataProps[], token: string, s
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();
         if (!refreshedToken)
-          throw new Error("토큰 재발급 실패, 엑셀 업데이트 중단");
+          throw new Error('토큰 재발급 실패, 엑셀 업데이트 중단');
 
         token = refreshedToken;
 
@@ -166,7 +173,7 @@ export async function addMissingRows(allData: usingDataProps[], token: string, s
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
             },
           }
         );

@@ -1,30 +1,30 @@
-import { useEffect, useState } from "react";
-import { getGraphToken } from "./auth";
-import { fetchAllData } from "./fetchAllData";
-import { addMissingRows } from "./updateExcel";
-import { getNewEpisodes } from "./getNewEpisodes";
-import type { LoginResponseData, usingDataProps } from "./type";
-import EpisodeList from "./EpisodeList";
-import syncNewEpisodesToExcel from "./syncNewEpisodesToExcel";
-import { toast } from "react-toastify";
-import LoginPopup from "./Login";
+import { useEffect, useState } from 'react';
+import { getGraphToken } from './auth';
+import { fetchAllData } from './fetchAllData';
+import { addMissingRows } from './updateExcel';
+import { getNewEpisodes } from './getNewEpisodes';
+import type { LoginResponseData, usingDataProps } from './type';
+import EpisodeList from './EpisodeList';
+import syncNewEpisodesToExcel from './syncNewEpisodesToExcel';
+import { toast } from 'react-toastify';
+import LoginPopup from './Login';
 
-let loginToken = localStorage.getItem("loginToken");
-let accessTk = localStorage.getItem("accessToken");
+let loginToken = localStorage.getItem('loginToken');
+let accessTk = localStorage.getItem('accessToken');
 
 function App() {
-  const [token, setToken] = useState("");
-  const [accessToken, setAccessToken] = useState("");
+  const [token, setToken] = useState('');
+  const [accessToken, setAccessToken] = useState('');
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
-  const [progress, setProgress] = useState("");
+  const [progress, setProgress] = useState('');
 
   useEffect(() => {
-    loginToken = localStorage.getItem("loginToken");
-    accessTk = localStorage.getItem("accessToken");
+    loginToken = localStorage.getItem('loginToken');
+    accessTk = localStorage.getItem('accessToken');
     if (accessTk) {
       setAccessToken(accessTk);
     }
@@ -34,38 +34,38 @@ function App() {
   }, []);
 
   const handleLogin = async () => {
-    if (!accessToken) return toast.warn("관리자 로그인을 먼저 해주세요!");
+    if (!accessToken) return toast.warn('관리자 로그인을 먼저 해주세요!');
     const tk = await getGraphToken();
     if (tk) {
       setToken(tk);
-      localStorage.setItem("loginToken", tk);
-      loginToken = localStorage.getItem("loginToken");
-      toast.success("MS 로그인에 성공하였습니다.");
+      localStorage.setItem('loginToken', tk);
+      loginToken = localStorage.getItem('loginToken');
+      toast.success('MS 로그인에 성공하였습니다.');
       handleSearchNew(tk, accessToken);
     }
   };
 
   const handlePopupLoginSuccess = (data: LoginResponseData) => {
     setAccessToken(data.accessToken);
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    toast.success("관리자 로그인에 성공했습니다!");
+    localStorage.setItem('accessToken', data.accessToken);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    toast.success('관리자 로그인에 성공했습니다!');
   };
 
   const handleUpdateExcel = async () => {
-    if (!token) return toast.warn("로그인을 먼저 해주세요!");
-    const result = window.confirm("엑셀 파일에 누락된 데이터를 추가합니다.");
+    if (!token) return toast.warn('로그인을 먼저 해주세요!');
+    const result = window.confirm('엑셀 파일에 누락된 데이터를 추가합니다.');
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllData(accessToken);
-      console.log("showdata: ", allData);
+      console.log('showdata: ', allData);
       await addMissingRows(allData, token, setProgress);
       setAllLoading(false);
     }
   };
 
   const handleSyncExcel = async () => {
-    if (!token) return toast.warn("로그인을 먼저 해주세요!");
+    if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
     await syncNewEpisodesToExcel(newEpi, token);
     setExcelLoading(false);
@@ -79,16 +79,16 @@ function App() {
   };
 
   return (
-    <div className="bg-[#F6F7FA] w-screen h-screen">
-      <div className="w-full h-[10%] flex justify-between items-center mb-0 p-10 bg-white">
-        <h1 className="text-4xl font-bold flex gap-4">
-          <img src="/logo.svg" alt="로고" width={40} height={40} />
+    <div className='bg-[#F6F7FA] w-screen h-screen'>
+      <div className='w-full h-[10%] flex justify-between items-center mb-0 p-10 bg-white'>
+        <h1 className='text-4xl font-bold flex gap-4'>
+          <img src='/logo.svg' alt='로고' width={40} height={40} />
           PICKLE
         </h1>
-        <div className="flex gap-4">
+        <div className='flex gap-4'>
           {!accessToken && (
             <button
-              className="border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100"
+              className='border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
               onClick={() => setShowLoginPopup(true)}
             >
               관리자 로그인
@@ -96,7 +96,7 @@ function App() {
           )}
           {!token && (
             <button
-              className="border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100"
+              className='border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
               onClick={handleLogin}
             >
               MS Graph 로그인
@@ -104,80 +104,80 @@ function App() {
           )}
         </div>
       </div>
-      <div className="p-10 h-[80%]">
-        <div className="flex gap-2">
+      <div className='p-10 h-[80%]'>
+        <div className='flex gap-2'>
           <button
-            className="border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100"
+            className='border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
             onClick={handleUpdateExcel}
           >
             전체 에피소드 엑셀로 변환
           </button>
           <a
-            href="https://pickle.obigo.ai/admin-web/#/episode-list"
-            target="_blank"
-            rel="noopener noreferrer"
+            href='https://pickle.obigo.ai/admin-web/#/episode-list'
+            target='_blank'
+            rel='noopener noreferrer'
           >
-            <button className="border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100">
+            <button className='border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'>
               대시보드 이동
             </button>
           </a>
           {allLoading && (
-            <div className="flex gap-4 items-center justify-center h-[40%] box-border">
-              <div className="w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className='flex gap-4 items-center justify-center h-[40%] box-border'>
+              <div className='w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin'></div>
               <p>{progress}</p>
             </div>
           )}
         </div>
-        <div className="w-full rounded-2xl bg-white h-full p-8">
-          <div className="flex justify-between items-center h-[10%]">
-            <h3 className="mb-6 text-[#3c25cc] font-semibold">
-              새로운 에피소드 총{" "}
-              <span className="font-extrabold">{newEpi.length}</span>개
+        <div className='w-full rounded-2xl bg-white h-full p-8'>
+          <div className='flex justify-between items-center h-[10%]'>
+            <h3 className='mb-6 text-[#3c25cc] font-semibold'>
+              새로운 에피소드 총{' '}
+              <span className='font-extrabold'>{newEpi.length}</span>개
             </h3>
-            <div className="flex gap-8 items-center">
+            <div className='flex gap-8 items-center'>
               {excelLoading && (
-                <div className="flex flex-col gap-4 items-center justify-center h-[40%] box-border">
-                  <div className="w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className='flex flex-col gap-4 items-center justify-center h-[40%] box-border'>
+                  <div className='w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin'></div>
                 </div>
               )}
               <button
                 onClick={() => handleSearchNew(token, accessToken)}
-                className="mb-3 cursor-pointer"
+                className='mb-3 cursor-pointer'
               >
-                <img src="/redo.svg" alt="재검색" width={22} height={22} />
+                <img src='/redo.svg' alt='재검색' width={22} height={22} />
               </button>
               <button
                 onClick={handleSyncExcel}
-                className="border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100"
+                className='border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
               >
                 Excel 동기화
               </button>
             </div>
           </div>
-          <div className="w-full h-[90%]">
-            <div className="min-w-max flex font-bold py-5">
-              <p className="w-[7%] px-2">ID</p>
-              <p className="w-[7%] px-2">활성화</p>
-              <p className="w-[12%] px-2">채널명</p>
-              <p className="w-[13%] px-2">에피소드명</p>
-              <p className="w-[12%] px-2">게시일</p>
-              <p className="w-[12%] px-2">등록일</p>
-              <p className="w-[9%] px-2">에피소드 시간</p>
-              <p className="w-[7%] px-2">좋아요수</p>
-              <p className="w-[7%] px-2">청취수</p>
-              <p className="w-[7%] px-2">tags</p>
-              <p className="w-[7%] px-2">tagsadded</p>
+          <div className='w-full h-[90%]'>
+            <div className='min-w-max flex font-bold py-5'>
+              <p className='w-[7%] px-2'>ID</p>
+              <p className='w-[7%] px-2'>활성화</p>
+              <p className='w-[12%] px-2'>채널명</p>
+              <p className='w-[13%] px-2'>에피소드명</p>
+              <p className='w-[12%] px-2'>게시일</p>
+              <p className='w-[12%] px-2'>등록일</p>
+              <p className='w-[9%] px-2'>에피소드 시간</p>
+              <p className='w-[7%] px-2'>좋아요수</p>
+              <p className='w-[7%] px-2'>청취수</p>
+              <p className='w-[7%] px-2'>tags</p>
+              <p className='w-[7%] px-2'>tagsadded</p>
             </div>
 
             {loading && (
-              <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border text-white bg-black/30">
-                <p className="text-center font-bold">
+              <div className='flex flex-col gap-4 items-center justify-center h-[70%] box-border text-white bg-black/30'>
+                <p className='text-center font-bold'>
                   새로운 에피소드 목록을 불러오는 중입니다.
                   <br />
                   잠시만 기다려주세요!
                 </p>
-                <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{' '}{progress}</span>
+                <div className='w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin'></div>
+                <span> {progress}</span>
               </div>
             )}
             {!loading && <EpisodeList data={newEpi} />}
