@@ -170,8 +170,8 @@ function App() {
             </div>
 
             {loading && (
-              <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border bg-black/30">
-                <p className="text-white text-center font-bold">
+              <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border text-white bg-black/30">
+                <p className="text-center font-bold">
                   새로운 에피소드 목록을 불러오는 중입니다.
                   <br />
                   잠시만 기다려주세요!
