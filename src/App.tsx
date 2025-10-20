@@ -126,8 +126,8 @@ function App() {
             </h3>
             <div className="flex gap-8 items-center">
               {excelLoading && (
-                <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border bg-black/30">
-                  <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="flex flex-col gap-4 items-center justify-center h-[70%] box-border">
+                  <div className="w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
               <button
