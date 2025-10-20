@@ -5,7 +5,7 @@ import { getGraphToken } from './auth';
 import { toast } from 'react-toastify';
 
 const fileId = import.meta.env.VITE_FILE_ID;
-const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
+const sheetName = localStorage.getItem('sheetName');
 const MAX_EXCEL_ROWS = 300000;
 
 export async function getUsedRange(token: string): Promise<number | null> {
@@ -78,6 +78,8 @@ export async function getExcelData(
         const refreshedToken = await getGraphToken();
         if (!refreshedToken)
           throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
+
+        localStorage.setItem('loginToken', refreshedToken);
 
         const retryRes = await axios.get(
           `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
@@ -166,6 +168,7 @@ export async function addMissingRows(
           throw new Error('토큰 재발급 실패, 엑셀 업데이트 중단');
 
         token = refreshedToken;
+        localStorage.setItem('loginToken', token);
 
         await axios.patch(
           `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,

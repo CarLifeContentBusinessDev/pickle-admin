@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
 
 const fileId = import.meta.env.VITE_FILE_ID;
-const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
+const sheetName = localStorage.getItem('sheetName');
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

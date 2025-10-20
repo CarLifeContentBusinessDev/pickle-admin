@@ -11,6 +11,7 @@ import LoginPopup from './feature/Login';
 import Header from './layout/Header';
 import Button from './components/Button';
 import LoadingOverlay from './components/LoadingOverlay';
+import getSheetList from './utils/getSheetList';
 
 let loginToken = localStorage.getItem('loginToken');
 let accessTk = localStorage.getItem('accessToken');
@@ -23,17 +24,30 @@ function App() {
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [selectedSheet, setSelectedSheet] = useState(
+    localStorage.getItem('sheetName') || ''
+  );
 
   useEffect(() => {
     loginToken = localStorage.getItem('loginToken');
     accessTk = localStorage.getItem('accessToken');
     if (accessTk) {
       setAccessToken(accessTk);
+      getSheetList(accessTk, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
     if (loginToken) {
       setToken(loginToken);
     }
   }, []);
+
+  const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setSelectedSheet(value);
+    localStorage.setItem('sheetName', value);
+  };
 
   const handleUpdateExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
@@ -91,6 +105,18 @@ function App() {
             </h3>
             <div className='flex gap-8 items-center'>
               <LoadingOverlay vertical={false} loading={excelLoading} />
+              <select
+                value={selectedSheet}
+                onChange={handleSelectSheet}
+                className='border px-6 py-2 rounded-md bg-white text-sm'
+              >
+                <option value=''>시트 선택</option>
+                {sheetList.map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
+              </select>
               <button
                 onClick={() => handleSearchNew(token, accessToken)}
                 className='mb-3 cursor-pointer'

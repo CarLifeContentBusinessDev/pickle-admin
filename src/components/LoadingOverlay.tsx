@@ -9,7 +9,7 @@ interface LoadingOverlayProps {
 const LoadingOverlay = ({
   children,
   progress,
-  height = '70%',
+  height = '100%',
   vertical = true,
   loading,
 }: LoadingOverlayProps) => {
