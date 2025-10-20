@@ -50,6 +50,7 @@ function excelDateTime(date: string | number) {
 }
 
 async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
+  console.log("overwriteExcelData called, rows to write:", newEpi.length);
   const existingData = await getExcelData(token);
   const totalExistingRows = existingData.length + 3;
   const totalRowsToClear = Math.max(newEpi.length + 3, totalExistingRows);
