@@ -51,7 +51,9 @@ function App() {
 
   const handleUpdateExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
-    const result = window.confirm(`${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`);
+    const result = window.confirm(
+      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+    );
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllData(accessToken);
@@ -97,7 +99,7 @@ function App() {
             loading={allLoading}
           ></LoadingOverlay>
         </div>
-        <div className='w-full rounded-2xl bg-white h-full p-8'>
+        <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
           <div className='flex justify-between items-center h-[10%]'>
             <h3 className='mb-6 text-[#3c25cc] font-semibold'>
               새로운 에피소드 총{' '}
@@ -108,7 +110,7 @@ function App() {
               <select
                 value={selectedSheet}
                 onChange={handleSelectSheet}
-                className='border px-6 py-2 rounded-md bg-white text-sm'
+                className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
               >
                 <option value=''>시트 선택</option>
                 {sheetList.map((sheet) => (
@@ -119,7 +121,7 @@ function App() {
               </select>
               <button
                 onClick={() => handleSearchNew(token, accessToken)}
-                className='mb-3 cursor-pointer'
+                className='cursor-pointer'
               >
                 <img src='/redo.svg' alt='재검색' width={22} height={22} />
               </button>

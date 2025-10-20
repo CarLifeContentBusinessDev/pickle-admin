@@ -19,7 +19,7 @@ const Button = ({
   target,
   rel,
 }: ButtonProps) => {
-  const baseStyle = `border cursor-pointer bg-[#3c25cc] mb-4 text-white shadow-[0_2px_0_rgba(72,5,255,0.06)]
+  const baseStyle = `border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)]
                      px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100
                      ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
 
