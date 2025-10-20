@@ -176,8 +176,8 @@ function App() {
                   <br />
                   잠시만 기다려주세요!
                 </p>
-                <span>{progress}</span>
                 <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>{' '}{progress}</span>
               </div>
             )}
             {!loading && <EpisodeList data={newEpi} />}
