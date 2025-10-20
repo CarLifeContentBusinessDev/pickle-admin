@@ -54,7 +54,7 @@ async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
   const totalExistingRows = existingData.length + 3;
   const totalRowsToClear = Math.max(newEpi.length + 3, totalExistingRows);
   await clearExcelFromRow(4, totalRowsToClear, token);
-  const batchSize = 1000;
+  const batchSize = 10000;
 
   try {
     for (let i = 0; i < newEpi.length; i += batchSize) {
