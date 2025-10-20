@@ -29,7 +29,7 @@ async function getUsedRange(token: string): Promise<number | null> {
         break;
       }
     }
-
+    console.log(lastDataRow);
     return Math.max(lastDataRow, 4);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
@@ -44,7 +44,7 @@ async function getUsedRange(token: string): Promise<number | null> {
   }
 }
 
-export async function getExcelData(token: string): Promise<usingDataProps[]> {
+export async function getExcelData(token: string, setProgress?: (message: string) => void): Promise<usingDataProps[]> {
   const batchSize = 10000;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
@@ -66,7 +66,7 @@ export async function getExcelData(token: string): Promise<usingDataProps[]> {
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
+      setProgress?.(`${i / totalBatches}%`);
       const values = res.data.values as (string | number)[][];
       if (values && values.length > 0) allRows.push(...values);
     } catch (err: unknown) {

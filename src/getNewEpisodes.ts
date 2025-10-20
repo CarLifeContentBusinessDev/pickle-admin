@@ -24,8 +24,8 @@ function findLatestTimeInExcel(excelData: usingDataProps[]): number {
   return latestDateInExcel.getTime();
 }
 
-export async function getNewEpisodes(token: string, accessToken: string) {
-  const excelData = await getExcelData(token);
+export async function getNewEpisodes(token: string, accessToken: string, setProgress: (message: string) => void) {
+  const excelData = await getExcelData(token, setProgress);
   if (excelData.length === 0) return [];
 
   const latestTime = findLatestTimeInExcel(excelData);

@@ -73,7 +73,7 @@ function App() {
 
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
-    const newList = await getNewEpisodes(token, accessToken);
+    const newList = await getNewEpisodes(token, accessToken, setProgress);
     setNewEpi(newList);
     setLoading(false);
   };
