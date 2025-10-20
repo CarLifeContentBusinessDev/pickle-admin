@@ -5,34 +5,40 @@ import { getGraphToken } from "./auth";
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
+const MAX_EXCEL_ROWS = 300000;
 
 async function getUsedRange(token: string): Promise<number | null> {
-  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/usedRange`;
+  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='A1:A${MAX_EXCEL_ROWS}')?valuesOnly=true`;
 
   try {
     const res = await axios.get(usedRangeUrl, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    const values = res.data.values as (string | number)[][];
+    if (!values) return null;
 
-    const address: string = res.data.address;
-    const parts = address.split(":");
-    const lastCell = parts[parts.length - 1];
-
-    const match = lastCell.match(/(\d+)$/);
-    if (!match) {
-      console.error("엑셀 사용 범위의 마지막 행 번호를 파악할 수 없습니다.");
-      return null;
+    let lastDataRow = 0;
+    for (let i = values.length - 1; i >= 0; i--) {
+      if (
+        values[i] &&
+        values[i].length > 0 &&
+        values[i][0] !== null &&
+        values[i][0] !== ""
+      ) {
+        lastDataRow = i + 1;
+        break;
+      }
     }
 
-    return parseInt(match[1], 10);
+    return Math.max(lastDataRow, 4);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       console.error(
-        "엑셀 usedRange 조회 실패:",
+        "A열 기반 마지막 행 조회 실패:",
         err.response?.data || err.message
       );
     } else {
-      console.error("엑셀 usedRange 조회 실패:", err);
+      console.error("A열 기반 마지막 행 조회 실패:", err);
     }
     return null;
   }
