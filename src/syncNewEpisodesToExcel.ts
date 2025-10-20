@@ -50,7 +50,6 @@ function excelDateTime(date: string | number) {
 }
 
 async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
-  console.log("overwriteExcelData called, rows to write:", newEpi.length);
   const existingData = await getUsedRange(token);
   const totalRowsToClear = Math.max(newEpi.length + 3, existingData!);
   await clearExcelFromRow(4, totalRowsToClear, token);
@@ -106,7 +105,7 @@ async function syncNewEpisodesToExcel(newEpi: usingDataProps[], token: string) {
 
   const excelIds = new Set(excelData.map((epi) => epi.episodeId));
   const filteredNew = newEpi.filter((epi) => !excelIds.has(epi.episodeId));
-console.log(filteredNew);
+
   const updatedData = [...filteredNew, ...excelData];
 
   await overwriteExcelData(updatedData, token);

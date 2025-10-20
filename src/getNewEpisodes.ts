@@ -4,7 +4,7 @@ import { getExcelData } from "./updateExcel";
 
 function excelDateToJSDate(serial: number): Date {
   const millisPerDay = 24 * 60 * 60 * 1000;
-  const excelEpochMillis = Date.UTC(1899, 11, 30); 
+  const excelEpochMillis = Date.UTC(1899, 11, 30);
   const targetMillis = excelEpochMillis + serial * millisPerDay;
 
   return new Date(targetMillis);
@@ -24,12 +24,16 @@ function findLatestTimeInExcel(excelData: usingDataProps[]): number {
   return latestDateInExcel.getTime();
 }
 
-export async function getNewEpisodes(token: string, accessToken: string, setProgress: (message: string) => void) {
+export async function getNewEpisodes(
+  token: string,
+  accessToken: string,
+  setProgress: (message: string) => void
+) {
   const excelData = await getExcelData(token, setProgress);
   if (excelData.length === 0) return [];
 
   const latestTime = findLatestTimeInExcel(excelData);
-  console.log(latestTime);
+
   const size = 1000;
   const firstRes = await axios.get(
     `https://pickle.obigo.ai/admin/episode?page=1&size=${size}`,
@@ -52,24 +56,20 @@ export async function getNewEpisodes(token: string, accessToken: string, setProg
     );
     const pageData = res.data.data.dataList;
     const dbDate = new Date(pageData[0].createdAt);
-    const pageTime = dbDate.getTime() - (dbDate.getTimezoneOffset() * 60 * 1000);
+    const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
 
     allApiData = allApiData.concat(pageData);
     if (pageTime <= latestTime) {
-      console.log(pageData[0].episodeName);
-      console.log(pageTime, latestTime);
       break;
     }
   }
 
   const newEpisodes = allApiData.filter((item) => {
     const dbDateForItem = new Date(item.createdAt);
-    const itemTime = dbDateForItem.getTime() - (dbDateForItem.getTimezoneOffset() * 60 * 1000);
+    const itemTime =
+      dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
     return itemTime > latestTime;
   });
-
-  console.log(allApiData);
-  console.log(newEpisodes);
 
   return newEpisodes;
 }
