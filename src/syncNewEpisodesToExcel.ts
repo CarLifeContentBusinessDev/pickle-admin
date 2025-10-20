@@ -1,8 +1,8 @@
-import { getExcelData, getUsedRange } from "./updateExcel";
-import type { usingDataProps } from "./type";
-import axios from "axios";
-import { toast } from "react-toastify";
-import formatDateString from "./formatDateString";
+import { getExcelData, getUsedRange } from './updateExcel';
+import type { usingDataProps } from './type';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import formatDateString from './formatDateString';
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
@@ -24,7 +24,7 @@ async function clearExcelFromRow(
     );
     await delay(500);
   } catch (err) {
-    console.error("엑셀 삭제 실패:", err);
+    console.error('엑셀 삭제 실패:', err);
   }
 }
 
@@ -35,9 +35,9 @@ function excelDateToJSDate(serial: number): Date {
 }
 
 function excelDateTime(date: string | number) {
-  if (!date) return "";
+  if (!date) return '';
 
-  if (typeof date === "number") {
+  if (typeof date === 'number') {
     return formatDateString(excelDateToJSDate(date).toISOString());
   }
 
@@ -46,7 +46,7 @@ function excelDateTime(date: string | number) {
   }
 
   const d = new Date(date);
-  return isNaN(d.getTime()) ? "" : formatDateString(d.toISOString());
+  return isNaN(d.getTime()) ? '' : formatDateString(d.toISOString());
 }
 
 async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
@@ -87,16 +87,16 @@ async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         }
       );
     }
 
-    toast.success("엑셀 동기화에 성공했습니다!");
+    toast.success('엑셀 동기화에 성공했습니다!');
   } catch (err) {
-    console.error("엑셀 동기화 실패:", err);
-    toast.error("엑셀 동기화에 실패했습니다.");
+    console.error('엑셀 동기화 실패:', err);
+    toast.error('엑셀 동기화에 실패했습니다.');
   }
 }
 

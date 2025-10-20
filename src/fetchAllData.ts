@@ -1,9 +1,11 @@
-import axios from "axios";
-import type { usingDataProps } from "./type";
+import axios from 'axios';
+import type { usingDataProps } from './type';
 
 const size = 10000;
 
-export async function fetchAllData(accessToken: string): Promise<usingDataProps[]> {
+export async function fetchAllData(
+  accessToken: string
+): Promise<usingDataProps[]> {
   try {
     const firstRes = await axios.get(
       `https://pickle.obigo.ai/admin/episode?page=1&size=${size}`,
@@ -29,7 +31,7 @@ export async function fetchAllData(accessToken: string): Promise<usingDataProps[
 
     return allData;
   } catch (err) {
-    console.error("데이터 API 가져오기 실패:", err);
+    console.error('데이터 API 가져오기 실패:', err);
     return [];
   }
 }
