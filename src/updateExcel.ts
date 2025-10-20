@@ -66,7 +66,7 @@ export async function getExcelData(token: string, setProgress?: (message: string
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setProgress?.(`${i / totalBatches}%`);
+      setProgress?.(`${Math.round(i / totalBatches * 100)}%`);
       const values = res.data.values as (string | number)[][];
       if (values && values.length > 0) allRows.push(...values);
     } catch (err: unknown) {
@@ -150,7 +150,7 @@ export async function addMissingRows(allData: usingDataProps[], token: string, s
           },
         }
       );
-      setProgress(`${i / missingRows.length}%`);
+      setProgress(`${Math.round(i / missingRows.length * 100)}%`);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();
