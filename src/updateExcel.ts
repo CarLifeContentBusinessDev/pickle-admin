@@ -45,7 +45,7 @@ async function getUsedRange(token: string): Promise<number | null> {
 }
 
 export async function getExcelData(token: string): Promise<usingDataProps[]> {
-  const batchSize = 1000;
+  const batchSize = 10000;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
 
