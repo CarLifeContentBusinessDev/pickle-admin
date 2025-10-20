@@ -51,7 +51,7 @@ function App() {
 
   const handleUpdateExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
-    const result = window.confirm('엑셀 파일에 누락된 데이터를 추가합니다.');
+    const result = window.confirm(`${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`);
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllData(accessToken);
