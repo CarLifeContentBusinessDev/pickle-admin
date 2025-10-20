@@ -42,9 +42,7 @@ function excelDateTime(date: string | number) {
   }
 
   if (!isNaN(Number(date))) {
-    return formatDateString(
-      excelDateToJSDate(Number(date)).toISOString()
-    );
+    return formatDateString(excelDateToJSDate(Number(date)).toISOString());
   }
 
   const d = new Date(date);
@@ -52,17 +50,15 @@ function excelDateTime(date: string | number) {
 }
 
 async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
-  /*
   const existingData = await getExcelData(token);
-  const updatedData = [...newEpi, ...existingData];
-  */
- 
+  const totalExistingRows = existingData.length + 3;
+  const totalRowsToClear = Math.max(newEpi.length + 3, totalExistingRows);
+  await clearExcelFromRow(4, totalRowsToClear, token);
   const batchSize = 1000;
 
   try {
     for (let i = 0; i < newEpi.length; i += batchSize) {
       const batch = newEpi.slice(i, i + batchSize);
-      await clearExcelFromRow(i + 4, i + batchSize + 3, token);
       const values = batch.map((row) => {
         const createdAtStr = excelDateTime(row.createdAt);
         const dispDtimeStr = excelDateTime(row.dispDtime);
