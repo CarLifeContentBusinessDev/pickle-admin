@@ -2,6 +2,7 @@ import axios from "axios";
 import type { usingDataProps } from "./type";
 import formatDateString from "./formatDateString";
 import { getGraphToken } from "./auth";
+import { toast } from "react-toastify";
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const sheetName = import.meta.env.VITE_WORKSHEET_NAME;
@@ -29,7 +30,7 @@ export async function getUsedRange(token: string): Promise<number | null> {
         break;
       }
     }
-    console.log(lastDataRow);
+    
     return Math.max(lastDataRow, 4);
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
@@ -113,7 +114,7 @@ export async function addMissingRows(allData: usingDataProps[], token: string, s
   );
 
   if (missingRows.length === 0) {
-    console.log("추가할 누락 데이터 없음");
+    toast.success('추가할 누락 데이터가 없습니다!');
     return;
   }
 
