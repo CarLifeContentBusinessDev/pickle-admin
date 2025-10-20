@@ -105,7 +105,7 @@ export async function getExcelData(token: string): Promise<usingDataProps[]> {
     }));
 }
 
-export async function addMissingRows(allData: usingDataProps[], token: string) {
+export async function addMissingRows(allData: usingDataProps[], token: string, setProgress: (message: string) => void) {
   const existingData = await getExcelData(token);
 
   const missingRows = allData.filter(
@@ -150,6 +150,7 @@ export async function addMissingRows(allData: usingDataProps[], token: string) {
           },
         }
       );
+      setProgress(`${i / missingRows.length}%`);
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();

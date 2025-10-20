@@ -19,6 +19,8 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
+  const [allLoading, setAllLoading] = useState(false);
+  const [progress, setProgress] = useState("");
 
   useEffect(() => {
     loginToken = localStorage.getItem("loginToken");
@@ -54,9 +56,11 @@ function App() {
     if (!token) return toast.warn("로그인을 먼저 해주세요!");
     const result = window.confirm("엑셀 파일에 누락된 데이터를 추가합니다.");
     if (result) {
+      setAllLoading(true);
       const allData = await fetchAllData(accessToken);
       console.log("showdata: ", allData);
-      await addMissingRows(allData, token);
+      await addMissingRows(allData, token, setProgress);
+      setAllLoading(false);
     }
   };
 
@@ -117,6 +121,12 @@ function App() {
               대시보드 이동
             </button>
           </a>
+          {allLoading && (
+            <div className="flex gap-4 items-center justify-center h-[40%] box-border">
+              <div className="w-12 h-12 border-4 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+              <p>{progress}</p>
+            </div>
+          )}
         </div>
         <div className="w-full rounded-2xl bg-white h-full p-8">
           <div className="flex justify-between items-center h-[10%]">
