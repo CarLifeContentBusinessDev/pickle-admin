@@ -1,0 +1,41 @@
+interface LoadingOverlayProps {
+  children?: React.ReactNode;
+  progress?: string | number;
+  height?: string;
+  vertical?: boolean;
+  loading: boolean;
+}
+
+const LoadingOverlay = ({
+  children,
+  progress,
+  height = '70%',
+  vertical = true,
+  loading,
+}: LoadingOverlayProps) => {
+  let boxStyle = 'flex-col text-white bg-black/30';
+  let spinnerStyle = 'w-12 h-12 border-white';
+
+  if (!vertical) {
+    boxStyle = 'text-black';
+    spinnerStyle = 'w-8 h-8 border-black';
+  }
+
+  return (
+    <>
+      {loading && (
+        <div
+          className={`flex gap-4 items-center justify-center h-[${height}] box-border ${boxStyle}`}
+        >
+          <p className='text-center font-bold'>{children}</p>
+          <div
+            className={`border-4 ${spinnerStyle} border-t-transparent rounded-full animate-spin`}
+          ></div>
+          {progress && <span>{progress}</span>}
+        </div>
+      )}
+    </>
+  );
+};
+
+export default LoadingOverlay;

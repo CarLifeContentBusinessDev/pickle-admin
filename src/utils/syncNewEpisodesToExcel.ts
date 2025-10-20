@@ -1,5 +1,5 @@
 import { getExcelData, getUsedRange } from './updateExcel';
-import type { usingDataProps } from './type';
+import type { usingDataProps } from '../type';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
