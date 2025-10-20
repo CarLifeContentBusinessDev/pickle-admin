@@ -108,9 +108,8 @@ async function syncNewEpisodesToExcel(newEpi: usingDataProps[], token: string) {
   const filteredNew = newEpi.filter((epi) => !excelIds.has(epi.episodeId));
 
   const updatedData = [...filteredNew, ...excelData];
-  const dataToWrite = updatedData.slice(3);
 
-  await overwriteExcelData(dataToWrite, token);
+  await overwriteExcelData(updatedData, token);
 }
 
 export default syncNewEpisodesToExcel;
