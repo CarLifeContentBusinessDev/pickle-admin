@@ -1,4 +1,4 @@
-import { getExcelData } from "./updateExcel";
+import { getExcelData, getUsedRange } from "./updateExcel";
 import type { usingDataProps } from "./type";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -51,9 +51,8 @@ function excelDateTime(date: string | number) {
 
 async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
   console.log("overwriteExcelData called, rows to write:", newEpi.length);
-  const existingData = await getExcelData(token);
-  const totalExistingRows = existingData.length + 3;
-  const totalRowsToClear = Math.max(newEpi.length + 3, totalExistingRows);
+  const existingData = await getUsedRange(token);
+  const totalRowsToClear = Math.max(newEpi.length + 3, existingData!);
   await clearExcelFromRow(4, totalRowsToClear, token);
   const batchSize = 10000;
 
