@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { fetchAllData } from '../../utils/fetchAllData';
+import { fetchAllCurationData, fetchAllData } from '../../utils/fetchAllData';
 import { addMissingRows } from '../../utils/updateExcel';
 import { getNewData } from '../../utils/getNewData';
 import type { usingChannelProps } from '../../type';
@@ -8,6 +8,7 @@ import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
+import { addMissingCurationRows } from '../../utils/updateCuration';
 
 const CATEGORY = 'channel';
 
@@ -49,13 +50,16 @@ const CurationLayout = () => {
 
   const handleUpdateExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
+
     const result = window.confirm(
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
+
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllData(accessToken, CATEGORY);
-      await addMissingRows(allData, token, setProgress, CATEGORY);
+      const allData = await fetchAllCurationData(accessToken);
+      console.log(allData);
+      await addMissingCurationRows(allData, token, setProgress);
       setAllLoading(false);
     }
   };
@@ -135,7 +139,7 @@ const CurationLayout = () => {
             <p className='w-[12%] px-2'>등록일</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
-            새로운 채널·도서 목록을 불러오는 중입니다.
+            새로운 큐레이션 목록을 불러오는 중입니다.
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
