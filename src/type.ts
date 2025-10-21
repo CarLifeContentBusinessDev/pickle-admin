@@ -14,34 +14,17 @@ export interface usingDataProps {
   tagsAdded: string;
 }
 
-/*
-export interface excelProps {
-  audioUrl: string;
+export interface usingChannelProps {
   channelId: number;
-  episodeNumber: number;
+  usageYn: string;
   channelName: string;
-  creatorSeq: number;
-  episodeName: string;
-  episodeId: number;
-  createdAt: string;
-  dispDtime: string;
-  episodeType: string;
-  guests: string;
-  language: string;
-  lastUpdateDtime: string;
+  channelTypeName: string;
+  categoryName: string;
+  vendorName: string;
   likeCnt: number;
   listenCnt: number;
-  modifiedAt: string;
-  modifierSeq: number;
-  playTime: number;
-  playlists: string;
-  tags: string;
-  tagsAdded: string;
-  thumbnailUrl: string;
-  usageYn: string;
-  vendorName: string;
+  createdAt: string;
 }
-*/
 
 export interface LoginResponseData {
   adminSeq: number;

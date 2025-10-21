@@ -3,22 +3,22 @@ import { toast } from 'react-toastify';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { addMissingRows } from '../../utils/updateExcel';
 import { getNewData } from '../../utils/getNewData';
-import type { usingDataProps } from '../../type';
-import EpisodeList from './EpisodeList';
+import type { usingChannelProps } from '../../type';
 import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
+import ChannelList from './ChannelList';
 
-const CATEGORY = 'episode';
+const CATEGORY = 'channel';
 
 let loginToken = localStorage.getItem('loginToken');
 let accessTk = localStorage.getItem('accessToken');
 
-const EpisodeLayout = () => {
+const ChannelLayout = () => {
   const [token, setToken] = useState('');
   const [accessToken, setAccessToken] = useState('');
-  const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
+  const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
@@ -55,7 +55,7 @@ const EpisodeLayout = () => {
     );
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllData(accessToken, CATEGORY); // 'episode'
+      const allData = await fetchAllData(accessToken, CATEGORY);
       await addMissingRows(allData, token, setProgress, CATEGORY);
       setAllLoading(false);
     }
@@ -64,20 +64,22 @@ const EpisodeLayout = () => {
   const handleSyncExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewDataToExcel(newEpi, token, CATEGORY);
+    await syncNewDataToExcel(newChannels, token, CATEGORY);
     setExcelLoading(false);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
-    setNewEpi(newList);
+    // TODO: getExcelData가 채널 데이터도 읽을 수 있도록 수정 필요
+    // 현재는 getExcelData가 에피소드 데이터만 읽어오므로, 새로운 채널을 제대로 비교하지 못할 수 있습니다.
+    setNewChannels(newList);
     setLoading(false);
   };
 
   return (
     <div className='p-10 h-[80%]'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>에피소드 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>채널·도서 관리</h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 에피소드 엑셀로 변환</Button>
         <Button
@@ -96,8 +98,8 @@ const EpisodeLayout = () => {
       <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
         <div className='flex justify-between items-center h-[10%]'>
           <h3 className='mb-6 text-[#3c25cc] font-semibold'>
-            새로운 에피소드 총{' '}
-            <span className='font-extrabold'>{newEpi.length}</span>개
+            새로운 채널·도서 총{' '}
+            <span className='font-extrabold'>{newChannels.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
             <LoadingOverlay vertical={false} loading={excelLoading} />
@@ -126,26 +128,25 @@ const EpisodeLayout = () => {
           <div className='min-w-max flex font-bold py-5'>
             <p className='w-[7%] px-2'>ID</p>
             <p className='w-[7%] px-2'>활성화</p>
-            <p className='w-[12%] px-2'>채널명</p>
-            <p className='w-[13%] px-2'>에피소드명</p>
-            <p className='w-[12%] px-2'>게시일</p>
+            <p className='w-[12%] line-clamp-2 px-2'>채널명</p>
+            <p className='w-[13%] line-clamp-2 px-2'>채널 타입</p>
+            <p className='w-[12%] px-2'>채널 타입</p>
+            <p className='w-[9%] px-2'>카테고리</p>
+            <p className='w-[7%] px-2'>벤더</p>
+            <p className='w-[7%] px-2'>좋아요</p>
+            <p className='w-[7%] px-2'>청취</p>
             <p className='w-[12%] px-2'>등록일</p>
-            <p className='w-[9%] px-2'>에피소드 시간</p>
-            <p className='w-[7%] px-2'>좋아요수</p>
-            <p className='w-[7%] px-2'>청취수</p>
-            <p className='w-[7%] px-2'>tags</p>
-            <p className='w-[7%] px-2'>tagsadded</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
-            새로운 에피소드 목록을 불러오는 중입니다.
+            새로운 채널·도서 목록을 불러오는 중입니다.
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {!loading && <EpisodeList data={newEpi} />}
+          {!loading && <ChannelList data={newChannels} />}
         </div>
       </div>
     </div>
   );
 };
 
-export default EpisodeLayout;
+export default ChannelLayout;
