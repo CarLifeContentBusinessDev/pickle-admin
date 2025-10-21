@@ -45,7 +45,6 @@ export async function getUsedRange(token: string): Promise<number | null> {
   }
 }
 
-// 함수 오버로딩 시그니처
 export async function getExcelData(
   token: string,
   setProgress: ((message: string) => void) | undefined,
@@ -62,7 +61,6 @@ export async function getExcelData(
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]>;
 
-// 실제 구현
 export async function getExcelData(
   token: string,
   setProgress?: (message: string) => void,
@@ -155,7 +153,6 @@ export async function getExcelData(
   }
 }
 
-// 함수 오버로딩 시그니처
 export async function addMissingRows(
   allData: usingChannelProps[],
   token: string,
@@ -169,7 +166,6 @@ export async function addMissingRows(
   category: 'episode'
 ): Promise<void>;
 
-// 실제 구현
 export async function addMissingRows(
   allData: (usingDataProps | usingChannelProps)[],
   token: string,

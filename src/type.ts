@@ -40,6 +40,28 @@ export interface usingCurationProps {
   episodes: curationEpisodesProps[];
 }
 
+export interface usingCurationExcelProps {
+  thumbnailTitle?: string;
+  field?: string;
+  section?: number;
+  curationType: string;
+  curationName: string;
+  curationDesc: string;
+  dispStartDtime: string;
+  dispEndDtime: string;
+  curationCreatedAt: string;
+  channelId?: number;
+  episodeId?: number;
+  usageYn?: string;
+  channelName?: string;
+  episodeName?: string;
+  dispDtime?: string;
+  createdAt?: string;
+  playTime?: number;
+  likeCnt?: number;
+  listenCnt?: number;
+}
+
 export interface curationEpisodesProps {
   channelId: number;
   episodeId: number;

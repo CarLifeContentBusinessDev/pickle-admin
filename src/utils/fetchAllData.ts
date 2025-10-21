@@ -3,7 +3,7 @@ import type {
   usingChannelProps,
   usingDataProps,
   CurationListIdProps,
-  usingCurationProps,
+  usingCurationExcelProps,
 } from '../type';
 
 const SIZE = 10000;
@@ -54,21 +54,33 @@ export async function fetchAllData(
 
 export async function fetchAllCurationData(
   accessToken: string
-): Promise<usingCurationProps[]> {
+): Promise<usingCurationExcelProps[]> {
   try {
-    const curationListRes = await axios.get(
+    const firstRes = await axios.get(
       `https://pickle.obigo.ai/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
 
-    const curationIds: CurationListIdProps[] =
-      curationListRes.data.data.dataList.map((item: { curationId: number }) => ({
-        curationId: item.curationId,
-      }));
+    const totalCount = firstRes.data.data.pageInfo.totalCount;
+    const totalPages = Math.ceil(totalCount / CURATIONSIZE);
+    let curationIds: CurationListIdProps[] = [];
 
-    const allCurationData: usingCurationProps[] = [];
+    for (let page = 1; page <= totalPages; page++) {
+      const curationListRes = await axios.get(
+        `https://pickle.obigo.ai/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      const pageCurationIds = curationListRes.data.data.dataList.map(
+        (item: { curationId: number }) => ({ curationId: item.curationId })
+      );
+      curationIds = curationIds.concat(pageCurationIds);
+    }
+
+    const allCurationData: usingCurationExcelProps[] = [];
 
     for (const { curationId } of curationIds) {
       const detailRes = await axios.get(
@@ -79,17 +91,33 @@ export async function fetchAllCurationData(
       );
       const detailData = detailRes.data.data;
 
-      const curationObject: usingCurationProps = {
-        curationType: detailData.curationType,
-        curationName: detailData.curationName,
-        curationDesc: detailData.curationDesc,
-        dispStartDtime: detailData.dispStartDtime,
-        dispEndDtime: detailData.dispEndDtime,
-        createdAt: detailData.createdAt,
-        episodes: detailData.episodes,
-      };
+      const episodes = detailData.episodes || [];
 
-      allCurationData.push(curationObject);
+      for (const episode of episodes) {
+        const episodeObject: usingCurationExcelProps = {
+          thumbnailTitle: detailData.thumbnailTitle ?? '',
+          field: detailData.field ?? '',
+          section: detailData.section ?? 0,
+          curationType: detailData.curationType,
+          curationName: detailData.curationName,
+          curationDesc: detailData.curationDesc,
+          dispStartDtime: detailData.dispStartDtime,
+          dispEndDtime: detailData.dispEndDtime,
+          curationCreatedAt: detailData.createdAt,
+          channelId: episode.channelId ?? 0,
+          episodeId: episode.episodeId ?? 0,
+          usageYn: episode.usageYn ?? '',
+          channelName: episode.channelName ?? '',
+          episodeName: episode.episodeName ?? '',
+          dispDtime: episode.dispDtime ?? '',
+          createdAt: episode.createdAt ?? '',
+          playTime: episode.playTime ?? 0,
+          likeCnt: episode.likeCnt ?? 0,
+          listenCnt: episode.listenCnt ?? 0,
+        };
+
+        allCurationData.push(episodeObject);
+      }
     }
 
     return allCurationData;

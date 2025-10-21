@@ -1,0 +1,179 @@
+import axios from 'axios';
+import type { usingCurationExcelProps } from '../type';
+import formatDateString from './formatDateString';
+import { getGraphToken } from './auth';
+import { toast } from 'react-toastify';
+import { getUsedRange } from './updateExcel';
+
+const fileId = import.meta.env.VITE_FILE_ID;
+
+export async function getCurationExcelData(
+  token: string,
+  setProgress?: (message: string) => void
+): Promise<usingCurationExcelProps[]> {
+  const batchSize = 1000;
+  const allRows: (string | number)[][] = [];
+  let totalRows = await getUsedRange(token);
+
+  if (totalRows === null || totalRows < 4) {
+    totalRows = 4;
+  }
+
+  const totalBatches = Math.ceil(totalRows / batchSize);
+
+  for (let i = 0; i < totalBatches; i++) {
+    const startRow = i * batchSize + 4;
+    const calculatedEndRow = startRow + batchSize - 1;
+    const endRow = Math.min(calculatedEndRow, totalRows);
+    const rangeAddress = `B${startRow}:T${endRow}`;
+
+    const sheetName = localStorage.getItem('sheetName');
+
+    try {
+      setProgress?.(`${Math.round((i / totalBatches) * 100)}%`);
+      const res = await axios.get(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const values = res.data.values as (string | number)[][];
+      if (values && values.length > 0) allRows.push(...values);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        const refreshedToken = await getGraphToken();
+        if (!refreshedToken)
+          throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
+
+        localStorage.setItem('loginToken', refreshedToken);
+
+        const retryRes = await axios.get(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
+          { headers: { Authorization: `Bearer ${refreshedToken}` } }
+        );
+
+        const retryValues = retryRes.data.values as (string | number)[][];
+        if (retryValues && retryValues.length > 0) allRows.push(...retryValues);
+      } else {
+        console.error('엑셀 조회 실패:', err);
+      }
+    }
+  }
+
+  const validRows = allRows.filter(
+    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
+  );
+
+  return validRows.map(
+    (row) =>
+      ({
+        thumbnailTitle: String(row[0] ?? ''),
+        curationType: String(row[1] ?? ''),
+        curationName: String(row[2] ?? ''),
+        curationDesc: String(row[3] ?? ''),
+        field: String(row[4] ?? ''),
+        section: Number(row[5] ?? 0),
+        dispStartDtime: String(row[6] ?? ''),
+        dispEndDtime: String(row[7] ?? ''),
+        curationCreatedAt: String(row[8] ?? ''),
+        channelId: Number(row[9] ?? 0),
+        episodeId: Number(row[10] ?? 0),
+        usageYn: String(row[11] ?? ''),
+        channelName: String(row[12] ?? ''),
+        episodeName: String(row[13] ?? ''),
+        dispDtime: String(row[14] ?? ''),
+        createdAt: String(row[15] ?? ''),
+        playTime: Number(row[16] ?? 0),
+        likeCnt: Number(row[17] ?? 0),
+        listenCnt: Number(row[18] ?? 0),
+      }) as usingCurationExcelProps
+  );
+}
+
+export async function addMissingCurationRows(
+  allData: usingCurationExcelProps[],
+  token: string,
+  setProgress: (message: string) => void
+) {
+  const existingData = await getCurationExcelData(token, setProgress);
+
+  const missingRows = allData.filter(
+    (item) => !existingData.some((row) => row.episodeId === item.episodeId)
+  );
+
+  if (missingRows.length === 0) {
+    toast.success('추가할 누락 데이터가 없습니다!');
+    return;
+  }
+
+  const batchSize = 1000;
+
+  for (let i = 0; i < missingRows.length; i += batchSize) {
+    const batch = missingRows.slice(
+      i,
+      i + batchSize
+    ) as usingCurationExcelProps[];
+    let values;
+
+    const sheetName = localStorage.getItem('sheetName');
+    values = (batch as usingCurationExcelProps[]).map((row) => [
+      row.thumbnailTitle,
+      row.field,
+      row.section,
+      row.curationType,
+      row.curationName,
+      row.curationDesc,
+      formatDateString(row.dispStartDtime),
+      formatDateString(row.dispEndDtime),
+      formatDateString(row.curationCreatedAt),
+      row.channelId,
+      row.episodeId,
+      row.usageYn,
+      row.channelName,
+      row.episodeName,
+      formatDateString(row.dispDtime),
+      formatDateString(row.createdAt),
+      row.playTime,
+      row.likeCnt,
+      row.listenCnt,
+    ]);
+
+    const startRow = existingData.length + i + 4;
+    const endRow = startRow + batch.length - 1;
+    const rangeAddress = `B${startRow}:T${endRow}`;
+
+    try {
+      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
+      await axios.patch(
+        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
+        { values },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+        const refreshedToken = await getGraphToken();
+        if (!refreshedToken)
+          throw new Error('토큰 재발급 실패, 엑셀 업데이트 중단');
+
+        token = refreshedToken;
+        localStorage.setItem('loginToken', token);
+
+        await axios.patch(
+          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
+          { values },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+      } else {
+        throw err;
+      }
+    }
+  }
+}
