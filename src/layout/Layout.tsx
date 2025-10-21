@@ -1,11 +1,17 @@
 import { Outlet } from 'react-router-dom';
 import Header from './Header';
+import Sidebar from './Sidebar';
 
 const Layout = () => {
   return (
-    <div className='bg-[#F6F7FA] w-screen min-h-screen'>
+    <div className='bg-[#F6F7FA] w-screen min-h-screen flex flex-col'>
       <Header />
-      <Outlet />
+      <div className='flex flex-1 overflow-hidden'>
+        <Sidebar />
+        <main className='flex-1 overflow-y-auto'>
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { getGraphToken } from '../utils/auth';
 import { toast } from 'react-toastify';
 import LoginPopup from '../feature/login/Login';
 import type { LoginResponseData } from '../type';
+import Button from '../components/Button';
 
 const Header = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
@@ -32,20 +33,12 @@ const Header = () => {
         </h1>
         <div className='flex gap-4'>
           {!localStorage.getItem('accessToken') && (
-            <button
-              className='border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
-              onClick={() => setShowLoginPopup(true)}
-            >
+            <Button onClick={() => setShowLoginPopup(true)}>
               관리자 로그인
-            </button>
+            </Button>
           )}
           {!localStorage.getItem('loginToken') && (
-            <button
-              className='border cursor-pointer bg-[#3c25cc] text-white shadow-[0_2px_0_rgba(72,5,255,0.06)] px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100'
-              onClick={handleLogin}
-            >
-              MS Graph 로그인
-            </button>
+            <Button onClick={handleLogin}>MS Graph 로그인</Button>
           )}
         </div>
       </div>
