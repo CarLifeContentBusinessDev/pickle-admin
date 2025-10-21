@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import type { LoginResponseData } from '../type';
+import type { LoginResponseData } from '../../type';
 
 interface LoginPopupProps {
   onClose: () => void;
