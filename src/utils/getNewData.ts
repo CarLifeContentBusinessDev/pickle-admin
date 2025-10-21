@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { usingDataProps } from '../type';
+import type { usingChannelProps, usingDataProps } from '../type';
 import { getExcelData } from './updateExcel';
 
 function excelDateToJSDate(serial: number): Date {
@@ -10,7 +10,9 @@ function excelDateToJSDate(serial: number): Date {
   return new Date(targetMillis);
 }
 
-function findLatestTimeInExcel(excelData: usingDataProps[]): number {
+function findLatestTimeInExcel(
+  excelData: (usingDataProps | usingChannelProps)[]
+): number {
   if (excelData.length === 0) return 0;
 
   const latestSerial = excelData.reduce((max, item) => {
@@ -24,19 +26,33 @@ function findLatestTimeInExcel(excelData: usingDataProps[]): number {
   return latestDateInExcel.getTime();
 }
 
-export async function getNewEpisodes(
+export async function getNewData(
   token: string,
   accessToken: string,
-  setProgress: (message: string) => void
-) {
-  const excelData = await getExcelData(token, setProgress);
+  setProgress: (message: string) => void,
+  category: 'channel'
+): Promise<usingChannelProps[]>;
+export async function getNewData(
+  token: string,
+  accessToken: string,
+  setProgress: (message: string) => void,
+  category: 'episode'
+): Promise<usingDataProps[]>;
+
+export async function getNewData(
+  token: string,
+  accessToken: string,
+  setProgress: (message: string) => void,
+  category: 'episode' | 'channel'
+): Promise<(usingDataProps | usingChannelProps)[]> {
+  const excelData = await getExcelData(token, setProgress, category);
   if (excelData.length === 0) return [];
 
   const latestTime = findLatestTimeInExcel(excelData);
 
   const size = 1000;
   const firstRes = await axios.get(
-    `https://pickle.obigo.ai/admin/episode?page=1&size=${size}`,
+    `https://pickle.obigo.ai/admin/${category}?page=1&size=${size}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
     }
@@ -45,11 +61,11 @@ export async function getNewEpisodes(
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / size);
 
-  let allApiData: usingDataProps[] = [];
+  let allApiData: (usingDataProps | usingChannelProps)[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
     const res = await axios.get(
-      `https://pickle.obigo.ai/admin/episode?page=${page}&size=${size}`,
+      `https://pickle.obigo.ai/admin/${category}?page=${page}&size=${size}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }

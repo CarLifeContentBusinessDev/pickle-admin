@@ -1,5 +1,5 @@
 import { getExcelData, getUsedRange } from './updateExcel';
-import type { usingDataProps } from '../type';
+import type { usingChannelProps, usingDataProps } from '../type';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
@@ -49,37 +49,79 @@ function excelDateTime(date: string | number) {
   return isNaN(d.getTime()) ? '' : formatDateString(d.toISOString());
 }
 
-async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
+async function overwriteExcelData(
+  newData: usingChannelProps[],
+  token: string,
+  category: 'channel'
+): Promise<void>;
+async function overwriteExcelData(
+  newData: usingDataProps[],
+  token: string,
+  category: 'episode'
+): Promise<void>;
+async function overwriteExcelData(
+  newData: (usingDataProps | usingChannelProps)[],
+  token: string,
+  category: 'episode' | 'channel'
+): Promise<void>;
+
+async function overwriteExcelData(
+  newData: (usingDataProps | usingChannelProps)[],
+  token: string,
+  category: 'episode' | 'channel'
+) {
   const existingData = await getUsedRange(token);
-  const totalRowsToClear = Math.max(newEpi.length + 3, existingData!);
+  const totalRowsToClear = Math.max(newData.length + 3, existingData!);
   await clearExcelFromRow(4, totalRowsToClear, token);
   const batchSize = 10000;
 
   try {
-    for (let i = 0; i < newEpi.length; i += batchSize) {
-      const batch = newEpi.slice(i, i + batchSize);
-      const values = batch.map((row) => {
-        const createdAtStr = excelDateTime(row.createdAt);
-        const dispDtimeStr = excelDateTime(row.dispDtime);
+    for (let i = 0; i < newData.length; i += batchSize) {
+      const batch = newData.slice(i, i + batchSize);
+      let values;
+      let rangeAddress;
 
-        return [
-          row.episodeId,
-          row.usageYn,
-          row.channelName,
-          row.episodeName,
-          dispDtimeStr,
-          createdAtStr,
-          row.playTime,
-          row.likeCnt,
-          row.listenCnt,
-          row.tags,
-          row.tagsAdded,
-        ];
-      });
+      if (category === 'episode') {
+        values = (batch as usingDataProps[]).map((row) => {
+          const createdAtStr = excelDateTime(row.createdAt);
+          const dispDtimeStr = excelDateTime(row.dispDtime);
 
-      const startRow = i + 4;
-      const endRow = startRow + batch.length - 1;
-      const rangeAddress = `A${startRow}:K${endRow}`;
+          return [
+            row.episodeId,
+            row.usageYn,
+            row.channelName,
+            row.episodeName,
+            dispDtimeStr,
+            createdAtStr,
+            row.playTime,
+            row.likeCnt,
+            row.listenCnt,
+            row.tags,
+            row.tagsAdded,
+          ];
+        });
+        const startRow = i + 4;
+        const endRow = startRow + batch.length - 1;
+        rangeAddress = `A${startRow}:K${endRow}`;
+      } else {
+        values = (batch as usingChannelProps[]).map((row) => {
+          const createdAtStr = excelDateTime(row.createdAt);
+          return [
+            row.channelId,
+            row.usageYn,
+            row.channelName,
+            row.channelTypeName,
+            row.categoryName,
+            row.vendorName,
+            row.likeCnt,
+            row.listenCnt,
+            createdAtStr,
+          ];
+        });
+        const startRow = i + 4;
+        const endRow = startRow + batch.length - 1;
+        rangeAddress = `A${startRow}:I${endRow}`;
+      }
 
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
@@ -100,15 +142,34 @@ async function overwriteExcelData(newEpi: usingDataProps[], token: string) {
   }
 }
 
-async function syncNewEpisodesToExcel(newEpi: usingDataProps[], token: string) {
-  const excelData = await getExcelData(token);
+async function syncNewDataToExcel(
+  newData: usingChannelProps[],
+  token: string,
+  category: 'channel'
+): Promise<void>;
+async function syncNewDataToExcel(
+  newData: usingDataProps[],
+  token: string,
+  category: 'episode'
+): Promise<void>;
 
-  const excelIds = new Set(excelData.map((epi) => epi.episodeId));
-  const filteredNew = newEpi.filter((epi) => !excelIds.has(epi.episodeId));
+async function syncNewDataToExcel(
+  newData: (usingDataProps | usingChannelProps)[],
+  token: string,
+  category: 'episode' | 'channel'
+) {
+  const excelData = await getExcelData(token, undefined, category);
+
+  const excelIds = new Set(
+    excelData.map((item) => (item as any).episodeId ?? (item as any).channelId)
+  );
+  const filteredNew = newData.filter(
+    (item) => !excelIds.has((item as any).episodeId ?? (item as any).channelId)
+  );
 
   const updatedData = [...filteredNew, ...excelData];
 
-  await overwriteExcelData(updatedData, token);
+  await overwriteExcelData(updatedData, token, category);
 }
 
-export default syncNewEpisodesToExcel;
+export default syncNewDataToExcel;
