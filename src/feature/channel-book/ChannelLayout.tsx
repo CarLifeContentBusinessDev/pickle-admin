@@ -71,8 +71,6 @@ const ChannelLayout = () => {
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
-    // TODO: getExcelData가 채널 데이터도 읽을 수 있도록 수정 필요
-    // 현재는 getExcelData가 에피소드 데이터만 읽어오므로, 새로운 채널을 제대로 비교하지 못할 수 있습니다.
     setNewChannels(newList);
     setLoading(false);
   };
@@ -81,7 +79,7 @@ const ChannelLayout = () => {
     <div className='p-10 h-[80%]'>
       <h1 className='text-3xl font-bold mb-4 indent-1'>채널·도서 관리</h1>
       <div className='flex gap-2'>
-        <Button onClick={handleUpdateExcel}>전체 에피소드 엑셀로 변환</Button>
+        <Button onClick={handleUpdateExcel}>전체 채널·도서 시트로 변환</Button>
         <Button
           href={import.meta.env.VITE_ADMIN_EPI_URL}
           target='_blank'
