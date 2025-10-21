@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { usingDataProps } from '../type';
-import formatDateString from '../utils/formatDateString';
+import type { usingDataProps } from '../../type';
+import formatDateString from '../../utils/formatDateString';
 
 const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
   const parentRef = useRef<HTMLDivElement>(null);
