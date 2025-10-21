@@ -1,17 +1,10 @@
 import { useState } from 'react';
 import { getGraphToken } from '../utils/auth';
 import { toast } from 'react-toastify';
-import { getNewEpisodes } from '../utils/getNewEpisodes';
-import LoginPopup from '../feature/Login';
-import type { LoginResponseData, usingDataProps } from '../type';
+import LoginPopup from '../feature/login/Login';
+import type { LoginResponseData } from '../type';
 
-interface HeaderProps {
-  setLoading: (loading: boolean) => void;
-  setNewEpi: (newEpi: usingDataProps[]) => void;
-  setProgress: (progress: string) => void;
-}
-
-const Header = ({ setLoading, setNewEpi, setProgress }: HeaderProps) => {
+const Header = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   const handleLogin = async () => {
@@ -21,7 +14,6 @@ const Header = ({ setLoading, setNewEpi, setProgress }: HeaderProps) => {
     if (tk && localStorage.getItem('accessToken')) {
       localStorage.setItem('loginToken', tk);
       toast.success('MS 로그인에 성공하였습니다.');
-      handleSearchNew(tk, localStorage.getItem('accessToken')!);
     }
   };
 
@@ -29,13 +21,6 @@ const Header = ({ setLoading, setNewEpi, setProgress }: HeaderProps) => {
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
     toast.success('관리자 로그인에 성공했습니다!');
-  };
-
-  const handleSearchNew = async (token: string, accessToken: string) => {
-    setLoading(true);
-    const newList = await getNewEpisodes(token, accessToken, setProgress);
-    setNewEpi(newList);
-    setLoading(false);
   };
 
   return (
