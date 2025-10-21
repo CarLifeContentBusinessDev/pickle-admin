@@ -26,6 +26,33 @@ export interface usingChannelProps {
   createdAt: string;
 }
 
+export interface CurationListIdProps {
+  curationId: number;
+}
+
+export interface usingCurationProps {
+  curationType: string;
+  curationName: string;
+  curationDesc: string;
+  dispStartDtime: string;
+  dispEndDtime: string;
+  createdAt: string;
+  episodes: curationEpisodesProps[];
+}
+
+export interface curationEpisodesProps {
+  channelId: number;
+  episodeId: number;
+  usageYn: string;
+  channelName: string;
+  episodeName: string;
+  dispDtime: string;
+  createdAt: string;
+  playTime: number;
+  likeCnt: number;
+  listenCnt: number;
+}
+
 export interface LoginResponseData {
   adminSeq: number;
   email: string;
