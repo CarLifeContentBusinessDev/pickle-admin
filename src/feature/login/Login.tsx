@@ -54,7 +54,7 @@ export default function LoginPopup({
       if (data.resultCode === 'SUCCESS') {
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
-
+        console.log(localStorage.getItem('accessToken'));
         if (remember) {
           localStorage.setItem('rememberId', id);
         } else {
@@ -63,7 +63,7 @@ export default function LoginPopup({
 
         if (onLoginSuccess) onLoginSuccess(data.data);
 
-        onClose();
+        window.location.reload();
       } else {
         setError(data.resultMessage || '로그인 실패');
       }

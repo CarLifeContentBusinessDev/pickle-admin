@@ -35,10 +35,10 @@ const EpisodeLayout = () => {
     accessTk = localStorage.getItem('accessToken');
     if (accessTk) {
       setAccessToken(accessTk);
-      getSheetList(accessTk, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
     if (loginToken) {
       setToken(loginToken);
+      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
   }, []);
 
