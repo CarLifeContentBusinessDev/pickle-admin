@@ -7,6 +7,7 @@ import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
+import { addMissingCurationRows } from '../../utils/updateCuration';
 
 const CATEGORY = 'channel';
 
@@ -33,10 +34,10 @@ const CurationLayout = () => {
     accessTk = localStorage.getItem('accessToken');
     if (accessTk) {
       setAccessToken(accessTk);
-      getSheetList(accessTk, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
     if (loginToken) {
       setToken(loginToken);
+      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
   }, []);
 
@@ -56,8 +57,7 @@ const CurationLayout = () => {
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllCurationData();
-      console.log(allData);
-      setAllLoading(false);
+      await addMissingCurationRows(allData, token, setProgress);
     }
   };
 

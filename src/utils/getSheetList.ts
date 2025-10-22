@@ -27,7 +27,7 @@ const getSheetList = async (loginToken: string, fileId: string) => {
           headers: { Authorization: `Bearer ${newToken}` },
         });
 
-        localStorage.setItem('accessToken', newToken);
+        localStorage.setItem('loginToken', newToken);
 
         return retryRes.data.value;
       } catch (retryErr) {
