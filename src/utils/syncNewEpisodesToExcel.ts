@@ -52,22 +52,26 @@ function excelDateTime(date: string | number) {
 async function overwriteExcelData(
   newData: usingChannelProps[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'channel'
 ): Promise<void>;
 async function overwriteExcelData(
   newData: usingDataProps[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'episode'
 ): Promise<void>;
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'episode' | 'channel'
 ): Promise<void>;
 
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'episode' | 'channel'
 ) {
   const existingData = await getUsedRange(token);
@@ -77,6 +81,7 @@ async function overwriteExcelData(
 
   try {
     for (let i = 0; i < newData.length; i += batchSize) {
+      setProgress(`${Math.round((i / newData.length) * 100)}%`);
       const batch = newData.slice(i, i + batchSize);
       let values;
       let rangeAddress;
@@ -145,17 +150,20 @@ async function overwriteExcelData(
 async function syncNewDataToExcel(
   newData: usingChannelProps[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'channel'
 ): Promise<void>;
 async function syncNewDataToExcel(
   newData: usingDataProps[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'episode'
 ): Promise<void>;
 
 async function syncNewDataToExcel(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
+  setProgress: (progress: string) => void,
   category: 'episode' | 'channel'
 ) {
   const excelData = await getExcelData(token, undefined, category);
@@ -169,7 +177,7 @@ async function syncNewDataToExcel(
 
   const updatedData = [...filteredNew, ...excelData];
 
-  await overwriteExcelData(updatedData, token, category);
+  await overwriteExcelData(updatedData, token, setProgress, category);
 }
 
 export default syncNewDataToExcel;
