@@ -24,6 +24,12 @@ const Header = () => {
     toast.success('관리자 로그인에 성공했습니다!');
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    window.location.reload();
+  };
+
   return (
     <>
       <div className='w-full h-[10%] flex justify-between items-center mb-0 p-10 bg-white'>
@@ -38,9 +44,7 @@ const Header = () => {
             </Button>
           )}
           {localStorage.getItem('accessToken') && (
-            <Button onClick={() => localStorage.removeItem('accessToken')}>
-              관리자 로그아웃
-            </Button>
+            <Button onClick={handleLogout}>관리자 로그아웃</Button>
           )}
           {!localStorage.getItem('loginToken') && (
             <Button onClick={handleLogin}>MS Graph 로그인</Button>
