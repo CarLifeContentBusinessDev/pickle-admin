@@ -90,6 +90,7 @@ export async function fetchAllCurationData(): Promise<
           playTime: episode.playTime ?? 0,
           likeCnt: episode.likeCnt ?? 0,
           listenCnt: episode.listenCnt ?? 0,
+          uploader: episode.uploader ?? 'Harper',
         };
 
         allCurationData.push(episodeObject);

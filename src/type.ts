@@ -61,6 +61,7 @@ export interface usingCurationExcelProps {
   playTime?: number;
   likeCnt?: number;
   listenCnt?: number;
+  uploader? :string;
 }
 
 export interface curationEpisodesProps {
