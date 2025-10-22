@@ -9,7 +9,7 @@ const MAX_EXCEL_ROWS = 300000;
 
 export async function getUsedRange(token: string): Promise<number | null> {
   const sheetName = localStorage.getItem('sheetName');
-  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='A1:A${MAX_EXCEL_ROWS}')?valuesOnly=true`;
+  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='C1:C${MAX_EXCEL_ROWS}')?valuesOnly=true`;
 
   try {
     const res = await axios.get(usedRangeUrl, {

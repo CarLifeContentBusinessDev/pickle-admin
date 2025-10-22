@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 
 const Layout = () => {
   return (
-    <div className='bg-[#F6F7FA] w-screen min-h-screen flex flex-col'>
+    <div className='bg-[#F6F7FA] w-screen h-screen flex flex-col'>
       <Header />
       <div className='flex flex-1 overflow-hidden'>
         <Sidebar />

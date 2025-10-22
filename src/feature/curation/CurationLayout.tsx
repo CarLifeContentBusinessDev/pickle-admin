@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { fetchAllCurationData } from '../../utils/fetchAllData';
-import { getNewData } from '../../utils/getNewData';
-import type { usingChannelProps } from '../../type';
+import type { usingCurationExcelProps } from '../../type';
 import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import { addMissingCurationRows } from '../../utils/updateCuration';
+import { getNewCurationData } from '../../utils/getNewCuration';
+import CurationList from './CurationList';
+import syncNewCurationToExcel from '../../utils/syncNewCurationToExcel';
 
 const CATEGORY = 'channel';
 
@@ -16,8 +18,9 @@ let accessTk = localStorage.getItem('accessToken');
 
 const CurationLayout = () => {
   const [token, setToken] = useState('');
-  const [accessToken, setAccessToken] = useState('');
-  const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
+  const [newCurations, setNewCurations] = useState<usingCurationExcelProps[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
@@ -32,9 +35,6 @@ const CurationLayout = () => {
   useEffect(() => {
     loginToken = localStorage.getItem('loginToken');
     accessTk = localStorage.getItem('accessToken');
-    if (accessTk) {
-      setAccessToken(accessTk);
-    }
     if (loginToken) {
       setToken(loginToken);
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
@@ -64,14 +64,14 @@ const CurationLayout = () => {
   const handleSyncExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewDataToExcel(newChannels, token, CATEGORY);
+    await syncNewCurationToExcel(newCurations, token);
     setExcelLoading(false);
   };
 
-  const handleSearchNew = async (token: string, accessToken: string) => {
+  const handleSearchNew = async (token: string) => {
     setLoading(true);
-    const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
-    setNewChannels(newList);
+    const newList = await getNewCurationData(token, setProgress);
+    setNewCurations(newList);
     setLoading(false);
   };
 
@@ -97,7 +97,7 @@ const CurationLayout = () => {
         <div className='flex justify-between items-center h-[10%]'>
           <h3 className='mb-6 text-[#3c25cc] font-semibold'>
             새로운 큐레이션 총{' '}
-            <span className='font-extrabold'>{newChannels.length}</span>개
+            <span className='font-extrabold'>{newCurations.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
             <LoadingOverlay vertical={false} loading={excelLoading} />
@@ -114,7 +114,7 @@ const CurationLayout = () => {
               ))}
             </select>
             <button
-              onClick={() => handleSearchNew(token, accessToken)}
+              onClick={() => handleSearchNew(token)}
               className='cursor-pointer'
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
@@ -122,25 +122,23 @@ const CurationLayout = () => {
             <Button onClick={handleSyncExcel}>Excel 동기화</Button>
           </div>
         </div>
-        <div className='w-full h-[90%]'>
+        <div className='w-full h-[90%] flex flex-col'>
           <div className='min-w-max flex font-bold py-5'>
-            <p className='w-[7%] px-2'>ID</p>
-            <p className='w-[7%] px-2'>활성화</p>
-            <p className='w-[12%] line-clamp-2 px-2'>채널명</p>
-            <p className='w-[13%] line-clamp-2 px-2'>채널 타입</p>
-            <p className='w-[12%] px-2'>채널 타입</p>
-            <p className='w-[9%] px-2'>카테고리</p>
-            <p className='w-[7%] px-2'>벤더</p>
-            <p className='w-[7%] px-2'>좋아요</p>
-            <p className='w-[7%] px-2'>청취</p>
-            <p className='w-[12%] px-2'>등록일</p>
+            <p className='w-[10%] px-1'>큐레이션 타입</p>
+            <p className='w-[7%] px-1'>상태</p>
+            <p className='w-[13%] line-clamp-2 px-1'>큐레이션명</p>
+            <p className='w-[12%] line-clamp-2 px-1'>큐레이션 설명</p>
+            <p className='w-[17%] px-1'>게시 기간</p>
+            <p className='w-[9%] px-1'>등록 일시</p>
+            <p className='w-[12%] px-1'>채널명</p>
+            <p className='w-[13%] px-1'>에피소드명</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 큐레이션 목록을 불러오는 중입니다.
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {/*!loading && <ChannelList data={newChannels} />*/}
+          {!loading && <CurationList data={newCurations} />}
         </div>
       </div>
     </div>

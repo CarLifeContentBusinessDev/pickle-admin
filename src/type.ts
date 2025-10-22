@@ -31,13 +31,14 @@ export interface CurationListIdProps {
 }
 
 export interface usingCurationProps {
+  curationId: number;
   curationType: string;
   curationName: string;
   curationDesc: string;
   dispStartDtime: string;
   dispEndDtime: string;
   createdAt: string;
-  episodes: curationEpisodesProps[];
+  episodes?: curationEpisodesProps[];
 }
 
 export interface usingCurationExcelProps {
