@@ -7,7 +7,6 @@ import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
-import { addMissingCurationRows } from '../../utils/updateCuration';
 
 const CATEGORY = 'channel';
 
@@ -56,9 +55,8 @@ const CurationLayout = () => {
 
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllCurationData(accessToken);
+      const allData = await fetchAllCurationData();
       console.log(allData);
-      await addMissingCurationRows(allData, token, setProgress);
       setAllLoading(false);
     }
   };
