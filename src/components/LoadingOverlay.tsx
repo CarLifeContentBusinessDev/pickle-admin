@@ -1,7 +1,6 @@
 interface LoadingOverlayProps {
   children?: React.ReactNode;
   progress?: string | number;
-  height?: string;
   vertical?: boolean;
   loading: boolean;
 }
@@ -9,7 +8,6 @@ interface LoadingOverlayProps {
 const LoadingOverlay = ({
   children,
   progress,
-  height = '100%',
   vertical = true,
   loading,
 }: LoadingOverlayProps) => {
@@ -25,7 +23,7 @@ const LoadingOverlay = ({
     <>
       {loading && (
         <div
-          className={`flex gap-4 items-center justify-center h-[${height}] box-border ${boxStyle}`}
+          className={`flex gap-4 items-center justify-center flex-1 box-border ${boxStyle}`}
         >
           <p className='text-center font-bold'>{children}</p>
           <div
