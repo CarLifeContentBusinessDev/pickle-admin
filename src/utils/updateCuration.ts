@@ -14,7 +14,7 @@ export async function getCurationExcelData(
   const batchSize = 100;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
-  
+
   if (totalRows === null || totalRows < 4) {
     totalRows = 4;
   }
@@ -70,7 +70,7 @@ export async function getCurationExcelData(
         curationName: String(row[2] ?? ''),
         curationDesc: String(row[3] ?? ''),
         field: String(row[4] ?? ''),
-        section: Number(row[5] ?? 0),
+        section: Number(row[5] ?? undefined),
         dispStartDtime: String(row[6] ?? ''),
         dispEndDtime: String(row[7] ?? ''),
         curationCreatedAt: String(row[8] ?? ''),
@@ -105,7 +105,7 @@ export async function addMissingCurationRows(
     return;
   }
 
-  const batchSize = 1000;
+  const batchSize = 100;
 
   for (let i = 0; i < missingRows.length; i += batchSize) {
     const batch = missingRows.slice(
@@ -178,4 +178,6 @@ export async function addMissingCurationRows(
       }
     }
   }
+
+  toast.success('엑셀 업데이트 완료!');
 }
