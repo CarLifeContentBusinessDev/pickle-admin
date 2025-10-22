@@ -84,7 +84,7 @@ export async function getNewData(
     const dbDateForItem = new Date(item.createdAt);
     const itemTime =
       dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
-    return itemTime > latestTime;
+    return itemTime > latestTime + 1000;
   });
 
   return newEpisodes;

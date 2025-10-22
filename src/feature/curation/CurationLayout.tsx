@@ -53,6 +53,7 @@ const CurationLayout = () => {
       setAllLoading(true);
       const allData = await fetchAllCurationData();
       await addMissingCurationRows(allData, token, setProgress);
+      setProgress('0');
       setAllLoading(false);
     }
   };
@@ -67,6 +68,7 @@ const CurationLayout = () => {
   const handleSearchNew = async (token: string) => {
     setLoading(true);
     const newList = await getNewCurationData(token, setProgress);
+    setProgress('0');
     setNewCurations(newList);
     setLoading(false);
   };

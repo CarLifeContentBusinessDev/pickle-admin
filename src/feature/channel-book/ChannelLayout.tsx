@@ -57,6 +57,7 @@ const ChannelLayout = () => {
       setAllLoading(true);
       const allData = await fetchAllData(CATEGORY);
       await addMissingRows(allData, token, setProgress, CATEGORY);
+      setProgress('0');
       setAllLoading(false);
     }
   };
@@ -71,6 +72,7 @@ const ChannelLayout = () => {
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
+    setProgress('0');
     setNewChannels(newList);
     setLoading(false);
   };

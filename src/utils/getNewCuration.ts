@@ -95,7 +95,7 @@ export async function getNewCurationData(
     const dbDateForItem = new Date(item.curationCreatedAt);
     const itemTime =
       dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
-    return itemTime > latestTime;
+    return itemTime > latestTime + 1000;
   });
 
   return newEpisodes;
