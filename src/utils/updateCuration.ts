@@ -1,4 +1,4 @@
-import axios, { all } from 'axios';
+import axios from 'axios';
 import type { usingCurationExcelProps } from '../type';
 import formatDateString from './formatDateString';
 import { getGraphToken } from './auth';
@@ -25,7 +25,7 @@ export async function getCurationExcelData(
     const startRow = i * batchSize + 4;
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
-    const rangeAddress = `B${startRow}:T${endRow}`;
+    const rangeAddress = `B${startRow}:U${endRow}`;
 
     const sheetName = localStorage.getItem('sheetName');
 
@@ -61,7 +61,6 @@ export async function getCurationExcelData(
   const validRows = allRows.filter(
     (row) => row[1] !== null && row[1] !== undefined && row[1] !== ''
   );
-  console.log(validRows);
 
   return validRows.map(
     (row) =>
@@ -85,6 +84,7 @@ export async function getCurationExcelData(
         playTime: Number(row[16] ?? 0),
         likeCnt: Number(row[17] ?? 0),
         listenCnt: Number(row[18] ?? 0),
+        uploader: String(row[19] ?? 'Harper'),
       }) as usingCurationExcelProps
   );
 }
@@ -135,11 +135,12 @@ export async function addMissingCurationRows(
       row.playTime,
       row.likeCnt,
       row.listenCnt,
+      row.uploader,
     ]);
 
     const startRow = existingData.length + i + 4;
     const endRow = startRow + batch.length - 1;
-    const rangeAddress = `B${startRow}:T${endRow}`;
+    const rangeAddress = `B${startRow}:U${endRow}`;
 
     try {
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
