@@ -55,7 +55,7 @@ const EpisodeLayout = () => {
     );
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllData(accessToken, CATEGORY); // 'episode'
+      const allData = await fetchAllData(CATEGORY);
       await addMissingRows(allData, token, setProgress, CATEGORY);
       setAllLoading(false);
     }

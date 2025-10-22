@@ -10,25 +10,17 @@ const SIZE = 10000;
 const CURATIONSIZE = 100;
 
 export async function fetchAllData(
-  accessToken: string,
   category: 'channel'
 ): Promise<usingChannelProps[]>;
 export async function fetchAllData(
-  accessToken: string,
   category: 'episode'
 ): Promise<usingDataProps[]>;
 
 export async function fetchAllData(
-  accessToken: string,
   category: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const firstRes = await api.get(
-      `/admin/${category}?page=1&size=${SIZE}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
+    const firstRes = await api.get(`/admin/${category}?page=1&size=${SIZE}`);
 
     const totalCount = firstRes.data.data.pageInfo.totalCount;
     const totalPages = Math.ceil(totalCount / SIZE);
@@ -36,12 +28,7 @@ export async function fetchAllData(
     let allData: (usingDataProps | usingChannelProps)[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
-      const res = await api.get(
-        `/admin/${category}?page=${page}&size=${SIZE}`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
       allData = allData.concat(res.data.data.dataList);
     }
 
@@ -52,15 +39,12 @@ export async function fetchAllData(
   }
 }
 
-export async function fetchAllCurationData(
-  accessToken: string
-): Promise<usingCurationExcelProps[]> {
+export async function fetchAllCurationData(): Promise<
+  usingCurationExcelProps[]
+> {
   try {
     const firstRes = await api.get(
-      `/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      `/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`
     );
 
     const totalCount = firstRes.data.data.pageInfo.totalCount;
@@ -69,10 +53,7 @@ export async function fetchAllCurationData(
 
     for (let page = 1; page <= totalPages; page++) {
       const curationListRes = await api.get(
-        `/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
+        `/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`
       );
       const pageCurationIds = curationListRes.data.data.dataList.map(
         (item: { curationId: number }) => ({ curationId: item.curationId })
@@ -83,12 +64,7 @@ export async function fetchAllCurationData(
     const allCurationData: usingCurationExcelProps[] = [];
 
     for (const { curationId } of curationIds) {
-      const detailRes = await api.get(
-        `/admin/curation/${curationId}`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const detailRes = await api.get(`/admin/curation/${curationId}`, {});
       const detailData = detailRes.data.data;
 
       const episodes = detailData.episodes || [];
