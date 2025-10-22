@@ -11,7 +11,6 @@ import CurationList from './CurationList';
 import syncNewCurationToExcel from '../../utils/syncNewCurationToExcel';
 
 let loginToken = localStorage.getItem('loginToken');
-let accessTk = localStorage.getItem('accessToken');
 
 const CurationLayout = () => {
   const [token, setToken] = useState('');
@@ -31,7 +30,6 @@ const CurationLayout = () => {
 
   useEffect(() => {
     loginToken = localStorage.getItem('loginToken');
-    accessTk = localStorage.getItem('accessToken');
     if (loginToken) {
       setToken(loginToken);
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
