@@ -52,7 +52,8 @@ function excelDateTime(date?: string | number) {
 
 async function overwriteExcelData(
   newData: usingCurationExcelProps[],
-  token: string
+  token: string,
+  setProgress: (progress: string) => void
 ) {
   const existingData = await getUsedRange(token);
   const totalRowsToClear = Math.max(newData.length + 3, existingData!);
@@ -61,6 +62,7 @@ async function overwriteExcelData(
 
   try {
     for (let i = 0; i < newData.length; i += batchSize) {
+      setProgress(`${Math.round((i / newData.length) * 100)}%`);
       const batch = newData.slice(i, i + batchSize);
 
       const values = (batch as usingCurationExcelProps[]).map((row) => [
@@ -111,7 +113,8 @@ async function overwriteExcelData(
 
 async function syncNewCurationToExcel(
   newData: usingCurationExcelProps[],
-  token: string
+  token: string,
+  setProgress: (progress: string) => void
 ) {
   const excelData = await getCurationExcelData(token, undefined);
 
@@ -125,7 +128,7 @@ async function syncNewCurationToExcel(
 
   const updatedData = [...filteredNew, ...excelData];
 
-  await overwriteExcelData(updatedData, token);
+  await overwriteExcelData(updatedData, token, setProgress);
 }
 
 export default syncNewCurationToExcel;

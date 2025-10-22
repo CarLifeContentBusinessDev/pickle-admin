@@ -65,7 +65,8 @@ const ChannelLayout = () => {
   const handleSyncExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewDataToExcel(newChannels, token, CATEGORY);
+    await syncNewDataToExcel(newChannels, token, setProgress, CATEGORY);
+      setProgress('0');
     setExcelLoading(false);
   };
 
@@ -102,7 +103,7 @@ const ChannelLayout = () => {
             <span className='font-extrabold'>{newChannels.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
-            <LoadingOverlay vertical={false} loading={excelLoading} />
+            <LoadingOverlay progress={progress} vertical={false} loading={excelLoading} />
             <select
               value={selectedSheet}
               onChange={handleSelectSheet}

@@ -65,7 +65,8 @@ const EpisodeLayout = () => {
   const handleSyncExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewDataToExcel(newEpi, token, CATEGORY);
+    await syncNewDataToExcel(newEpi, token, setProgress, CATEGORY);
+    setProgress('0');
     setExcelLoading(false);
   };
 
@@ -102,7 +103,7 @@ const EpisodeLayout = () => {
             <span className='font-extrabold'>{newEpi.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
-            <LoadingOverlay vertical={false} loading={excelLoading} />
+            <LoadingOverlay progress={progress} vertical={false} loading={excelLoading} />
             <select
               value={selectedSheet}
               onChange={handleSelectSheet}

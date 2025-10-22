@@ -61,7 +61,8 @@ const CurationLayout = () => {
   const handleSyncExcel = async () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewCurationToExcel(newCurations, token);
+    await syncNewCurationToExcel(newCurations, token, setProgress);
+    setProgress('0');
     setExcelLoading(false);
   };
 
@@ -98,7 +99,7 @@ const CurationLayout = () => {
             <span className='font-extrabold'>{newCurations.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
-            <LoadingOverlay vertical={false} loading={excelLoading} />
+            <LoadingOverlay progress={progress} vertical={false} loading={excelLoading} />
             <select
               value={selectedSheet}
               onChange={handleSelectSheet}
