@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { all } from 'axios';
 import type { usingCurationExcelProps } from '../type';
 import formatDateString from './formatDateString';
 import { getGraphToken } from './auth';
@@ -11,10 +11,10 @@ export async function getCurationExcelData(
   token: string,
   setProgress?: (message: string) => void
 ): Promise<usingCurationExcelProps[]> {
-  const batchSize = 1000;
+  const batchSize = 100;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
-
+  
   if (totalRows === null || totalRows < 4) {
     totalRows = 4;
   }
@@ -59,8 +59,9 @@ export async function getCurationExcelData(
   }
 
   const validRows = allRows.filter(
-    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
+    (row) => row[1] !== null && row[1] !== undefined && row[1] !== ''
   );
+  console.log(validRows);
 
   return validRows.map(
     (row) =>
@@ -116,11 +117,11 @@ export async function addMissingCurationRows(
     const sheetName = localStorage.getItem('sheetName');
     values = (batch as usingCurationExcelProps[]).map((row) => [
       row.thumbnailTitle,
-      row.field,
-      row.section,
       row.curationType,
       row.curationName,
       row.curationDesc,
+      row.field,
+      row.section,
       formatDateString(row.dispStartDtime),
       formatDateString(row.dispEndDtime),
       formatDateString(row.curationCreatedAt),

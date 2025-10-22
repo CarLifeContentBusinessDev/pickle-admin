@@ -46,7 +46,7 @@ export async function fetchAllCurationData(): Promise<
     const firstRes = await api.get(
       `/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`
     );
-    console.log(firstRes);
+
     const totalCount = firstRes.data.data.pageInfo.totalCount;
     const totalPages = Math.ceil(totalCount / CURATIONSIZE);
     let curationIds: CurationListIdProps[] = [];
