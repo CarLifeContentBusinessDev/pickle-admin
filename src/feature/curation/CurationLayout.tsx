@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { fetchAllCurationData } from '../../utils/fetchAllData';
 import type { usingCurationExcelProps } from '../../type';
-import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
@@ -10,8 +9,6 @@ import { addMissingCurationRows } from '../../utils/updateCuration';
 import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
 import syncNewCurationToExcel from '../../utils/syncNewCurationToExcel';
-
-const CATEGORY = 'channel';
 
 let loginToken = localStorage.getItem('loginToken');
 let accessTk = localStorage.getItem('accessToken');
@@ -58,6 +55,7 @@ const CurationLayout = () => {
       setAllLoading(true);
       const allData = await fetchAllCurationData();
       await addMissingCurationRows(allData, token, setProgress);
+      setAllLoading(false);
     }
   };
 

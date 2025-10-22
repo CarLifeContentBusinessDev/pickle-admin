@@ -73,7 +73,7 @@ export async function fetchAllCurationData(): Promise<
         const episodeObject: usingCurationExcelProps = {
           thumbnailTitle: detailData.thumbnailTitle ?? '',
           field: detailData.field ?? '',
-          section: detailData.section ?? 0,
+          section: detailData.section ?? undefined,
           curationType: detailData.curationType,
           curationName: detailData.curationName,
           curationDesc: detailData.curationDesc,
