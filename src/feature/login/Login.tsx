@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from '../../utils/api';
 import type { LoginResponseData } from '../../type';
 
 interface LoginPopupProps {
@@ -36,7 +36,7 @@ export default function LoginPopup({
     setError('');
 
     try {
-      const res = await axios.post<LoginApiResponse>(
+      const res = await api.post<LoginApiResponse>(
         'https://pickle.obigo.ai/admin/login',
         {
           adminId: id,

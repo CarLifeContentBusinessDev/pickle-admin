@@ -1,10 +1,10 @@
-import axios from 'axios';
 import type {
   usingChannelProps,
   usingDataProps,
   CurationListIdProps,
   usingCurationExcelProps,
 } from '../type';
+import api from './api';
 
 const SIZE = 10000;
 const CURATIONSIZE = 100;
@@ -23,8 +23,8 @@ export async function fetchAllData(
   category: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const firstRes = await axios.get(
-      `https://pickle.obigo.ai/admin/${category}?page=1&size=${SIZE}`,
+    const firstRes = await api.get(
+      `/admin/${category}?page=1&size=${SIZE}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
@@ -36,8 +36,8 @@ export async function fetchAllData(
     let allData: (usingDataProps | usingChannelProps)[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
-      const res = await axios.get(
-        `https://pickle.obigo.ai/admin/${category}?page=${page}&size=${SIZE}`,
+      const res = await api.get(
+        `/admin/${category}?page=${page}&size=${SIZE}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -56,8 +56,8 @@ export async function fetchAllCurationData(
   accessToken: string
 ): Promise<usingCurationExcelProps[]> {
   try {
-    const firstRes = await axios.get(
-      `https://pickle.obigo.ai/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`,
+    const firstRes = await api.get(
+      `/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
@@ -68,8 +68,8 @@ export async function fetchAllCurationData(
     let curationIds: CurationListIdProps[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
-      const curationListRes = await axios.get(
-        `https://pickle.obigo.ai/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`,
+      const curationListRes = await api.get(
+        `/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -83,8 +83,8 @@ export async function fetchAllCurationData(
     const allCurationData: usingCurationExcelProps[] = [];
 
     for (const { curationId } of curationIds) {
-      const detailRes = await axios.get(
-        `https://pickle.obigo.ai/admin/curation/${curationId}`,
+      const detailRes = await api.get(
+        `/admin/curation/${curationId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }

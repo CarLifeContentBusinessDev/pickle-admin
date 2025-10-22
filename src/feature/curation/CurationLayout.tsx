@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { fetchAllCurationData, fetchAllData } from '../../utils/fetchAllData';
-import { addMissingRows } from '../../utils/updateExcel';
+import { fetchAllCurationData } from '../../utils/fetchAllData';
 import { getNewData } from '../../utils/getNewData';
 import type { usingChannelProps } from '../../type';
 import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';

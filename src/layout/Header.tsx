@@ -37,6 +37,11 @@ const Header = () => {
               관리자 로그인
             </Button>
           )}
+          {localStorage.getItem('accessToken') && (
+            <Button onClick={() => localStorage.removeItem('accessToken')}>
+              관리자 로그아웃
+            </Button>
+          )}
           {!localStorage.getItem('loginToken') && (
             <Button onClick={handleLogin}>MS Graph 로그인</Button>
           )}

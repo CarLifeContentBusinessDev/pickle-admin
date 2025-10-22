@@ -1,6 +1,6 @@
-import axios from 'axios';
 import type { usingChannelProps, usingDataProps } from '../type';
 import { getExcelData } from './updateExcel';
+import api from './api';
 
 function excelDateToJSDate(serial: number): Date {
   const millisPerDay = 24 * 60 * 60 * 1000;
@@ -51,8 +51,8 @@ export async function getNewData(
   const latestTime = findLatestTimeInExcel(excelData);
 
   const size = 1000;
-  const firstRes = await axios.get(
-    `https://pickle.obigo.ai/admin/${category}?page=1&size=${size}`,
+  const firstRes = await api.get(
+    `/admin/${category}?page=1&size=${size}`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
     }
@@ -64,8 +64,8 @@ export async function getNewData(
   let allApiData: (usingDataProps | usingChannelProps)[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
-    const res = await axios.get(
-      `https://pickle.obigo.ai/admin/${category}?page=${page}&size=${size}`,
+    const res = await api.get(
+      `/admin/${category}?page=${page}&size=${size}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
       }
