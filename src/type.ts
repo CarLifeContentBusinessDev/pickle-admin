@@ -24,6 +24,7 @@ export interface usingChannelProps {
   likeCnt: number;
   listenCnt: number;
   createdAt: string;
+  lastUpdateDtime:string;
 }
 
 export interface CurationListIdProps {

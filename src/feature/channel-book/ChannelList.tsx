@@ -43,11 +43,12 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
                   {channel.channelName}
                 </p>
                 <p className='w-[13%] line-clamp-2 px-2'>
-                  {channel.channelTypeName}
+                  {channel.vendorName}
                 </p>
-                <p className='w-[12%] px-2'>{channel.categoryName}</p>
-                <p className='w-[12%] px-2'>{channel.vendorName}</p>
-                <p className='w-[9%] px-2'>{channel.likeCnt}</p>
+                <p className='w-[9%] px-2'>{channel.categoryName}</p>
+                <p className='w-[15%] px-2'>{formatDateString(channel.lastUpdateDtime)}</p>
+                <p className='w-[7%] px-2'>{channel.channelTypeName}</p>
+                <p className='w-[7%] px-2'>{channel.likeCnt}</p>
                 <p className='w-[7%] px-2'>{channel.listenCnt}</p>
                 <p className='w-[12%] px-2'>
                   {formatDateString(channel.createdAt)}
