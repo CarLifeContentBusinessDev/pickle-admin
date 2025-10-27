@@ -235,7 +235,7 @@ export async function addMissingRows(
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     try {
-      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
+      setProgress(`${Math.round((50 + i / missingRows.length) / 2 * 100)}%`);
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
         { values },

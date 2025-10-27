@@ -10,14 +10,17 @@ const SIZE = 10000;
 const CURATIONSIZE = 100;
 
 export async function fetchAllData(
-  category: 'channel'
+  category: 'channel',
+  setProgress: (message: string) => void
 ): Promise<usingChannelProps[]>;
 export async function fetchAllData(
-  category: 'episode'
+  category: 'episode',
+  setProgress: (message: string) => void
 ): Promise<usingDataProps[]>;
 
 export async function fetchAllData(
-  category: string
+  category: string,
+  setProgress: (message: string) => void
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
     const firstRes = await api.get(`/admin/${category}?page=1&size=${SIZE}`);
@@ -28,6 +31,7 @@ export async function fetchAllData(
     let allData: (usingDataProps | usingChannelProps)[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
+      setProgress(`${Math.round((page / totalPages) / 2 * 100)}%`);
       const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
       allData = allData.concat(res.data.data.dataList);
     }

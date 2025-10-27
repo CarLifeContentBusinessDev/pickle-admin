@@ -29,7 +29,7 @@ const LoadingOverlay = ({
           <div
             className={`border-4 ${spinnerStyle} border-t-transparent rounded-full animate-spin`}
           ></div>
-          {progress && <span className="text-gray-500">{progress}</span>}
+          {progress && <span>{progress}</span>}
         </div>
       )}
     </>
