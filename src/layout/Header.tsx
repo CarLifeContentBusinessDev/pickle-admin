@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { getGraphToken } from '../utils/auth';
 import { toast } from 'react-toastify';
+import { getGraphToken } from '../utils/auth';
 import LoginPopup from '../feature/login/Login';
-import type { LoginResponseData } from '../type';
 import Button from '../components/Button';
+import type { LoginResponseData } from '../type';
 
 const Header = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);

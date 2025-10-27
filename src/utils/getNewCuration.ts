@@ -28,8 +28,8 @@ export async function getNewCurationData(
   token: string,
   setProgress: (message: string) => void
 ): Promise<usingCurationExcelProps[]> {
-  const excelData = await getCurationExcelData(token, setProgress);
-  
+  const excelData = await getCurationExcelData(token);
+
   if (excelData.length === 0) return [];
   const latestTime = findLatestTimeInExcel(excelData);
 
@@ -37,10 +37,14 @@ export async function getNewCurationData(
   const firstRes = await api.get(
     `/admin/curation?page=1&size=${size}&periodType=ALL`
   );
-
   const totalCount = firstRes.data.data.pageInfo.totalCount;
-
   const totalPages = Math.ceil(totalCount / size);
+
+  let progress = 0;
+  const addProgress = () => {
+    progress += 100 / totalCount;
+    setProgress(`${Math.min(100, Math.round(progress))}%`);
+  };
 
   let allApiData: usingCurationProps[] = [];
 
@@ -62,6 +66,7 @@ export async function getNewCurationData(
 
   for (let i = 0; i < allApiData.length; i++) {
     const epiRes = await api.get(`/admin/curation/${allApiData[i].curationId}`);
+    addProgress();
     const detailData = epiRes.data.data;
     const episodes = detailData.episodes || [];
 

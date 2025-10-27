@@ -45,7 +45,7 @@ export async function getNewData(
   setProgress: (message: string) => void,
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]> {
-  const excelData = await getExcelData(token, setProgress, category);
+  const excelData = await getExcelData(token, category);
   if (excelData.length === 0) return [];
 
   const latestTime = findLatestTimeInExcel(excelData);
@@ -60,6 +60,12 @@ export async function getNewData(
 
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / size);
+  
+  let progress = 0;
+  const addProgress = () => {
+    progress += 100 / totalCount;
+    setProgress(`${Math.min(100, Math.round(progress))}%`);
+  };
 
   let allApiData: (usingDataProps | usingChannelProps)[] = [];
 
@@ -70,6 +76,7 @@ export async function getNewData(
         headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
+    addProgress();
     const pageData = res.data.data.dataList;
     const dbDate = new Date(pageData[0].createdAt);
     const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
