@@ -24,7 +24,8 @@
     "tailwindcss": "^4.1.14",
     "xlsx": "^0.18.5",
     "xlsx-js-style": "^1.2.0",
-    "xlsx-style": "^0.8.13"
+    "xlsx-style": "^0.8.13",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@azure/msal-browser": "^4.25.0",

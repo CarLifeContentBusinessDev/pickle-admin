@@ -9,15 +9,14 @@ import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import ChannelList from './ChannelList';
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import { useAccessTokenStore } from '../../store/useAccessTokenStore';
 
 const CATEGORY = 'channel';
 
-let loginToken = localStorage.getItem('loginToken');
-let accessTk = localStorage.getItem('accessToken');
-
 const ChannelLayout = () => {
-  const [token, setToken] = useState('');
-  const [accessToken, setAccessToken] = useState('');
+  const { loginToken } = useLoginTokenStore();
+  const { accessToken } = useAccessTokenStore();
   const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
@@ -31,13 +30,7 @@ const ChannelLayout = () => {
   );
 
   useEffect(() => {
-    loginToken = localStorage.getItem('loginToken');
-    accessTk = localStorage.getItem('accessToken');
-    if (accessTk) {
-      setAccessToken(accessTk);
-    }
     if (loginToken) {
-      setToken(loginToken);
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
   }, []);
@@ -49,23 +42,23 @@ const ChannelLayout = () => {
   };
 
   const handleUpdateExcel = async () => {
-    if (!token) return toast.warn('로그인을 먼저 해주세요!');
+    if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     const result = window.confirm(
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllData(CATEGORY);
-      await addMissingRows(allData, token, setProgress, CATEGORY);
+      await addMissingRows(allData, loginToken, setProgress, CATEGORY);
       setProgress('');
       setAllLoading(false);
     }
   };
 
   const handleSyncExcel = async () => {
-    if (!token) return toast.warn('로그인을 먼저 해주세요!');
+    if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewDataToExcel(newChannels, token, setProgress, CATEGORY);
+    await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY);
       setProgress('');
     setExcelLoading(false);
   };
@@ -117,7 +110,7 @@ const ChannelLayout = () => {
               ))}
             </select>
             <button
-              onClick={() => handleSearchNew(token, accessToken)}
+              onClick={() => handleSearchNew(loginToken, accessToken)}
               className='cursor-pointer'
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
