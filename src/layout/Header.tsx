@@ -1,51 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { getGraphToken } from '../utils/auth';
 import LoginPopup from '../feature/login/Login';
 import Button from '../components/Button';
 import type { LoginResponseData } from '../type';
+import { useLoginTokenStore } from '../store/useLoginTokenStore';
+import { useAccessTokenStore } from '../store/useAccessTokenStore';
 
 const Header = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
-  const [accessToken, setAccessToken] = useState(
-    localStorage.getItem('accessToken')
-  );
-  const [loginToken, setLoginToken] = useState(
-    localStorage.getItem('loginToken')
-  );
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setAccessToken(localStorage.getItem('accessToken'));
-      setLoginToken(localStorage.getItem('loginToken'));
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
+  const { loginToken, setLoginToken } = useLoginTokenStore();
+  const { accessToken, setAccessToken, clearAccessToken } = useAccessTokenStore();
 
   const handleLogin = async () => {
-    if (!localStorage.getItem('accessToken'))
-      return toast.warn('관리자 로그인을 먼저 해주세요!');
-    const tk = await getGraphToken();
-    if (tk && localStorage.getItem('accessToken')) {
-      localStorage.setItem('loginToken', tk);
-      setLoginToken(tk);
+    if (!accessToken) return toast.warn('관리자 로그인을 먼저 해주세요!');
+    const token = await getGraphToken();
+    if (token && localStorage.getItem('accessToken')) {
+      setLoginToken(token);
       toast.success('MS 로그인에 성공하였습니다.');
     }
   };
 
   const handlePopupLoginSuccess = (data: LoginResponseData) => {
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
     setAccessToken(data.accessToken);
-    toast.success('관리자 로그인에 성공했습니다!');
+    localStorage.setItem('refreshToken', data.refreshToken);
+    setShowLoginPopup(false);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-    setAccessToken(null);
+    clearAccessToken();
     window.location.reload();
   };
 

@@ -116,7 +116,7 @@ async function syncNewCurationToExcel(
   token: string,
   setProgress: (progress: string) => void
 ) {
-  const excelData = await getCurationExcelData(token, undefined);
+  const excelData = await getCurationExcelData(token);
 
   const excelKeys = new Set(
     excelData.map((item) => `${item.curationCreatedAt}`)

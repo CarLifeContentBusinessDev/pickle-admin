@@ -9,11 +9,10 @@ import { addMissingCurationRows } from '../../utils/updateCuration';
 import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
 import syncNewCurationToExcel from '../../utils/syncNewCurationToExcel';
-
-let loginToken = localStorage.getItem('loginToken');
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 
 const CurationLayout = () => {
-  const [token, setToken] = useState('');
+  const { loginToken } = useLoginTokenStore();
   const [newCurations, setNewCurations] = useState<usingCurationExcelProps[]>(
     []
   );
@@ -29,9 +28,7 @@ const CurationLayout = () => {
   );
 
   useEffect(() => {
-    loginToken = localStorage.getItem('loginToken');
     if (loginToken) {
-      setToken(loginToken);
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
   }, []);
@@ -43,7 +40,7 @@ const CurationLayout = () => {
   };
 
   const handleUpdateExcel = async () => {
-    if (!token) return toast.warn('로그인을 먼저 해주세요!');
+    if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
     const result = window.confirm(
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
@@ -52,16 +49,16 @@ const CurationLayout = () => {
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllCurationData();
-      await addMissingCurationRows(allData, token, setProgress);
+      await addMissingCurationRows(allData, loginToken, setProgress);
       setProgress('');
       setAllLoading(false);
     }
   };
 
   const handleSyncExcel = async () => {
-    if (!token) return toast.warn('로그인을 먼저 해주세요!');
+    if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
-    await syncNewCurationToExcel(newCurations, token, setProgress);
+    await syncNewCurationToExcel(newCurations, loginToken, setProgress);
     setProgress('');
     setExcelLoading(false);
   };
@@ -113,7 +110,7 @@ const CurationLayout = () => {
               ))}
             </select>
             <button
-              onClick={() => handleSearchNew(token)}
+              onClick={() => handleSearchNew(loginToken)}
               className='cursor-pointer'
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
