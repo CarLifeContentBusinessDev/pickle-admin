@@ -24,7 +24,7 @@ export async function getCurationExcelData(
     const startRow = i * batchSize + 4;
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
-    const rangeAddress = `B${startRow}:U${endRow}`;
+    const rangeAddress = `B${startRow}:W${endRow}`;
 
     const sheetName = localStorage.getItem('sheetName');
 
@@ -67,22 +67,24 @@ export async function getCurationExcelData(
         curationType: String(row[1] ?? ''),
         curationName: String(row[2] ?? ''),
         curationDesc: String(row[3] ?? ''),
-        field: String(row[4] ?? ''),
-        section: Number(row[5] ?? undefined),
-        dispStartDtime: String(row[6] ?? ''),
-        dispEndDtime: String(row[7] ?? ''),
-        curationCreatedAt: String(row[8] ?? ''),
-        channelId: Number(row[9] ?? 0),
-        episodeId: Number(row[10] ?? 0),
-        usageYn: String(row[11] ?? ''),
-        channelName: String(row[12] ?? ''),
-        episodeName: String(row[13] ?? ''),
-        dispDtime: String(row[14] ?? ''),
-        createdAt: String(row[15] ?? ''),
-        playTime: Number(row[16] ?? 0),
-        likeCnt: Number(row[17] ?? 0),
-        listenCnt: Number(row[18] ?? 0),
-        uploader: String(row[19] ?? 'Harper'),
+        activeState: String(row[4] ?? ''),
+        exhibitionState: String(row[5] ?? ''),
+        field: String(row[6] ?? ''),
+        section: Number(row[7] ?? undefined),
+        dispStartDtime: String(row[8] ?? ''),
+        dispEndDtime: String(row[9] ?? ''),
+        curationCreatedAt: String(row[10] ?? ''),
+        channelId: Number(row[11] ?? 0),
+        episodeId: Number(row[12] ?? 0),
+        usageYn: String(row[13] ?? ''),
+        channelName: String(row[14] ?? ''),
+        episodeName: String(row[15] ?? ''),
+        dispDtime: String(row[16] ?? ''),
+        createdAt: String(row[17] ?? ''),
+        playTime: Number(row[18] ?? 0),
+        likeCnt: Number(row[19] ?? 0),
+        listenCnt: Number(row[20] ?? 0),
+        uploader: String(row[21] ?? ''),
       }) as usingCurationExcelProps
   );
 }
@@ -118,6 +120,8 @@ export async function addMissingCurationRows(
       row.curationType,
       row.curationName,
       row.curationDesc,
+      row.activeState,
+      row.exhibitionState,
       row.field,
       row.section,
       formatDateString(row.dispStartDtime),
@@ -138,7 +142,7 @@ export async function addMissingCurationRows(
 
     const startRow = existingData.length + i + 4;
     const endRow = startRow + batch.length - 1;
-    const rangeAddress = `B${startRow}:U${endRow}`;
+    const rangeAddress = `B${startRow}:W${endRow}`;
 
     try {
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);

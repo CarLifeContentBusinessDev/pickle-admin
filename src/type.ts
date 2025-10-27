@@ -46,6 +46,8 @@ export interface usingCurationExcelProps {
   thumbnailTitle?: string;
   field?: string;
   section?: number;
+  activeState?: string;
+  exhibitionState?: string;
   curationType: string;
   curationName: string;
   curationDesc: string;
