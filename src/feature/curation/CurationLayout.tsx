@@ -53,7 +53,7 @@ const CurationLayout = () => {
       setAllLoading(true);
       const allData = await fetchAllCurationData();
       await addMissingCurationRows(allData, token, setProgress);
-      setProgress('0');
+      setProgress('');
       setAllLoading(false);
     }
   };
@@ -62,14 +62,14 @@ const CurationLayout = () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
     await syncNewCurationToExcel(newCurations, token, setProgress);
-    setProgress('0');
+    setProgress('');
     setExcelLoading(false);
   };
 
   const handleSearchNew = async (token: string) => {
     setLoading(true);
     const newList = await getNewCurationData(token, setProgress);
-    setProgress('0');
+    setProgress('');
     setNewCurations(newList);
     setLoading(false);
   };

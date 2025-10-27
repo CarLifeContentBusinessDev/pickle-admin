@@ -47,23 +47,19 @@ export async function getUsedRange(token: string): Promise<number | null> {
 
 export async function getExcelData(
   token: string,
-  setProgress: ((message: string) => void) | undefined,
   category: 'channel'
 ): Promise<usingChannelProps[]>;
 export async function getExcelData(
   token: string,
-  setProgress: ((message: string) => void) | undefined,
   category: 'episode'
 ): Promise<usingDataProps[]>;
 export async function getExcelData(
   token: string,
-  setProgress: ((message: string) => void) | undefined,
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]>;
 
 export async function getExcelData(
   token: string,
-  setProgress?: (message: string) => void,
   category: 'episode' | 'channel' = 'episode'
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   const batchSize = 10000;
@@ -86,7 +82,6 @@ export async function getExcelData(
 
     const sheetName = localStorage.getItem('sheetName');
     try {
-      setProgress?.(`${Math.round((i / totalBatches) * 100)}%`);
       const res = await axios.get(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -172,7 +167,7 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'episode' | 'channel'
 ) {
-  const existingData = await getExcelData(token, setProgress, category);
+  const existingData = await getExcelData(token, category);
 
   const missingRows = allData.filter(
     (item) =>

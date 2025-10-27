@@ -9,9 +9,8 @@ const fileId = import.meta.env.VITE_FILE_ID;
 
 export async function getCurationExcelData(
   token: string,
-  setProgress?: (message: string) => void
 ): Promise<usingCurationExcelProps[]> {
-  const batchSize = 100;
+  const batchSize = 1000;
   const allRows: (string | number)[][] = [];
   let totalRows = await getUsedRange(token);
 
@@ -30,7 +29,6 @@ export async function getCurationExcelData(
     const sheetName = localStorage.getItem('sheetName');
 
     try {
-      setProgress?.(`${Math.round((i / totalBatches) * 100)}%`);
       const res = await axios.get(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
@@ -94,7 +92,7 @@ export async function addMissingCurationRows(
   token: string,
   setProgress: (message: string) => void
 ) {
-  const existingData = await getCurationExcelData(token, setProgress);
+  const existingData = await getCurationExcelData(token);
 
   const missingRows = allData.filter(
     (item) => !existingData.some((row) => row.episodeId === item.episodeId)

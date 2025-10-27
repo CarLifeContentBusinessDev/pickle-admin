@@ -166,7 +166,7 @@ async function syncNewDataToExcel(
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel'
 ) {
-  const excelData = await getExcelData(token, undefined, category);
+  const excelData = await getExcelData(token, category);
 
   const excelIds = new Set(
     excelData.map((item) => (item as any).episodeId ?? (item as any).channelId)

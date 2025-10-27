@@ -57,7 +57,7 @@ const ChannelLayout = () => {
       setAllLoading(true);
       const allData = await fetchAllData(CATEGORY);
       await addMissingRows(allData, token, setProgress, CATEGORY);
-      setProgress('0');
+      setProgress('');
       setAllLoading(false);
     }
   };
@@ -66,14 +66,14 @@ const ChannelLayout = () => {
     if (!token) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
     await syncNewDataToExcel(newChannels, token, setProgress, CATEGORY);
-      setProgress('0');
+      setProgress('');
     setExcelLoading(false);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
-    setProgress('0');
+    setProgress('');
     setNewChannels(newList);
     setLoading(false);
   };
@@ -125,7 +125,7 @@ const ChannelLayout = () => {
             <Button onClick={handleSyncExcel}>Excel 동기화</Button>
           </div>
         </div>
-        <div className='w-full h-[90%]'>
+        <div className='w-full h-[90%] flex flex-col'>
           <div className='min-w-max flex font-bold py-5'>
             <p className='w-[7%] px-2'>ID</p>
             <p className='w-[7%] px-2'>활성화</p>
