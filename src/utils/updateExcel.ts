@@ -9,7 +9,7 @@ const MAX_EXCEL_ROWS = 300000;
 
 export async function getUsedRange(token: string): Promise<number | null> {
   const sheetName = localStorage.getItem('sheetName');
-  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='C1:C${MAX_EXCEL_ROWS}')?valuesOnly=true`;
+  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='D1:D${MAX_EXCEL_ROWS}')?valuesOnly=true`;
 
   try {
     const res = await axios.get(usedRangeUrl, {
@@ -35,11 +35,11 @@ export async function getUsedRange(token: string): Promise<number | null> {
   } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       console.error(
-        'A열 기반 마지막 행 조회 실패:',
+        'D열 기반 마지막 행 조회 실패:',
         err.response?.data || err.message
       );
     } else {
-      console.error('A열 기반 마지막 행 조회 실패:', err);
+      console.error('D열 기반 마지막 행 조회 실패:', err);
     }
     return null;
   }
@@ -72,13 +72,13 @@ export async function getExcelData(
 
   const totalBatches = Math.ceil(totalRows / batchSize);
 
-  const lastColumn = category === 'episode' ? 'K' : 'I';
+  const lastColumn = category === 'episode' ? 'L' : 'K';
 
   for (let i = 0; i < totalBatches; i++) {
     const startRow = i * batchSize + 4;
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
-    const rangeAddress = `A${startRow}:${lastColumn}${endRow}`;
+    const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     const sheetName = localStorage.getItem('sheetName');
     try {
@@ -137,12 +137,13 @@ export async function getExcelData(
           channelId: Number(row[0] ?? 0),
           usageYn: String(row[1] ?? ''),
           channelName: String(row[2] ?? ''),
-          channelTypeName: String(row[3] ?? ''),
+          vendorName: String(row[3] ?? ''),
           categoryName: String(row[4] ?? ''),
-          vendorName: String(row[5] ?? ''),
-          likeCnt: Number(row[6] ?? 0),
-          listenCnt: Number(row[7] ?? 0),
-          createdAt: String(row[8] ?? ''),
+          lastUpdateDtime: String(row[5] ?? ''),
+          channelTypeName: String(row[6] ?? ''),
+          likeCnt: Number(row[7] ?? 0),
+          listenCnt: Number(row[8] ?? 0),
+          createdAt: String(row[9] ?? ''),
         }) as usingChannelProps
     );
   }
@@ -212,25 +213,26 @@ export async function addMissingRows(
         row.tags,
         row.tagsAdded,
       ]);
-      lastColumn = 'K';
+      lastColumn = 'L';
     } else {
       values = (batch as usingChannelProps[]).map((row) => [
         row.channelId,
         row.usageYn,
         row.channelName,
-        row.channelTypeName,
-        row.categoryName,
         row.vendorName,
+        row.categoryName,
+        formatDateString(row.lastUpdateDtime),
+        row.channelTypeName,
         row.likeCnt,
         row.listenCnt,
         formatDateString(row.createdAt),
       ]);
-      lastColumn = 'I';
+      lastColumn = 'K';
     }
 
     const startRow = existingData.length + i + 4;
     const endRow = startRow + batch.length - 1;
-    const rangeAddress = `A${startRow}:${lastColumn}${endRow}`;
+    const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     try {
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);

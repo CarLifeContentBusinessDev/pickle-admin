@@ -120,15 +120,15 @@ const ChannelLayout = () => {
         </div>
         <div className='w-full h-[90%] flex flex-col'>
           <div className='min-w-max flex font-bold py-5'>
-            <p className='w-[7%] px-2'>ID</p>
+            <p className='w-[7%] px-2'>채널ID</p>
             <p className='w-[7%] px-2'>활성화</p>
             <p className='w-[12%] line-clamp-2 px-2'>채널명</p>
-            <p className='w-[13%] line-clamp-2 px-2'>채널 타입</p>
-            <p className='w-[12%] px-2'>채널 타입</p>
+            <p className='w-[13%] line-clamp-2 px-2'>제작사명</p>
             <p className='w-[9%] px-2'>카테고리</p>
-            <p className='w-[7%] px-2'>벤더</p>
+            <p className='w-[15%] px-2'>최근 에피소드 업로드일</p>
+            <p className='w-[7%] px-2'>채널 타입</p>
             <p className='w-[7%] px-2'>좋아요</p>
-            <p className='w-[7%] px-2'>청취</p>
+            <p className='w-[7%] px-2'>재생 요청 수</p>
             <p className='w-[12%] px-2'>등록일</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>

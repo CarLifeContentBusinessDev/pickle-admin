@@ -14,11 +14,15 @@ function delay(ms: number) {
 async function clearExcelFromRow(
   startRow: number,
   endRow: number,
-  token: string
+  token: string,
+  category: 'episode' | 'channel',
 ) {
+  let lastLine = 'K';
+  if (category === 'episode') lastLine = 'L';
+
   try {
     await axios.post(
-      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='A${startRow}:K${endRow}')/clear`,
+      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='B${startRow}:${lastLine}${endRow}')/clear`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -76,7 +80,7 @@ async function overwriteExcelData(
 ) {
   const existingData = await getUsedRange(token);
   const totalRowsToClear = Math.max(newData.length + 3, existingData!);
-  await clearExcelFromRow(4, totalRowsToClear, token);
+  await clearExcelFromRow(4, totalRowsToClear, token, category);
   const batchSize = 10000;
 
   try {
@@ -107,7 +111,7 @@ async function overwriteExcelData(
         });
         const startRow = i + 4;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `A${startRow}:K${endRow}`;
+        rangeAddress = `B${startRow}:L${endRow}`;
       } else {
         values = (batch as usingChannelProps[]).map((row) => {
           const createdAtStr = excelDateTime(row.createdAt);
@@ -125,7 +129,7 @@ async function overwriteExcelData(
         });
         const startRow = i + 4;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `A${startRow}:I${endRow}`;
+        rangeAddress = `B${startRow}:K${endRow}`;
       }
 
       await axios.patch(
