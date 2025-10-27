@@ -15,7 +15,7 @@ async function clearExcelFromRow(
   startRow: number,
   endRow: number,
   token: string,
-  category: 'episode' | 'channel',
+  category: 'episode' | 'channel'
 ) {
   let lastLine = 'K';
   if (category === 'episode') lastLine = 'L';
@@ -115,13 +115,16 @@ async function overwriteExcelData(
       } else {
         values = (batch as usingChannelProps[]).map((row) => {
           const createdAtStr = excelDateTime(row.createdAt);
+          const lastUpdateDtimeStr = excelDateTime(row.lastUpdateDtime);
+
           return [
             row.channelId,
             row.usageYn,
             row.channelName,
-            row.channelTypeName,
-            row.categoryName,
             row.vendorName,
+            row.categoryName,
+            lastUpdateDtimeStr,
+            row.channelTypeName,
             row.likeCnt,
             row.listenCnt,
             createdAtStr,

@@ -19,7 +19,7 @@ async function clearExcelFromRow(
 ) {
   try {
     await axios.post(
-      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='B${startRow}:U${endRow}')/clear`,
+      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='B${startRow}:W${endRow}')/clear`,
       {},
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -70,6 +70,8 @@ async function overwriteExcelData(
         row.curationType,
         row.curationName,
         row.curationDesc,
+        row.activeState,
+        row.exhibitionState,
         row.field,
         row.section,
         excelDateTime(row.dispStartDtime),
@@ -90,7 +92,7 @@ async function overwriteExcelData(
 
       const startRow = i + 4;
       const endRow = startRow + batch.length - 1;
-      const rangeAddress = `B${startRow}:U${endRow}`;
+      const rangeAddress = `B${startRow}:W${endRow}`;
 
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,

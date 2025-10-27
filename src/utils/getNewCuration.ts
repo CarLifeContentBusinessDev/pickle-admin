@@ -76,6 +76,8 @@ export async function getNewCurationData(
         curationType: detailData.curationType,
         curationName: detailData.curationName,
         curationDesc: detailData.curationDesc,
+        activeState: detailData.activeState ?? '',
+        exhibitionState: detailData.exhibitionState ?? '',
         field: detailData.field ?? '',
         section: detailData.section ?? 0,
         dispStartDtime: detailData.dispStartDtime,

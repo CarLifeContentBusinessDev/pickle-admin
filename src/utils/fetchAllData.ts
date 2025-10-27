@@ -72,11 +72,13 @@ export async function fetchAllCurationData(): Promise<
       for (const episode of episodes) {
         const episodeObject: usingCurationExcelProps = {
           thumbnailTitle: detailData.thumbnailTitle ?? '',
-          field: detailData.field ?? '',
-          section: detailData.section ?? undefined,
           curationType: detailData.curationType,
           curationName: detailData.curationName,
           curationDesc: detailData.curationDesc,
+          activeState: detailData.activeState ?? '',
+          exhibitionState: detailData.exhibitionState ?? '',
+          field: detailData.field ?? '',
+          section: detailData.section ?? undefined,
           dispStartDtime: detailData.dispStartDtime,
           dispEndDtime: detailData.dispEndDtime,
           curationCreatedAt: detailData.createdAt,
@@ -90,7 +92,7 @@ export async function fetchAllCurationData(): Promise<
           playTime: episode.playTime ?? 0,
           likeCnt: episode.likeCnt ?? 0,
           listenCnt: episode.listenCnt ?? 0,
-          uploader: episode.uploader ?? 'Harper',
+          uploader: episode.uploader ?? '',
         };
 
         allCurationData.push(episodeObject);
