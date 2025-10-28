@@ -48,7 +48,7 @@ const ChannelLayout = () => {
     );
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllData(CATEGORY);
+      const allData = await fetchAllData(CATEGORY, setProgress);
       await addMissingRows(allData, loginToken, setProgress, CATEGORY);
       setProgress('');
       setAllLoading(false);
