@@ -16,9 +16,12 @@ export interface usingDataProps {
 
 export interface usingChannelProps {
   channelId: number;
+  interfaceUrl: string;
   usageYn: string;
   channelName: string;
   channelTypeName: string;
+  interfaceType: string;
+  categoryId: number;
   categoryName: string;
   vendorName: string;
   likeCnt: number;

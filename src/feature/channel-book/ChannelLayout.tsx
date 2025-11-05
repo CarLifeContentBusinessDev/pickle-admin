@@ -28,6 +28,7 @@ const ChannelLayout = () => {
   const [selectedSheet, setSelectedSheet] = useState(
     localStorage.getItem('sheetName') || ''
   );
+  const [addData, setAddData] = useState<usingChannelProps[]>([]);
 
   useEffect(() => {
     if (loginToken) {
@@ -35,6 +36,12 @@ const ChannelLayout = () => {
     }
   }, []);
 
+  useEffect(() => {
+    const addData = async () => await fetchAllData(CATEGORY, setProgress);
+
+    addData().then(setAddData);
+  }, []);
+console.log(addData);
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedSheet(value);
@@ -121,14 +128,11 @@ const ChannelLayout = () => {
         <div className='w-full h-[90%] flex flex-col'>
           <div className='min-w-max flex font-bold py-5'>
             <p className='w-[7%] px-2'>채널ID</p>
-            <p className='w-[7%] px-2'>활성화</p>
-            <p className='w-[12%] line-clamp-2 px-2'>채널명</p>
-            <p className='w-[13%] line-clamp-2 px-2'>제작사명</p>
-            <p className='w-[9%] px-2'>카테고리</p>
-            <p className='w-[15%] px-2'>최근 에피소드 업로드일</p>
-            <p className='w-[7%] px-2'>채널 타입</p>
-            <p className='w-[7%] px-2'>좋아요</p>
-            <p className='w-[7%] px-2'>재생 요청 수</p>
+            <p className='w-[20%] px-2'>interface_url</p>
+            <p className='w-[12%] px-2'>채널 타입</p>
+            <p className='w-[13%] px-2'>interface_type</p>
+            <p className='w-[9%] px-2'>채널명</p>
+            <p className='w-[9%] px-2'>카테고리ID</p>
             <p className='w-[12%] px-2'>등록일</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
@@ -136,7 +140,8 @@ const ChannelLayout = () => {
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {!loading && <ChannelList data={newChannels} />}
+          {newChannels.length === 0 && <ChannelList data={addData} />}
+          {!loading && newChannels.length && <ChannelList data={newChannels} />}
         </div>
       </div>
     </div>
