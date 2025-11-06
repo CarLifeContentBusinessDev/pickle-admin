@@ -1,5 +1,5 @@
 import type { usingCurationExcelProps, usingCurationProps } from '../type';
-import api from './api';
+import { api } from './api';
 import { getCurationExcelData } from './updateCuration';
 
 function excelDateToJSDate(serial: number): Date {
