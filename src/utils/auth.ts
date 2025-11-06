@@ -1,4 +1,5 @@
 import { InteractionRequiredAuthError } from '@azure/msal-browser';
+import { useLoginTokenStore } from '../store/useLoginTokenStore';
 
 // auth.ts
 export async function getGraphToken(): Promise<string | null> {
@@ -44,6 +45,7 @@ export async function getGraphToken(): Promise<string | null> {
     }
 
     localStorage.setItem('loginToken', tokenResponse.accessToken);
+    useLoginTokenStore.getState().setLoginToken(tokenResponse.accessToken);
 
     return tokenResponse.accessToken;
   } catch (err) {

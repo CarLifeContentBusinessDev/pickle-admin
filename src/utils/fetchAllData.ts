@@ -4,7 +4,7 @@ import type {
   CurationListIdProps,
   usingCurationExcelProps,
 } from '../type';
-import api from './api';
+import { api } from './api';
 
 const SIZE = 10000;
 const CURATIONSIZE = 100;

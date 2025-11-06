@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { addMissingRows } from '../../utils/updateExcel';
-import { getNewData } from '../../utils/getNewData';
+import { getNewDataWithExcel } from '../../utils/getNewData';
 import type { usingDataProps } from '../../type';
 import EpisodeList from './EpisodeList';
 import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
@@ -10,13 +10,11 @@ import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import { useAccessTokenStore } from '../../store/useAccessTokenStore';
 
 const CATEGORY = 'episode';
 
 const EpisodeLayout = () => {
   const { loginToken } = useLoginTokenStore();
-  const { accessToken } = useAccessTokenStore();
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
@@ -63,9 +61,9 @@ const EpisodeLayout = () => {
     setExcelLoading(false);
   };
 
-  const handleSearchNew = async (token: string, accessToken: string) => {
+  const handleSearchNew = async () => {
     setLoading(true);
-    const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
+    const newList = await getNewDataWithExcel();
     setProgress('');
     setNewEpi(newList);
     setLoading(false);
@@ -114,7 +112,7 @@ const EpisodeLayout = () => {
               ))}
             </select>
             <button
-              onClick={() => handleSearchNew(loginToken, accessToken)}
+              onClick={() => handleSearchNew()}
               className='cursor-pointer'
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
