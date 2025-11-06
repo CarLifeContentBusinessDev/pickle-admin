@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../../utils/api';
+import { api } from '../../utils/api';
 import type { LoginResponseData } from '../../type';
 
 interface LoginPopupProps {

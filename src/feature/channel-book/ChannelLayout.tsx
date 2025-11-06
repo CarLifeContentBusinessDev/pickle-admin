@@ -41,7 +41,7 @@ const ChannelLayout = () => {
 
     addData().then(setAddData);
   }, []);
-console.log(addData);
+
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedSheet(value);
@@ -66,12 +66,13 @@ console.log(addData);
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     setExcelLoading(true);
     await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY);
-      setProgress('');
+    setProgress('');
     setExcelLoading(false);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
     setLoading(true);
+    setAddData([]);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
     setProgress('');
     setNewChannels(newList);
@@ -103,7 +104,11 @@ console.log(addData);
             <span className='font-extrabold'>{newChannels.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
-            <LoadingOverlay progress={progress} vertical={false} loading={excelLoading} />
+            <LoadingOverlay
+              progress={progress}
+              vertical={false}
+              loading={excelLoading}
+            />
             <select
               value={selectedSheet}
               onChange={handleSelectSheet}
@@ -140,8 +145,12 @@ console.log(addData);
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {newChannels.length === 0 && <ChannelList data={addData} />}
-          {!loading && newChannels.length && <ChannelList data={newChannels} />}
+          {!loading && newChannels.length === 0 && (
+            <ChannelList data={addData} />
+          )}
+          {!loading && newChannels.length > 0 && (
+            <ChannelList data={newChannels} />
+          )}
         </div>
       </div>
     </div>

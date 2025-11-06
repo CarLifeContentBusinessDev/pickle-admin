@@ -3,6 +3,7 @@ import type { usingChannelProps, usingDataProps } from '../type';
 import formatDateString from './formatDateString';
 import { getGraphToken } from './auth';
 import { toast } from 'react-toastify';
+import { fetchExcelData } from '../api/apis';
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const MAX_EXCEL_ROWS = 300000;
@@ -79,8 +80,8 @@ export async function getExcelData(
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
-
     const sheetName = localStorage.getItem('sheetName');
+
     try {
       const res = await axios.get(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
@@ -109,9 +110,7 @@ export async function getExcelData(
     }
   }
 
-  const validRows = allRows.filter(
-    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
-  );
+  const validRows = filterRows(allRows);
 
   if (category === 'episode') {
     return validRows.map(
@@ -148,6 +147,55 @@ export async function getExcelData(
     );
   }
 }
+
+export async function getExcelLastData() {
+  const LASTCOLUMN = 'L';
+  const rangeAddress = `B4:${LASTCOLUMN}1`;
+  const sheetName = localStorage.getItem('sheetName');
+  let validRows: (string | number)[][] = [];
+
+  try {
+    const res = await fetchExcelData(sheetName!, rangeAddress);
+    validRows = filterRows(res);
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      const refreshedToken = await getGraphToken();
+      if (!refreshedToken) throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
+
+      localStorage.setItem('loginToken', refreshedToken);
+
+      const res = await fetchExcelData(sheetName!, rangeAddress);
+      validRows = filterRows(res);
+    } else {
+      console.error('엑셀 조회 실패:', err);
+    }
+  }
+
+  return validRows.map(
+    (row) =>
+      ({
+        episodeId: Number(row[0] ?? 0),
+        usageYn: String(row[1] ?? ''),
+        channelName: String(row[2] ?? ''),
+        episodeName: String(row[3] ?? ''),
+        dispDtime: String(row[4] ?? ''),
+        createdAt: String(row[5] ?? ''),
+        playTime: Number(row[6] ?? 0),
+        likeCnt: Number(row[7] ?? 0),
+        listenCnt: Number(row[8] ?? 0),
+        tags: String(row[9] ?? ''),
+        tagsAdded: String(row[10] ?? ''),
+      }) as usingDataProps
+  );
+}
+
+const filterRows = (rows: (string | number)[][]) => {
+  rows.filter(
+    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
+  );
+
+  return rows;
+};
 
 export async function addMissingRows(
   allData: usingChannelProps[],
@@ -235,7 +283,7 @@ export async function addMissingRows(
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     try {
-      setProgress(`${Math.round((50 + i / missingRows.length) / 2 * 100)}%`);
+      setProgress(`${Math.round((50 + i / missingRows.length / 2) * 100)}%`);
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
         { values },
