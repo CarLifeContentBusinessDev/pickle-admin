@@ -75,17 +75,24 @@ export default function LoginPopup({
     }
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleLogin();
+  };
+
   return (
     <div
       className='fixed inset-0 bg-black/50 flex items-center justify-center z-50'
       onClick={onClose}
     >
-      <div
+      <form
+        onSubmit={handleSubmit}
         className='relative bg-white p-8 rounded-xl w-80 flex flex-col gap-4'
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
+          type='button'
           className='absolute top-4 cursor-pointer right-6 text-md text-gray-500 mt-2'
         >
           X
@@ -121,13 +128,13 @@ export default function LoginPopup({
         </label>
 
         <button
-          onClick={handleLogin}
           disabled={loading}
+          type='submit'
           className='bg-[#3c25cc] cursor-pointer text-white rounded-md p-2 mt-2 hover:opacity-90 transition disabled:opacity-50'
         >
           {loading ? '로그인 중...' : '로그인'}
         </button>
-      </div>
+      </form>
     </div>
   );
 }
