@@ -201,21 +201,25 @@ export async function addMissingRows(
   allData: usingChannelProps[],
   token: string,
   setProgress: (message: string) => void,
-  category: 'channel'
+  category: 'channel',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 export async function addMissingRows(
   allData: usingDataProps[],
   token: string,
   setProgress: (message: string) => void,
-  category: 'episode'
+  category: 'episode',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 
 export async function addMissingRows(
   allData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (message: string) => void,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  setAllLoading: (loading: boolean) => void
 ) {
+  setAllLoading(true);
   const existingData = await getExcelData(token, category);
 
   const missingRows = allData.filter(
@@ -233,6 +237,7 @@ export async function addMissingRows(
 
   if (missingRows.length === 0) {
     toast.success('추가할 누락 데이터가 없습니다!');
+    setAllLoading(false);
     return;
   }
 
@@ -284,7 +289,7 @@ export async function addMissingRows(
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     try {
-      setProgress(`${Math.round(50 + (i / missingRows.length / 2) * 100)}%`);
+      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
         { values },
@@ -316,8 +321,12 @@ export async function addMissingRows(
           }
         );
       } else {
+        toast.error('전체 데이터 업데이트 실패!');
         throw err;
       }
+    } finally {
+      setProgress('');
+      setAllLoading(false);
     }
   }
 }

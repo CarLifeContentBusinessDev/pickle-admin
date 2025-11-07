@@ -54,11 +54,8 @@ const ChannelLayout = () => {
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
-      setAllLoading(true);
       const allData = await fetchAllData(CATEGORY, setProgress);
-      await addMissingRows(allData, loginToken, setProgress, CATEGORY);
-      setProgress('');
-      setAllLoading(false);
+      await addMissingRows(allData, loginToken, setProgress, CATEGORY, setAllLoading);
     }
   };
 
