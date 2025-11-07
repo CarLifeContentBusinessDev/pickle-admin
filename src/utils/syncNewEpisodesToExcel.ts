@@ -6,6 +6,7 @@ import formatDateString from './formatDateString';
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const sheetName = localStorage.getItem('sheetName');
+const STARTROW = 4;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -79,8 +80,8 @@ async function overwriteExcelData(
   category: 'episode' | 'channel'
 ) {
   const existingData = await getUsedRange(token);
-  const totalRowsToClear = Math.max(newData.length + 3, existingData!);
-  await clearExcelFromRow(4, totalRowsToClear, token, category);
+  const totalRowsToClear = Math.max(newData.length + 2, existingData!);
+  await clearExcelFromRow(STARTROW, totalRowsToClear, token, category);
   const batchSize = 10000;
 
   try {
@@ -109,7 +110,7 @@ async function overwriteExcelData(
             row.tagsAdded,
           ];
         });
-        const startRow = i + 4;
+        const startRow = i + STARTROW;
         const endRow = startRow + batch.length - 1;
         rangeAddress = `B${startRow}:L${endRow}`;
       } else {
@@ -128,11 +129,12 @@ async function overwriteExcelData(
             row.likeCnt,
             row.listenCnt,
             createdAtStr,
+            row.interfaceUrl,
           ];
         });
-        const startRow = i + 4;
+        const startRow = i + STARTROW;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `B${startRow}:K${endRow}`;
+        rangeAddress = `B${startRow}:L${endRow}`;
       }
 
       await axios.patch(

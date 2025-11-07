@@ -9,7 +9,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
     <ToastContainer
-      position='top-left'
+      position='top-center'
       autoClose={2000}
       hideProgressBar={false}
       newestOnTop={false}

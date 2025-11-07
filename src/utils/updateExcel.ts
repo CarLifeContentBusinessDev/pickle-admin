@@ -7,6 +7,7 @@ import { fetchExcelData } from '../api/apis';
 
 const fileId = import.meta.env.VITE_FILE_ID;
 const MAX_EXCEL_ROWS = 300000;
+const STARTROW = 4;
 
 export async function getUsedRange(token: string): Promise<number | null> {
   const sheetName = localStorage.getItem('sheetName');
@@ -73,10 +74,10 @@ export async function getExcelData(
 
   const totalBatches = Math.ceil(totalRows / batchSize);
 
-  const lastColumn = category === 'episode' ? 'L' : 'K';
+  const lastColumn = category === 'episode' ? 'L' : 'L';
 
   for (let i = 0; i < totalBatches; i++) {
-    const startRow = i * batchSize + 4;
+    const startRow = i * batchSize + STARTROW;
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
@@ -143,6 +144,7 @@ export async function getExcelData(
           likeCnt: Number(row[7] ?? 0),
           listenCnt: Number(row[8] ?? 0),
           createdAt: String(row[9] ?? ''),
+          interfaceUrl: String(row[10] ?? ''),
         }) as usingChannelProps
     );
   }
@@ -150,7 +152,7 @@ export async function getExcelData(
 
 export async function getExcelLastData() {
   const LASTCOLUMN = 'L';
-  const rangeAddress = `B4:${LASTCOLUMN}1`;
+  const rangeAddress = `B${STARTROW}:${LASTCOLUMN}1`;
   const sheetName = localStorage.getItem('sheetName');
   let validRows: (string | number)[][] = [];
 
@@ -190,11 +192,9 @@ export async function getExcelLastData() {
 }
 
 const filterRows = (rows: (string | number)[][]) => {
-  rows.filter(
+  return rows.filter(
     (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
   );
-
-  return rows;
 };
 
 export async function addMissingRows(
@@ -274,16 +274,17 @@ export async function addMissingRows(
         row.likeCnt,
         row.listenCnt,
         formatDateString(row.createdAt),
+        `=HYPERLINK("${row.interfaceUrl}", "${row.interfaceUrl}")`,
       ]);
-      lastColumn = 'K';
+      lastColumn = 'L';
     }
 
-    const startRow = existingData.length + i + 4;
+    const startRow = existingData.length + i + STARTROW;
     const endRow = startRow + batch.length - 1;
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
 
     try {
-      setProgress(`${Math.round((50 + i / missingRows.length / 2) * 100)}%`);
+      setProgress(`${Math.round(50 + (i / missingRows.length / 2) * 100)}%`);
       await axios.patch(
         `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
         { values },
@@ -294,6 +295,7 @@ export async function addMissingRows(
           },
         }
       );
+      toast.success('전체 데이터 업데이트 완료!');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();
