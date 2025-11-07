@@ -61,10 +61,7 @@ const ChannelLayout = () => {
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
-    setExcelLoading(true);
-    await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY);
-    setProgress('');
-    setExcelLoading(false);
+    await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY, setExcelLoading);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {

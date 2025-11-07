@@ -300,7 +300,6 @@ export async function addMissingRows(
           },
         }
       );
-      toast.success('전체 데이터 업데이트 완료!');
     } catch (err: unknown) {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         const refreshedToken = await getGraphToken();
@@ -328,5 +327,6 @@ export async function addMissingRows(
       setProgress('');
       setAllLoading(false);
     }
+    toast.success('전체 데이터 업데이트 완료!');
   }
 }

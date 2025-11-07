@@ -10,6 +10,7 @@ import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import { findChangedData } from '../../utils/updateLogs';
 
 const CATEGORY = 'episode';
 
@@ -45,20 +46,18 @@ const EpisodeLayout = () => {
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
-      setAllLoading(true);
       const allData = await fetchAllData(CATEGORY, setProgress);
-      await addMissingRows(allData, loginToken, setProgress, CATEGORY);
-      setProgress('');
-      setAllLoading(false);
+      const duplicateData = await findChangedData(allData);
+      await addMissingRows(allData, loginToken, setProgress, CATEGORY, setAllLoading);
+      localStorage.setItem('sheetName', 'Episode_Logs');
+      setSelectedSheet('Episode_Logs');
+      await addMissingRows(duplicateData, loginToken, setProgress, CATEGORY, setAllLoading);
     }
   };
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
-    setExcelLoading(true);
-    await syncNewDataToExcel(newEpi, loginToken, setProgress, CATEGORY);
-    setProgress('');
-    setExcelLoading(false);
+    await syncNewDataToExcel(newEpi, loginToken, setProgress, CATEGORY, setExcelLoading);
   };
 
   const handleSearchNew = async () => {
