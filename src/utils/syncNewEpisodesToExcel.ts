@@ -58,26 +58,30 @@ async function overwriteExcelData(
   newData: usingChannelProps[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'channel'
+  category: 'channel',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 async function overwriteExcelData(
   newData: usingDataProps[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'episode'
+  category: 'episode',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  setAllLoading: (loading: boolean) => void
 ) {
   const existingData = await getUsedRange(token);
   const totalRowsToClear = Math.max(newData.length + 2, existingData!);
@@ -85,6 +89,7 @@ async function overwriteExcelData(
   const batchSize = 10000;
 
   try {
+    setAllLoading(true);
     for (let i = 0; i < newData.length; i += batchSize) {
       setProgress(`${Math.round((i / newData.length) * 100)}%`);
       const batch = newData.slice(i, i + batchSize);
@@ -149,6 +154,7 @@ async function overwriteExcelData(
       );
     }
 
+    setAllLoading(false);
     toast.success('엑셀 동기화에 성공했습니다!');
   } catch (err) {
     console.error('엑셀 동기화 실패:', err);
@@ -160,20 +166,23 @@ async function syncNewDataToExcel(
   newData: usingChannelProps[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'channel'
+  category: 'channel',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 async function syncNewDataToExcel(
   newData: usingDataProps[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'episode'
+  category: 'episode',
+  setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 
 async function syncNewDataToExcel(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (progress: string) => void,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  setAllLoading: (loading: boolean) => void
 ) {
   const excelData = await getExcelData(token, category);
 
@@ -186,7 +195,8 @@ async function syncNewDataToExcel(
 
   const updatedData = [...filteredNew, ...excelData];
 
-  await overwriteExcelData(updatedData, token, setProgress, category);
+
+  await overwriteExcelData(updatedData, token, setProgress, category, setAllLoading);
 }
 
 export default syncNewDataToExcel;
