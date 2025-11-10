@@ -18,7 +18,7 @@ async function clearExcelFromRow(
   category: 'episode' | 'channel',
   sheetName: string
 ) {
-  let lastLine = 'K';
+  let lastLine = 'L';
   if (category === 'episode') lastLine = 'L';
 
   try {
@@ -90,7 +90,7 @@ async function overwriteExcelData(
   const existingData = await getUsedRange(token, sheetName);
   const totalRowsToClear = Math.max(newData.length + 2, existingData!);
   await clearExcelFromRow(STARTROW, totalRowsToClear, token, category, sheetName);
-  const batchSize = 10000;
+  const batchSize = 5000;
 
   try {
     setAllLoading(true);
@@ -115,8 +115,8 @@ async function overwriteExcelData(
             row.playTime,
             row.likeCnt,
             row.listenCnt,
-            row.tags,
-            row.tagsAdded,
+            row.thumbnailUrl || '',
+            row.audioUrl || '',
           ];
         });
         const startRow = i + STARTROW;

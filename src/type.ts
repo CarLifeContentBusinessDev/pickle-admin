@@ -12,6 +12,8 @@ export interface usingDataProps {
   playTime: number;
   tags: string;
   tagsAdded: string;
+  thumbnailUrl: string;
+  audioUrl: string;
 }
 
 export interface usingChannelProps {

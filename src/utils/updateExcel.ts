@@ -68,7 +68,7 @@ export async function getExcelData(
   category: 'episode' | 'channel' = 'episode',
   sheetName?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
-  const batchSize = 10000;
+  const batchSize = 5000;
   const allRows: (string | number)[][] = [];
   const targetSheet = sheetName || localStorage.getItem('sheetName') || '';
   let totalRows = await getUsedRange(token, targetSheet);
@@ -130,8 +130,10 @@ export async function getExcelData(
           playTime: Number(row[6] ?? 0),
           likeCnt: Number(row[7] ?? 0),
           listenCnt: Number(row[8] ?? 0),
-          tags: String(row[9] ?? ''),
-          tagsAdded: String(row[10] ?? ''),
+          thumbnailUrl: String(row[9] ?? ''),
+          audioUrl: String(row[10] ?? ''),
+          tags: '',
+          tagsAdded: '',
         }) as usingDataProps
     );
   } else {
@@ -189,8 +191,10 @@ export async function getExcelLastData() {
         playTime: Number(row[6] ?? 0),
         likeCnt: Number(row[7] ?? 0),
         listenCnt: Number(row[8] ?? 0),
-        tags: String(row[9] ?? ''),
-        tagsAdded: String(row[10] ?? ''),
+        thumbnailUrl: String(row[9] ?? ''),
+        audioUrl: String(row[10] ?? ''),
+        tags: '',
+        tagsAdded: '',
       }) as usingDataProps
   );
 }
@@ -245,7 +249,7 @@ export async function addMissingRows(
     return;
   }
 
-  const batchSize = 10000;
+  const batchSize = 5000;
 
   for (let i = 0; i < missingRows.length; i += batchSize) {
     const batch = missingRows.slice(i, i + batchSize) as (
@@ -267,8 +271,8 @@ export async function addMissingRows(
         row.playTime,
         row.likeCnt,
         row.listenCnt,
-        row.tags,
-        row.tagsAdded,
+        row.thumbnailUrl || '',
+        row.audioUrl || '',
       ]);
       lastColumn = 'L';
     } else {
