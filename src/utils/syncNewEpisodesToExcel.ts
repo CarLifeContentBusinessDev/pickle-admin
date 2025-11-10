@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
 
 const fileId = import.meta.env.VITE_FILE_ID;
-const sheetName = localStorage.getItem('sheetName');
 const STARTROW = 4;
 
 function delay(ms: number) {
@@ -16,7 +15,8 @@ async function clearExcelFromRow(
   startRow: number,
   endRow: number,
   token: string,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  sheetName: string
 ) {
   let lastLine = 'K';
   if (category === 'episode') lastLine = 'L';
@@ -59,21 +59,24 @@ async function overwriteExcelData(
   token: string,
   setProgress: (progress: string) => void,
   category: 'channel',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  sheetName: string
 ): Promise<void>;
 async function overwriteExcelData(
   newData: usingDataProps[],
   token: string,
   setProgress: (progress: string) => void,
   category: 'episode',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  sheetName: string
 ): Promise<void>;
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  sheetName: string
 ): Promise<void>;
 
 async function overwriteExcelData(
@@ -81,11 +84,12 @@ async function overwriteExcelData(
   token: string,
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  sheetName: string
 ) {
-  const existingData = await getUsedRange(token);
+  const existingData = await getUsedRange(token, sheetName);
   const totalRowsToClear = Math.max(newData.length + 2, existingData!);
-  await clearExcelFromRow(STARTROW, totalRowsToClear, token, category);
+  await clearExcelFromRow(STARTROW, totalRowsToClear, token, category, sheetName);
   const batchSize = 10000;
 
   try {
@@ -162,14 +166,14 @@ async function overwriteExcelData(
   }
 }
 
-async function syncNewDataToExcel(
+export async function syncNewDataToExcel(
   newData: usingChannelProps[],
   token: string,
   setProgress: (progress: string) => void,
   category: 'channel',
   setAllLoading: (loading: boolean) => void
 ): Promise<void>;
-async function syncNewDataToExcel(
+export async function syncNewDataToExcel(
   newData: usingDataProps[],
   token: string,
   setProgress: (progress: string) => void,
@@ -177,14 +181,15 @@ async function syncNewDataToExcel(
   setAllLoading: (loading: boolean) => void
 ): Promise<void>;
 
-async function syncNewDataToExcel(
+export async function syncNewDataToExcel(
   newData: (usingDataProps | usingChannelProps)[],
   token: string,
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void
 ) {
-  const excelData = await getExcelData(token, category);
+  const sheetName = localStorage.getItem('sheetName') || '';
+  const excelData = await getExcelData(token, category, sheetName);
 
   const excelIds = new Set(
     excelData.map((item) => (item as any).episodeId ?? (item as any).channelId)
@@ -195,8 +200,33 @@ async function syncNewDataToExcel(
 
   const updatedData = [...filteredNew, ...excelData];
 
-
-  await overwriteExcelData(updatedData, token, setProgress, category, setAllLoading);
+  await overwriteExcelData(
+    updatedData,
+    token,
+    setProgress,
+    category,
+    setAllLoading,
+    sheetName
+  );
 }
 
-export default syncNewDataToExcel;
+export async function syncNewDuplicateDataToExcel(
+  duplicateNewEpi: usingDataProps[],
+  token: string,
+  setProgress: (progress: string) => void,
+  category: 'episode',
+  setAllLoading: (loading: boolean) => void,
+  sheetName: string
+) {
+  const excelData = await getExcelData(token, category, sheetName);
+  const updatedData = [...duplicateNewEpi, ...excelData];
+
+  await overwriteExcelData(
+    updatedData,
+    token,
+    setProgress,
+    category,
+    setAllLoading,
+    sheetName
+  );
+}

@@ -9,9 +9,9 @@ const fileId = import.meta.env.VITE_FILE_ID;
 const MAX_EXCEL_ROWS = 300000;
 const STARTROW = 4;
 
-export async function getUsedRange(token: string): Promise<number | null> {
-  const sheetName = localStorage.getItem('sheetName');
-  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='D1:D${MAX_EXCEL_ROWS}')?valuesOnly=true`;
+export async function getUsedRange(token: string, sheetName?: string): Promise<number | null> {
+  const targetSheet = sheetName || localStorage.getItem('sheetName');
+  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='D1:D${MAX_EXCEL_ROWS}')?valuesOnly=true`;
 
   try {
     const res = await axios.get(usedRangeUrl, {
@@ -49,24 +49,29 @@ export async function getUsedRange(token: string): Promise<number | null> {
 
 export async function getExcelData(
   token: string,
-  category: 'channel'
+  category: 'channel',
+  sheetName?: string
 ): Promise<usingChannelProps[]>;
 export async function getExcelData(
   token: string,
-  category: 'episode'
+  category: 'episode',
+  sheetName?: string
 ): Promise<usingDataProps[]>;
 export async function getExcelData(
   token: string,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  sheetName?: string
 ): Promise<(usingDataProps | usingChannelProps)[]>;
 
 export async function getExcelData(
   token: string,
-  category: 'episode' | 'channel' = 'episode'
+  category: 'episode' | 'channel' = 'episode',
+  sheetName?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   const batchSize = 10000;
   const allRows: (string | number)[][] = [];
-  let totalRows = await getUsedRange(token);
+  const targetSheet = sheetName || localStorage.getItem('sheetName') || '';
+  let totalRows = await getUsedRange(token, targetSheet);
 
   if (totalRows === null || totalRows < 4) {
     totalRows = 4;
@@ -81,11 +86,10 @@ export async function getExcelData(
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
     const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
-    const sheetName = localStorage.getItem('sheetName');
 
     try {
       const res = await axios.get(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
+        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='${rangeAddress}')?valuesOnly=true`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const values = res.data.values as (string | number)[][];
@@ -99,7 +103,7 @@ export async function getExcelData(
         localStorage.setItem('loginToken', refreshedToken);
 
         const retryRes = await axios.get(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
+          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='${rangeAddress}')?valuesOnly=true`,
           { headers: { Authorization: `Bearer ${refreshedToken}` } }
         );
 
@@ -241,7 +245,7 @@ export async function addMissingRows(
     return;
   }
 
-  const batchSize = 1000;
+  const batchSize = 10000;
 
   for (let i = 0; i < missingRows.length; i += batchSize) {
     const batch = missingRows.slice(i, i + batchSize) as (
@@ -327,6 +331,7 @@ export async function addMissingRows(
       setProgress('');
       setAllLoading(false);
     }
-    toast.success('전체 데이터 업데이트 완료!');
   }
+
+  toast.success('전체 데이터 업데이트 완료!');
 }

@@ -4,7 +4,7 @@ import { fetchAllData } from '../../utils/fetchAllData';
 import { addMissingRows } from '../../utils/updateExcel';
 import { getNewData } from '../../utils/getNewData';
 import type { usingChannelProps } from '../../type';
-import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
+import { syncNewDataToExcel } from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
