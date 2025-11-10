@@ -5,18 +5,22 @@ import { addMissingRows } from '../../utils/updateExcel';
 import { getNewDataWithExcel } from '../../utils/getNewData';
 import type { usingDataProps } from '../../type';
 import EpisodeList from './EpisodeList';
-import syncNewDataToExcel from '../../utils/syncNewEpisodesToExcel';
+import {
+  syncNewDataToExcel,
+  syncNewDuplicateDataToExcel,
+} from '../../utils/syncNewEpisodesToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import { findChangedData } from '../../utils/updateLogs';
+import { findChangedData, findUpdateData } from '../../utils/updateLogs';
 
 const CATEGORY = 'episode';
 
 const EpisodeLayout = () => {
   const { loginToken } = useLoginTokenStore();
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
+  const [duplicateNewEpi, setDuplicateNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
@@ -48,23 +52,56 @@ const EpisodeLayout = () => {
     if (result) {
       const allData = await fetchAllData(CATEGORY, setProgress);
       const duplicateData = await findChangedData(allData);
-      await addMissingRows(allData, loginToken, setProgress, CATEGORY, setAllLoading);
+      await addMissingRows(
+        allData,
+        loginToken,
+        setProgress,
+        CATEGORY,
+        setAllLoading
+      );
       localStorage.setItem('sheetName', 'Episode_Logs');
       setSelectedSheet('Episode_Logs');
-      await addMissingRows(duplicateData, loginToken, setProgress, CATEGORY, setAllLoading);
+      await addMissingRows(
+        duplicateData,
+        loginToken,
+        setProgress,
+        CATEGORY,
+        setAllLoading
+      );
     }
   };
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
-    await syncNewDataToExcel(newEpi, loginToken, setProgress, CATEGORY, setExcelLoading);
+
+    await syncNewDataToExcel(
+      newEpi,
+      loginToken,
+      setProgress,
+      CATEGORY,
+      setExcelLoading
+    );
+
+    localStorage.setItem('sheetName', 'Episode_Logs');
+    setSelectedSheet('Episode_Logs');
+    
+    await syncNewDuplicateDataToExcel(
+      duplicateNewEpi,
+      loginToken,
+      setProgress,
+      CATEGORY,
+      setExcelLoading,
+      'Episode_Logs'
+    );
   };
 
   const handleSearchNew = async () => {
     setLoading(true);
     const newList = await getNewDataWithExcel();
+    const duplicateNewData = await findUpdateData(newList);
     setProgress('');
     setNewEpi(newList);
+    setDuplicateNewEpi(duplicateNewData);
     setLoading(false);
   };
 
@@ -119,7 +156,7 @@ const EpisodeLayout = () => {
             <Button onClick={handleSyncExcel}>Excel 동기화</Button>
           </div>
         </div>
-        <div className='w-full h-[90%] flex flex-col'>
+        <div className='w-full h-[90%] gap-4 flex flex-col'>
           <div className='min-w-max flex font-bold py-5'>
             <p className='w-[7%] px-2'>ID</p>
             <p className='w-[7%] px-2'>활성화</p>
@@ -139,6 +176,7 @@ const EpisodeLayout = () => {
             잠시만 기다려주세요!
           </LoadingOverlay>
           {!loading && <EpisodeList data={newEpi} />}
+          {!loading && <EpisodeList data={duplicateNewEpi} />}
         </div>
       </div>
     </div>
