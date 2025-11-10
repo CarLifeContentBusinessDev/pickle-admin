@@ -125,7 +125,7 @@ async function overwriteExcelData(
       } else {
         values = (batch as usingChannelProps[]).map((row) => {
           const createdAtStr = excelDateTime(row.createdAt);
-          const lastUpdateDtimeStr = excelDateTime(row.lastUpdateDtime);
+          const dispDtimeStr = excelDateTime(row.dispDtime);
 
           return [
             row.channelId,
@@ -133,7 +133,7 @@ async function overwriteExcelData(
             row.channelName,
             row.vendorName,
             row.categoryName,
-            lastUpdateDtimeStr,
+            dispDtimeStr,
             row.channelTypeName,
             row.likeCnt,
             row.listenCnt,
