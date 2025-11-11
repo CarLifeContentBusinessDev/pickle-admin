@@ -30,6 +30,7 @@ export interface usingChannelProps {
   listenCnt: number;
   createdAt: string;
   dispDtime: string;
+  thumbnailUrl: string;
 }
 
 export interface CurationListIdProps {

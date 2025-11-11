@@ -18,7 +18,7 @@ async function clearExcelFromRow(
   category: 'episode' | 'channel',
   sheetName: string
 ) {
-  let lastLine = 'L';
+  let lastLine = 'M';
   if (category === 'episode') lastLine = 'L';
 
   try {
@@ -139,11 +139,12 @@ async function overwriteExcelData(
             row.listenCnt,
             createdAtStr,
             row.interfaceUrl,
+            row.thumbnailUrl,
           ];
         });
         const startRow = i + STARTROW;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `B${startRow}:L${endRow}`;
+        rangeAddress = `B${startRow}:M${endRow}`;
       }
 
       await axios.patch(
