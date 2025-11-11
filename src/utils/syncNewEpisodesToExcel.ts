@@ -1,10 +1,10 @@
 import { getExcelData, getUsedRange } from './updateExcel';
 import type { usingChannelProps, usingDataProps } from '../type';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
+import { getSheetsClient } from './auth';
 
-const fileId = import.meta.env.VITE_FILE_ID;
+const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 const STARTROW = 4;
 
 function delay(ms: number) {
@@ -14,19 +14,20 @@ function delay(ms: number) {
 async function clearExcelFromRow(
   startRow: number,
   endRow: number,
-  token: string,
   category: 'episode' | 'channel',
   sheetName: string
 ) {
-  let lastLine = 'K';
-  if (category === 'episode') lastLine = 'L';
+  let lastLine = category === 'episode' ? 'L' : 'M';
 
   try {
-    await axios.post(
-      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='B${startRow}:${lastLine}${endRow}')/clear`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const sheets = getSheetsClient();
+    const range = `${sheetName}!B${startRow}:${lastLine}${endRow}`;
+
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range,
+      resource: {},
+    });
     await delay(500);
   } catch (err) {
     console.error('엑셀 삭제 실패:', err);
@@ -56,7 +57,6 @@ function excelDateTime(date: string | number) {
 
 async function overwriteExcelData(
   newData: usingChannelProps[],
-  token: string,
   setProgress: (progress: string) => void,
   category: 'channel',
   setAllLoading: (loading: boolean) => void,
@@ -64,7 +64,6 @@ async function overwriteExcelData(
 ): Promise<void>;
 async function overwriteExcelData(
   newData: usingDataProps[],
-  token: string,
   setProgress: (progress: string) => void,
   category: 'episode',
   setAllLoading: (loading: boolean) => void,
@@ -72,7 +71,6 @@ async function overwriteExcelData(
 ): Promise<void>;
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
-  token: string,
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void,
@@ -81,24 +79,25 @@ async function overwriteExcelData(
 
 async function overwriteExcelData(
   newData: (usingDataProps | usingChannelProps)[],
-  token: string,
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void,
   sheetName: string
 ) {
-  const existingData = await getUsedRange(token, sheetName);
+  const existingData = await getUsedRange(sheetName);
   const totalRowsToClear = Math.max(newData.length + 2, existingData!);
-  await clearExcelFromRow(STARTROW, totalRowsToClear, token, category, sheetName);
+  await clearExcelFromRow(STARTROW, totalRowsToClear, category, sheetName);
   const batchSize = 10000;
 
   try {
     setAllLoading(true);
+    const sheets = getSheetsClient();
+
     for (let i = 0; i < newData.length; i += batchSize) {
       setProgress(`${Math.round((i / newData.length) * 100)}%`);
       const batch = newData.slice(i, i + batchSize);
       let values;
-      let rangeAddress;
+      let range;
 
       if (category === 'episode') {
         values = (batch as usingDataProps[]).map((row) => {
@@ -115,13 +114,13 @@ async function overwriteExcelData(
             row.playTime,
             row.likeCnt,
             row.listenCnt,
-            row.tags,
-            row.tagsAdded,
+            row.thumbnailUrl,
+            row.audioUrl,
           ];
         });
         const startRow = i + STARTROW;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `B${startRow}:L${endRow}`;
+        range = `${sheetName}!B${startRow}:L${endRow}`;
       } else {
         values = (batch as usingChannelProps[]).map((row) => {
           const createdAtStr = excelDateTime(row.createdAt);
@@ -139,23 +138,20 @@ async function overwriteExcelData(
             row.listenCnt,
             createdAtStr,
             row.interfaceUrl,
+            row.thumbnailUrl,
           ];
         });
         const startRow = i + STARTROW;
         const endRow = startRow + batch.length - 1;
-        rangeAddress = `B${startRow}:L${endRow}`;
+        range = `${sheetName}!B${startRow}:M${endRow}`;
       }
 
-      await axios.patch(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-        { values },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
     }
 
     setAllLoading(false);
@@ -202,7 +198,6 @@ export async function syncNewDataToExcel(
 
   await overwriteExcelData(
     updatedData,
-    token,
     setProgress,
     category,
     setAllLoading,
@@ -223,7 +218,6 @@ export async function syncNewDuplicateDataToExcel(
 
   await overwriteExcelData(
     updatedData,
-    token,
     setProgress,
     category,
     setAllLoading,

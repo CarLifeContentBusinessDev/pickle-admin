@@ -1,52 +1,45 @@
-import axios from 'axios';
 import type { usingChannelProps, usingDataProps } from '../type';
 import formatDateString from './formatDateString';
-import { getGraphToken } from './auth';
+import { getGoogleToken, getSheetsClient } from './auth';
 import { toast } from 'react-toastify';
-import { fetchExcelData } from '../api/apis';
 
-const fileId = import.meta.env.VITE_FILE_ID;
-const MAX_EXCEL_ROWS = 300000;
+const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
+const MAX_ROWS = 300000;
 const STARTROW = 4;
 
-export async function getUsedRange(token: string, sheetName?: string): Promise<number | null> {
-  const targetSheet = sheetName || localStorage.getItem('sheetName');
-  const usedRangeUrl = `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='D1:D${MAX_EXCEL_ROWS}')?valuesOnly=true`;
-
+// Google Sheets에서 마지막 데이터 행 조회
+export async function getUsedRange(sheetName?: string): Promise<number | null> {
   try {
-    const res = await axios.get(usedRangeUrl, {
-      headers: { Authorization: `Bearer ${token}` },
+    const token = await getGoogleToken();
+    if (!token) throw new Error('인증 토큰이 없습니다');
+
+    const targetSheet = sheetName || localStorage.getItem('sheetName') || '시트를 선택해주세요.';
+    const sheets = getSheetsClient();
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${targetSheet}!D1:D${MAX_ROWS}`,
     });
-    const values = res.data.values as (string | number)[][];
-    if (!values) return null;
+
+    const values = response.result.values;
+    if (!values || values.length === 0) return STARTROW;
 
     let lastDataRow = 0;
     for (let i = values.length - 1; i >= 0; i--) {
-      if (
-        values[i] &&
-        values[i].length > 0 &&
-        values[i][0] !== null &&
-        values[i][0] !== ''
-      ) {
+      if (values[i] && values[i][0] !== null && values[i][0] !== '') {
         lastDataRow = i + 1;
         break;
       }
     }
 
-    return Math.max(lastDataRow, 4);
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      console.error(
-        'D열 기반 마지막 행 조회 실패:',
-        err.response?.data || err.message
-      );
-    } else {
-      console.error('D열 기반 마지막 행 조회 실패:', err);
-    }
+    return Math.max(lastDataRow, STARTROW);
+  } catch (err) {
+    console.error('마지막 행 조회 실패:', err);
     return null;
   }
 }
 
+// Google Sheets에서 데이터 읽기
 export async function getExcelData(
   token: string,
   category: 'channel',
@@ -64,60 +57,99 @@ export async function getExcelData(
 ): Promise<(usingDataProps | usingChannelProps)[]>;
 
 export async function getExcelData(
-  token: string,
+  _token: string,
   category: 'episode' | 'channel' = 'episode',
   sheetName?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
-  const batchSize = 10000;
-  const allRows: (string | number)[][] = [];
-  const targetSheet = sheetName || localStorage.getItem('sheetName') || '';
-  let totalRows = await getUsedRange(token, targetSheet);
+  try {
+    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const totalRows = await getUsedRange(targetSheet);
 
-  if (totalRows === null || totalRows < 4) {
-    totalRows = 4;
-  }
+    if (!totalRows || totalRows < STARTROW) {
+      return [];
+    }
 
-  const totalBatches = Math.ceil(totalRows / batchSize);
+    const sheets = getSheetsClient();
+    const lastColumn = category === 'episode' ? 'L' : 'M';
+    const range = `${targetSheet}!B${STARTROW}:${lastColumn}${totalRows}`;
 
-  const lastColumn = category === 'episode' ? 'L' : 'L';
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
 
-  for (let i = 0; i < totalBatches; i++) {
-    const startRow = i * batchSize + STARTROW;
-    const calculatedEndRow = startRow + batchSize - 1;
-    const endRow = Math.min(calculatedEndRow, totalRows);
-    const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
+    const values = response.result.values || [];
+    const validRows = filterRows(values);
 
-    try {
-      const res = await axios.get(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='${rangeAddress}')?valuesOnly=true`,
-        { headers: { Authorization: `Bearer ${token}` } }
+    if (category === 'episode') {
+      return validRows.map(
+        (row) =>
+          ({
+            episodeId: Number(row[0] ?? 0),
+            usageYn: String(row[1] ?? ''),
+            channelName: String(row[2] ?? ''),
+            episodeName: String(row[3] ?? ''),
+            dispDtime: String(row[4] ?? ''),
+            createdAt: String(row[5] ?? ''),
+            playTime: Number(row[6] ?? 0),
+            likeCnt: Number(row[7] ?? 0),
+            listenCnt: Number(row[8] ?? 0),
+            thumbnailUrl: String(row[9] ?? ''),
+            audioUrl: String(row[10] ?? ''),
+          }) as usingDataProps
       );
-      const values = res.data.values as (string | number)[][];
-      if (values && values.length > 0) allRows.push(...values);
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        const refreshedToken = await getGraphToken();
-        if (!refreshedToken)
-          throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
+    } else {
+      return validRows.map(
+        (row) =>
+          ({
+            channelId: Number(row[0] ?? 0),
+            usageYn: String(row[1] ?? ''),
+            channelName: String(row[2] ?? ''),
+            vendorName: String(row[3] ?? ''),
+            categoryName: String(row[4] ?? ''),
+            dispDtime: String(row[5] ?? ''),
+            channelTypeName: String(row[6] ?? ''),
+            likeCnt: Number(row[7] ?? 0),
+            listenCnt: Number(row[8] ?? 0),
+            createdAt: String(row[9] ?? ''),
+            interfaceUrl: String(row[10] ?? ''),
+            thumbnailUrl: String(row[11] ?? ''),
+          }) as usingChannelProps
+      );
+    }
+  } catch (err) {
+    console.error('Excel 데이터 조회 실패:', err);
 
-        localStorage.setItem('loginToken', refreshedToken);
-
-        const retryRes = await axios.get(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${targetSheet}')/range(address='${rangeAddress}')?valuesOnly=true`,
-          { headers: { Authorization: `Bearer ${refreshedToken}` } }
-        );
-
-        const retryValues = retryRes.data.values as (string | number)[][];
-        if (retryValues && retryValues.length > 0) allRows.push(...retryValues);
-      } else {
-        console.error('엑셀 조회 실패:', err);
+    if ((err as any)?.status === 401) {
+      const newToken = await getGoogleToken();
+      if (newToken) {
+        return getExcelData(newToken, category, sheetName);
       }
     }
+
+    throw err;
   }
+}
 
-  const validRows = filterRows(allRows);
+// 첫 번째 행(최신 데이터)만 가져오기
+export async function getExcelLastData() {
+  try {
+    const token = await getGoogleToken();
+    if (!token) throw new Error('인증 토큰이 없습니다');
 
-  if (category === 'episode') {
+    const sheetName = localStorage.getItem('sheetName') || 'Sheet1';
+    const sheets = getSheetsClient();
+    const LASTCOLUMN = 'L';
+    const range = `${sheetName}!B${STARTROW}:${LASTCOLUMN}${STARTROW}`;
+
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range,
+    });
+
+    const values = response.result.values || [];
+    const validRows = filterRows(values);
+
     return validRows.map(
       (row) =>
         ({
@@ -130,77 +162,29 @@ export async function getExcelData(
           playTime: Number(row[6] ?? 0),
           likeCnt: Number(row[7] ?? 0),
           listenCnt: Number(row[8] ?? 0),
-          tags: String(row[9] ?? ''),
-          tagsAdded: String(row[10] ?? ''),
+          thumbnailUrl: String(row[9] ?? ''),
+          audioUrl: String(row[10] ?? ''),
         }) as usingDataProps
     );
-  } else {
-    return validRows.map(
-      (row) =>
-        ({
-          channelId: Number(row[0] ?? 0),
-          usageYn: String(row[1] ?? ''),
-          channelName: String(row[2] ?? ''),
-          vendorName: String(row[3] ?? ''),
-          categoryName: String(row[4] ?? ''),
-          dispDtime: String(row[5] ?? ''),
-          channelTypeName: String(row[6] ?? ''),
-          likeCnt: Number(row[7] ?? 0),
-          listenCnt: Number(row[8] ?? 0),
-          createdAt: String(row[9] ?? ''),
-          interfaceUrl: String(row[10] ?? ''),
-        }) as usingChannelProps
-    );
-  }
-}
+  } catch (err) {
+    console.error('Excel 마지막 데이터 조회 실패:', err);
 
-export async function getExcelLastData() {
-  const LASTCOLUMN = 'L';
-  const rangeAddress = `B${STARTROW}:${LASTCOLUMN}1`;
-  const sheetName = localStorage.getItem('sheetName');
-  let validRows: (string | number)[][] = [];
-
-  try {
-    const res = await fetchExcelData(sheetName!, rangeAddress);
-    validRows = filterRows(res);
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err) && err.response?.status === 401) {
-      const refreshedToken = await getGraphToken();
-      if (!refreshedToken) throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
-
-      localStorage.setItem('loginToken', refreshedToken);
-
-      const res = await fetchExcelData(sheetName!, rangeAddress);
-      validRows = filterRows(res);
-    } else {
-      console.error('엑셀 조회 실패:', err);
+    if ((err as any)?.status === 401) {
+      const newToken = await getGoogleToken();
+      if (newToken) {
+        return getExcelLastData();
+      }
     }
-  }
 
-  return validRows.map(
-    (row) =>
-      ({
-        episodeId: Number(row[0] ?? 0),
-        usageYn: String(row[1] ?? ''),
-        channelName: String(row[2] ?? ''),
-        episodeName: String(row[3] ?? ''),
-        dispDtime: String(row[4] ?? ''),
-        createdAt: String(row[5] ?? ''),
-        playTime: Number(row[6] ?? 0),
-        likeCnt: Number(row[7] ?? 0),
-        listenCnt: Number(row[8] ?? 0),
-        tags: String(row[9] ?? ''),
-        tagsAdded: String(row[10] ?? ''),
-      }) as usingDataProps
-  );
+    throw err;
+  }
 }
 
-const filterRows = (rows: (string | number)[][]) => {
-  return rows.filter(
-    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
-  );
+const filterRows = (rows: any[][]) => {
+  return rows.filter((row) => row[0] !== null && row[0] !== undefined && row[0] !== '');
 };
 
+// 데이터 업데이트
 export async function addMissingRows(
   allData: usingChannelProps[],
   token: string,
@@ -223,41 +207,133 @@ export async function addMissingRows(
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void
 ) {
-  setAllLoading(true);
-  const existingData = await getExcelData(token, category);
+  try {
+    setAllLoading(true);
+    const existingData = await getExcelData(token, category);
 
-  const missingRows = allData.filter(
-    (item) =>
-      !existingData.some(
-        (row) =>
-          ('episodeId' in row &&
-            'episodeId' in item &&
-            row.episodeId === item.episodeId) ||
-          ('channelId' in row &&
-            'channelId' in item &&
-            row.channelId === item.channelId)
-      )
-  );
+    const missingRows = allData.filter(
+      (item) =>
+        !existingData.some(
+          (row) =>
+            ('episodeId' in row &&
+              'episodeId' in item &&
+              row.episodeId === item.episodeId) ||
+            ('channelId' in row && 'channelId' in item && row.channelId === item.channelId)
+        )
+    );
 
-  if (missingRows.length === 0) {
-    toast.success('추가할 누락 데이터가 없습니다!');
+    if (missingRows.length === 0) {
+      toast.success('추가할 누락 데이터가 없습니다!');
+      setAllLoading(false);
+      return;
+    }
+
+    const batchSize = 10000;
+    const sheetName = localStorage.getItem('sheetName') || 'Sheet1';
+    const sheets = getSheetsClient();
+
+    for (let i = 0; i < missingRows.length; i += batchSize) {
+      const batch = missingRows.slice(i, i + batchSize) as (
+        | usingDataProps
+        | usingChannelProps
+      )[];
+      let values;
+      let lastColumn;
+
+      if (category === 'episode') {
+        values = (batch as usingDataProps[]).map((row) => [
+          row.episodeId,
+          row.usageYn,
+          row.channelName,
+          row.episodeName,
+          formatDateString(row.dispDtime),
+          formatDateString(row.createdAt),
+          row.playTime,
+          row.likeCnt,
+          row.listenCnt,
+          row.thumbnailUrl,
+          row.audioUrl,
+        ]);
+        lastColumn = 'L';
+      } else {
+        values = (batch as usingChannelProps[]).map((row, index) => {
+          // 첫 번째 행의 dispDtime 확인 (디버깅용)
+          if (index === 0) {
+            console.log('Excel 저장 - 첫 번째 채널 데이터:', row);
+            console.log('Excel 저장 - dispDtime 원본 값:', row.dispDtime);
+            console.log('Excel 저장 - dispDtime 포맷 후:', formatDateString(row.dispDtime));
+          }
+
+          return [
+            row.channelId,
+            row.usageYn,
+            row.channelName,
+            row.vendorName,
+            row.categoryName,
+            formatDateString(row.dispDtime),
+            row.channelTypeName,
+            row.likeCnt,
+            row.listenCnt,
+            formatDateString(row.createdAt),
+            row.interfaceUrl,
+            row.thumbnailUrl,
+          ];
+        });
+        lastColumn = 'M';
+      }
+
+      const startRow = existingData.length + i + STARTROW;
+      const endRow = startRow + batch.length - 1;
+      const range = `${sheetName}!B${startRow}:${lastColumn}${endRow}`;
+
+      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
+    }
+
+    toast.success('전체 데이터 업데이트 완료!');
+  } catch (err) {
+    console.error('데이터 추가 실패:', err);
+    toast.error('전체 데이터 업데이트 실패!');
+
+    if ((err as any)?.status === 401) {
+      const newToken = await getGoogleToken();
+      if (newToken) {
+        if (category === 'episode') {
+          return addMissingRows(allData as usingDataProps[], newToken, setProgress, 'episode', setAllLoading);
+        } else {
+          return addMissingRows(allData as usingChannelProps[], newToken, setProgress, 'channel', setAllLoading);
+        }
+      }
+    }
+
+    throw err;
+  } finally {
+    setProgress('');
     setAllLoading(false);
-    return;
   }
+}
 
-  const batchSize = 10000;
-
-  for (let i = 0; i < missingRows.length; i += batchSize) {
-    const batch = missingRows.slice(i, i + batchSize) as (
-      | usingDataProps
-      | usingChannelProps
-    )[];
+// 데이터 덮어쓰기
+export async function overwriteExcelData(
+  data: (usingDataProps | usingChannelProps)[],
+  _token: string,
+  category: 'episode' | 'channel',
+  sheetName?: string
+) {
+  try {
+    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const sheets = getSheetsClient();
     let values;
     let lastColumn;
 
-    const sheetName = localStorage.getItem('sheetName');
     if (category === 'episode') {
-      values = (batch as usingDataProps[]).map((row) => [
+      values = (data as usingDataProps[]).map((row) => [
         row.episodeId,
         row.usageYn,
         row.channelName,
@@ -267,12 +343,12 @@ export async function addMissingRows(
         row.playTime,
         row.likeCnt,
         row.listenCnt,
-        row.tags,
-        row.tagsAdded,
+        row.thumbnailUrl,
+        row.audioUrl,
       ]);
       lastColumn = 'L';
     } else {
-      values = (batch as usingChannelProps[]).map((row) => [
+      values = (data as usingChannelProps[]).map((row) => [
         row.channelId,
         row.usageYn,
         row.channelName,
@@ -283,55 +359,65 @@ export async function addMissingRows(
         row.likeCnt,
         row.listenCnt,
         formatDateString(row.createdAt),
-        `=HYPERLINK("${row.interfaceUrl}", "${row.interfaceUrl}")`,
+        row.interfaceUrl,
+        row.thumbnailUrl,
       ]);
-      lastColumn = 'L';
+      lastColumn = 'M';
     }
 
-    const startRow = existingData.length + i + STARTROW;
-    const endRow = startRow + batch.length - 1;
-    const rangeAddress = `B${startRow}:${lastColumn}${endRow}`;
+    const range = `${targetSheet}!B${STARTROW}:${lastColumn}${STARTROW + values.length - 1}`;
 
-    try {
-      setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
-      await axios.patch(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-        { values },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-    } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        const refreshedToken = await getGraphToken();
-        if (!refreshedToken)
-          throw new Error('토큰 재발급 실패, 엑셀 업데이트 중단');
+    const clearRange = `${targetSheet}!B${STARTROW}:${lastColumn}${MAX_ROWS}`;
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: clearRange,
+      resource: {},
+    });
 
-        token = refreshedToken;
-        localStorage.setItem('loginToken', token);
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values },
+    });
 
-        await axios.patch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-          { values },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-      } else {
-        toast.error('전체 데이터 업데이트 실패!');
-        throw err;
+    toast.success('데이터 덮어쓰기 완료!');
+  } catch (err) {
+    console.error('데이터 덮어쓰기 실패:', err);
+    toast.error('데이터 덮어쓰기 실패!');
+
+    // 토큰 만료 시 재시도
+    if ((err as any)?.status === 401) {
+      const newToken = await getGoogleToken();
+      if (newToken) {
+        return overwriteExcelData(data, newToken, category, sheetName);
       }
-    } finally {
-      setProgress('');
-      setAllLoading(false);
     }
-  }
 
-  toast.success('전체 데이터 업데이트 완료!');
+    throw err;
+  }
+}
+
+// 범위 삭제
+export async function clearExcelRange(range: string, sheetName?: string) {
+  try {
+    const token = await getGoogleToken();
+    if (!token) throw new Error('인증 토큰이 없습니다');
+
+    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const sheets = getSheetsClient();
+    const fullRange = `${targetSheet}!${range}`;
+
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range: fullRange,
+      resource: {},
+    });
+
+    toast.success('데이터 삭제 완료!');
+  } catch (err) {
+    console.error('데이터 삭제 실패:', err);
+    toast.error('데이터 삭제 실패!');
+    throw err;
+  }
 }
