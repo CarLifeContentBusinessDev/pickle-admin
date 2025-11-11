@@ -35,13 +35,34 @@ export async function fetchAllData(
       const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
       const dataList = res.data.data.dataList;
 
-      // 첫 페이지 첫 번째 데이터의 dispDtime 확인 (디버깅용)
-      if (page === 1 && dataList.length > 0 && category === 'channel') {
-        console.log('채널 API 응답 첫 번째 데이터:', dataList[0]);
-        console.log('dispDtime 값:', dataList[0].dispDtime);
-      }
-
       allData = allData.concat(dataList);
+    }
+
+    if (category === 'channel') {
+      const channelData = allData as usingChannelProps[];
+
+      for (let i = 0; i < channelData.length; i++) {
+        const channel = channelData[i];
+
+        try {
+          setProgress(`${Math.round(50 + (i / channelData.length) * 50)}%`);
+
+          const episodeRes = await api.get(
+            `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`
+          );
+
+          const episodes = episodeRes.data.data.dataList;
+
+          if (episodes && episodes.length > 0) {
+            channel.dispDtime = episodes[0].dispDtime || '';
+          } else {
+            channel.dispDtime = '';
+          }
+        } catch (err) {
+          console.error(`채널 ${channel.channelId}의 에피소드 조회 실패:`, err);
+          channel.dispDtime = '';
+        }
+      }
     }
 
     return allData;
