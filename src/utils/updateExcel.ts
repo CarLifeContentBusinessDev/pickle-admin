@@ -79,7 +79,7 @@ export async function getExcelData(
 
   const totalBatches = Math.ceil(totalRows / batchSize);
 
-  const lastColumn = category === 'episode' ? 'L' : 'L';
+  const lastColumn = category === 'episode' ? 'L' : 'M';
 
   for (let i = 0; i < totalBatches; i++) {
     const startRow = i * batchSize + STARTROW;
@@ -151,6 +151,7 @@ export async function getExcelData(
           listenCnt: Number(row[8] ?? 0),
           createdAt: String(row[9] ?? ''),
           interfaceUrl: String(row[10] ?? ''),
+          thumbnailUrl: String(row[11] ?? ''),
         }) as usingChannelProps
     );
   }
@@ -271,8 +272,8 @@ export async function addMissingRows(
         row.playTime,
         row.likeCnt,
         row.listenCnt,
-        row.thumbnailUrl || '',
-        row.audioUrl || '',
+        `=HYPERLINK("${row.thumbnailUrl}", "${row.thumbnailUrl}")` || '',
+        `=HYPERLINK("${row.audioUrl}", "${row.audioUrl}")` || '',
       ]);
       lastColumn = 'L';
     } else {
@@ -288,8 +289,9 @@ export async function addMissingRows(
         row.listenCnt,
         formatDateString(row.createdAt),
         `=HYPERLINK("${row.interfaceUrl}", "${row.interfaceUrl}")`,
+        `=HYPERLINK("${row.thumbnailUrl}", "${row.thumbnailUrl}")` || '',
       ]);
-      lastColumn = 'L';
+      lastColumn = 'M';
     }
 
     const startRow = existingData.length + i + STARTROW;
