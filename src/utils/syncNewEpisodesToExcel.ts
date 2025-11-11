@@ -2,6 +2,7 @@ import { getExcelData, getUsedRange } from './updateExcel';
 import type { usingChannelProps, usingDataProps } from '../type';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
+import { formatPlayTime } from './formatPlayTime';
 import { getSheetsClient } from './auth';
 
 const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
@@ -111,7 +112,7 @@ async function overwriteExcelData(
             row.episodeName,
             dispDtimeStr,
             createdAtStr,
-            row.playTime,
+            formatPlayTime(row.playTime),
             row.likeCnt,
             row.listenCnt,
             row.thumbnailUrl,
