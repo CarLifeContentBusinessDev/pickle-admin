@@ -10,8 +10,8 @@ export interface usingDataProps {
   likeCnt: number;
   listenCnt: number;
   playTime: number;
-  tags: string;
-  tagsAdded: string;
+  thumbnailUrl: string;
+  audioUrl: string;
 }
 
 export interface usingChannelProps {
@@ -28,6 +28,7 @@ export interface usingChannelProps {
   listenCnt: number;
   createdAt: string;
   dispDtime: string;
+  thumbnailUrl: string;
 }
 
 export interface CurationListIdProps {

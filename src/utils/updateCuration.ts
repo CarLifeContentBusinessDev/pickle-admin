@@ -1,54 +1,53 @@
-import axios from 'axios';
 import type { usingCurationExcelProps } from '../type';
 import formatDateString from './formatDateString';
-import { getGraphToken } from './auth';
+import { getGoogleToken, getSheetsClient } from './auth';
 import { toast } from 'react-toastify';
 import { getUsedRange } from './updateExcel';
 
-const fileId = import.meta.env.VITE_FILE_ID;
+const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 
 export async function getCurationExcelData(
-  token: string,
+  _token: string,
 ): Promise<usingCurationExcelProps[]> {
   const batchSize = 1000;
   const allRows: (string | number)[][] = [];
-  let totalRows = await getUsedRange(token);
+  let totalRows = await getUsedRange();
 
   if (totalRows === null || totalRows < 4) {
     totalRows = 4;
   }
 
   const totalBatches = Math.ceil(totalRows / batchSize);
+  const sheets = getSheetsClient();
 
   for (let i = 0; i < totalBatches; i++) {
     const startRow = i * batchSize + 4;
     const calculatedEndRow = startRow + batchSize - 1;
     const endRow = Math.min(calculatedEndRow, totalRows);
-    const rangeAddress = `B${startRow}:W${endRow}`;
-
     const sheetName = localStorage.getItem('sheetName');
+    const range = `${sheetName}!B${startRow}:W${endRow}`;
 
     try {
-      const res = await axios.get(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const values = res.data.values as (string | number)[][];
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
+      const values = response.result.values as (string | number)[][];
       if (values && values.length > 0) allRows.push(...values);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        const refreshedToken = await getGraphToken();
+      if ((err as any)?.status === 401) {
+        const refreshedToken = await getGoogleToken();
         if (!refreshedToken)
           throw new Error('토큰 재발급 실패, 엑셀 조회 중단');
 
         localStorage.setItem('loginToken', refreshedToken);
 
-        const retryRes = await axios.get(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')?valuesOnly=true`,
-          { headers: { Authorization: `Bearer ${refreshedToken}` } }
-        );
+        const retryResponse = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range,
+        });
 
-        const retryValues = retryRes.data.values as (string | number)[][];
+        const retryValues = retryResponse.result.values as (string | number)[][];
         if (retryValues && retryValues.length > 0) allRows.push(...retryValues);
       } else {
         console.error('엑셀 조회 실패:', err);
@@ -106,6 +105,7 @@ export async function addMissingCurationRows(
   }
 
   const batchSize = 100;
+  const sheets = getSheetsClient();
 
   for (let i = 0; i < missingRows.length; i += batchSize) {
     const batch = missingRows.slice(
@@ -142,39 +142,31 @@ export async function addMissingCurationRows(
 
     const startRow = existingData.length + i + 4;
     const endRow = startRow + batch.length - 1;
-    const rangeAddress = `B${startRow}:W${endRow}`;
+    const range = `${sheetName}!B${startRow}:W${endRow}`;
 
     try {
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
-      await axios.patch(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-        { values },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        const refreshedToken = await getGraphToken();
+      if ((err as any)?.status === 401) {
+        const refreshedToken = await getGoogleToken();
         if (!refreshedToken)
           throw new Error('토큰 재발급 실패, 엑셀 업데이트 중단');
 
         token = refreshedToken;
         localStorage.setItem('loginToken', token);
 
-        await axios.patch(
-          `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-          { values },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range,
+          valueInputOption: 'USER_ENTERED',
+          resource: { values },
+        });
       } else {
         throw err;
       }

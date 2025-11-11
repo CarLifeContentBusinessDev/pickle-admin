@@ -33,7 +33,15 @@ export async function fetchAllData(
     for (let page = 1; page <= totalPages; page++) {
       setProgress(`${Math.round((page / totalPages) / 2 * 100)}%`);
       const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
-      allData = allData.concat(res.data.data.dataList);
+      const dataList = res.data.data.dataList;
+
+      // 첫 페이지 첫 번째 데이터의 dispDtime 확인 (디버깅용)
+      if (page === 1 && dataList.length > 0 && category === 'channel') {
+        console.log('채널 API 응답 첫 번째 데이터:', dataList[0]);
+        console.log('dispDtime 값:', dataList[0].dispDtime);
+      }
+
+      allData = allData.concat(dataList);
     }
 
     return allData;

@@ -50,8 +50,8 @@ const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
                 <p className='w-[9%] px-2'>{epi.playTime}</p>
                 <p className='w-[7%] px-2'>{epi.likeCnt}</p>
                 <p className='w-[7%] px-2'>{epi.listenCnt}</p>
-                <p className='w-[7%] px-2'>{epi.tags}</p>
-                <p className='w-[7%] px-2'>{epi.tagsAdded}</p>
+                <p className='w-[7%] px-2'>{epi.thumbnailUrl}</p>
+                <p className='w-[7%] px-2'>{epi.audioUrl}</p>
               </div>
             );
           })}
