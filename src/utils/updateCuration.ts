@@ -1,5 +1,6 @@
 import type { usingCurationExcelProps } from '../type';
 import formatDateString from './formatDateString';
+import { formatPlayTime, parsePlayTime } from './formatPlayTime';
 import { getGoogleToken, getSheetsClient } from './auth';
 import { toast } from 'react-toastify';
 import { getUsedRange } from './updateExcel';
@@ -80,7 +81,7 @@ export async function getCurationExcelData(
         episodeName: String(row[15] ?? ''),
         dispDtime: String(row[16] ?? ''),
         createdAt: String(row[17] ?? ''),
-        playTime: Number(row[18] ?? 0),
+        playTime: parsePlayTime(row[18] ?? 0),
         likeCnt: Number(row[19] ?? 0),
         listenCnt: Number(row[20] ?? 0),
         uploader: String(row[21] ?? ''),
@@ -134,7 +135,7 @@ export async function addMissingCurationRows(
       row.episodeName,
       formatDateString(row.dispDtime),
       formatDateString(row.createdAt),
-      row.playTime,
+      formatPlayTime(row.playTime ?? 0),
       row.likeCnt,
       row.listenCnt,
       row.uploader,

@@ -1,5 +1,6 @@
 import type { usingChannelProps, usingDataProps } from '../type';
 import formatDateString from './formatDateString';
+import { formatPlayTime, parsePlayTime } from './formatPlayTime';
 import { getGoogleToken, getSheetsClient } from './auth';
 import { toast } from 'react-toastify';
 
@@ -91,7 +92,7 @@ export async function getExcelData(
             episodeName: String(row[3] ?? ''),
             dispDtime: String(row[4] ?? ''),
             createdAt: String(row[5] ?? ''),
-            playTime: Number(row[6] ?? 0),
+            playTime: parsePlayTime(row[6] ?? 0),
             likeCnt: Number(row[7] ?? 0),
             listenCnt: Number(row[8] ?? 0),
             thumbnailUrl: String(row[9] ?? ''),
@@ -159,7 +160,7 @@ export async function getExcelLastData() {
           episodeName: String(row[3] ?? ''),
           dispDtime: String(row[4] ?? ''),
           createdAt: String(row[5] ?? ''),
-          playTime: Number(row[6] ?? 0),
+          playTime: parsePlayTime(row[6] ?? 0),
           likeCnt: Number(row[7] ?? 0),
           listenCnt: Number(row[8] ?? 0),
           thumbnailUrl: String(row[9] ?? ''),
@@ -248,7 +249,7 @@ export async function addMissingRows(
           row.episodeName,
           formatDateString(row.dispDtime),
           formatDateString(row.createdAt),
-          row.playTime,
+          formatPlayTime(row.playTime),
           row.likeCnt,
           row.listenCnt,
           row.thumbnailUrl,
@@ -340,7 +341,7 @@ export async function overwriteExcelData(
         row.episodeName,
         formatDateString(row.dispDtime),
         formatDateString(row.createdAt),
-        row.playTime,
+        formatPlayTime(row.playTime),
         row.likeCnt,
         row.listenCnt,
         row.thumbnailUrl,

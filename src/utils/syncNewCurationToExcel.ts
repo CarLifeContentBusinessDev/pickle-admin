@@ -2,6 +2,7 @@ import { getUsedRange } from './updateExcel';
 import type { usingCurationExcelProps } from '../type';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
+import { formatPlayTime } from './formatPlayTime';
 import { getCurationExcelData } from './updateCuration';
 import { getSheetsClient } from './auth';
 
@@ -87,7 +88,7 @@ async function overwriteExcelData(
         row.episodeName,
         excelDateTime(row.dispDtime),
         excelDateTime(row.createdAt),
-        row.playTime,
+        formatPlayTime(row.playTime ?? 0),
         row.likeCnt,
         row.listenCnt,
         row.uploader,
