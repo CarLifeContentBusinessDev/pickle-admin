@@ -84,7 +84,7 @@ const EpisodeLayout = () => {
 
     localStorage.setItem('sheetName', 'Episode_Logs');
     setSelectedSheet('Episode_Logs');
-    
+
     await syncNewDuplicateDataToExcel(
       duplicateNewEpi,
       loginToken,
@@ -123,8 +123,8 @@ const EpisodeLayout = () => {
           loading={allLoading}
         ></LoadingOverlay>
       </div>
-      <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
-        <div className='flex justify-between items-center h-[10%]'>
+      <div className='w-full rounded-2xl bg-white h-[180%] mt-4 p-8'>
+        <div className='flex justify-between items-center h-[5%]'>
           <h3 className='mb-6 text-[#3c25cc] font-semibold'>
             새로운 에피소드 총{' '}
             <span className='font-extrabold'>{newEpi.length}</span>개
@@ -176,6 +176,10 @@ const EpisodeLayout = () => {
             잠시만 기다려주세요!
           </LoadingOverlay>
           {!loading && <EpisodeList data={newEpi} />}
+          <h2 className='mb-6 text-[#3c25cc] font-semibold'>
+            변경된 에피소드{' '}
+            <span className='font-extrabold'>{duplicateNewEpi.length}</span>개{' '}
+          </h2>
           {!loading && <EpisodeList data={duplicateNewEpi} />}
         </div>
       </div>
