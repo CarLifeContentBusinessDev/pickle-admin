@@ -92,7 +92,7 @@ export async function getNewData(
 }
 
 export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
-  const batchSize = 1000;
+  const batchSize = 10000;
   let allApiData: usingDataProps[] = [];
 
   const firstRes = await api.get(`/admin/episode?page=1&size=1`);
@@ -108,7 +108,8 @@ export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
     const pageData = res.data.data.dataList;
     if (pageData.length === 0) break;
 
-    const dbDate = new Date(pageData[batchSize - 1].createdAt);
+    const lastIndex = pageData.length - 1;
+    const dbDate = new Date(pageData[lastIndex].createdAt);
     const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
 
     allApiData = allApiData.concat(pageData);

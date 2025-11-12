@@ -1,11 +1,12 @@
 import { getUsedRange } from './updateExcel';
 import type { usingCurationExcelProps } from '../type';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
+import { formatPlayTime } from './formatPlayTime';
 import { getCurationExcelData } from './updateCuration';
+import { getSheetsClient } from './auth';
 
-const fileId = import.meta.env.VITE_FILE_ID;
+const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 const sheetName = localStorage.getItem('sheetName');
 
 function delay(ms: number) {
@@ -14,15 +15,17 @@ function delay(ms: number) {
 
 async function clearExcelFromRow(
   startRow: number,
-  endRow: number,
-  token: string
+  endRow: number
 ) {
   try {
-    await axios.post(
-      `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='B${startRow}:W${endRow}')/clear`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const sheets = getSheetsClient();
+    const range = `${sheetName}!B${startRow}:W${endRow}`;
+
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId,
+      range,
+      resource: {},
+    });
     await delay(500);
   } catch (err) {
     console.error('엑셀 삭제 실패:', err);
@@ -52,15 +55,16 @@ function excelDateTime(date?: string | number) {
 
 async function overwriteExcelData(
   newData: usingCurationExcelProps[],
-  token: string,
   setProgress: (progress: string) => void
 ) {
-  const existingData = await getUsedRange(token);
+  const existingData = await getUsedRange();
   const totalRowsToClear = Math.max(newData.length + 3, existingData!);
-  await clearExcelFromRow(4, totalRowsToClear, token);
+  await clearExcelFromRow(4, totalRowsToClear);
   const batchSize = 1000;
 
   try {
+    const sheets = getSheetsClient();
+
     for (let i = 0; i < newData.length; i += batchSize) {
       setProgress(`${Math.round((i / newData.length) * 100)}%`);
       const batch = newData.slice(i, i + batchSize);
@@ -84,7 +88,7 @@ async function overwriteExcelData(
         row.episodeName,
         excelDateTime(row.dispDtime),
         excelDateTime(row.createdAt),
-        row.playTime,
+        formatPlayTime(row.playTime ?? 0),
         row.likeCnt,
         row.listenCnt,
         row.uploader,
@@ -92,18 +96,14 @@ async function overwriteExcelData(
 
       const startRow = i + 4;
       const endRow = startRow + batch.length - 1;
-      const rangeAddress = `B${startRow}:W${endRow}`;
+      const range = `${sheetName}!B${startRow}:W${endRow}`;
 
-      await axios.patch(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${fileId}/workbook/worksheets('${sheetName}')/range(address='${rangeAddress}')`,
-        { values },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values },
+      });
     }
 
     toast.success('엑셀 동기화에 성공했습니다!');
@@ -130,7 +130,7 @@ async function syncNewCurationToExcel(
 
   const updatedData = [...filteredNew, ...excelData];
 
-  await overwriteExcelData(updatedData, token, setProgress);
+  await overwriteExcelData(updatedData, setProgress);
 }
 
 export default syncNewCurationToExcel;

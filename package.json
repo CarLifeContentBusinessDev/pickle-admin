@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google-cloud/local-auth": "^3.0.1",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/postcss": "^4.1.14",
     "@tailwindcss/vite": "^4.1.14",
     "@tanstack/react-virtual": "^3.13.12",
     "axios": "^1.12.2",
+    "googleapis": "^165.0.0",
     "postcss": "^8.5.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
@@ -22,14 +24,13 @@
     "react-toastify": "^11.0.5",
     "react-virtualized-auto-sizer": "^1.0.26",
     "tailwindcss": "^4.1.14",
-    "xlsx": "^0.18.5",
-    "xlsx-js-style": "^1.2.0",
-    "xlsx-style": "^0.8.13",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
-    "@azure/msal-browser": "^4.25.0",
     "@eslint/js": "^9.36.0",
+    "@types/gapi": "^0.0.47",
+    "@types/gapi.auth2": "^0.0.61",
+    "@types/gapi.client.sheets": "^4.0.20201031",
     "@types/node": "^24.6.0",
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",

@@ -133,6 +133,7 @@ const ChannelLayout = () => {
             <p className='w-[9%] px-2'>채널명</p>
             <p className='w-[9%] px-2'>카테고리ID</p>
             <p className='w-[12%] px-2'>등록일</p>
+            <p className='w-[12%] px-2'>최근 에피소드 업로드일</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 채널·도서 목록을 불러오는 중입니다.

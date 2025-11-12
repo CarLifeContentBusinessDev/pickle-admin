@@ -10,8 +10,6 @@ export interface usingDataProps {
   likeCnt: number;
   listenCnt: number;
   playTime: number;
-  tags: string;
-  tagsAdded: string;
   thumbnailUrl: string;
   audioUrl: string;
 }
