@@ -85,9 +85,9 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
                   </p>
                   <p
                     className='w-[9%] h-full px-2 cursor-pointer hover:bg-gray-200 transition rounded'
-                    onClick={() => handleCopy(channel.categoryName)}
+                    onClick={() => handleCopy(channel.channelName)}
                   >
-                    {channel.categoryName}
+                    {channel.channelName}
                   </p>
                   <p
                     className='w-[9%] h-full px-2 cursor-pointer hover:bg-gray-200 transition rounded'
