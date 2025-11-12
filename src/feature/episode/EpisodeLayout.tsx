@@ -167,8 +167,8 @@ const EpisodeLayout = () => {
             <p className='w-[9%] px-2'>에피소드 시간</p>
             <p className='w-[7%] px-2'>좋아요수</p>
             <p className='w-[7%] px-2'>청취수</p>
-            <p className='w-[7%] px-2'>tags</p>
-            <p className='w-[7%] px-2'>tagsadded</p>
+            <p className='w-[7%] px-2'>썸네일URL</p>
+            <p className='w-[7%] px-2'>오디오URL</p>
           </div>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 에피소드 목록을 불러오는 중입니다.

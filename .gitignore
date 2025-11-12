@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 claude.md
+MIGRATION_GUIDE.md
+README_MIGRATION.md
+
+.env

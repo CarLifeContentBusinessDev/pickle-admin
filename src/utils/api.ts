@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-const FILEID = import.meta.env.VITE_FILE_ID;
-
 const api = axios.create({
   baseURL: 'https://pickle.obigo.ai',
 });
@@ -29,19 +27,4 @@ api.interceptors.response.use((response) => {
   return response;
 });
 
-const excelApi = axios.create({
-  baseURL: `https://graph.microsoft.com/v1.0/me/drive/items/${FILEID}/workbook`,
-});
-
-excelApi.interceptors.request.use(
-  (config) => {
-    const loginToken = localStorage.getItem('loginToken');
-    if (loginToken) {
-      config.headers.Authorization = `Bearer ${loginToken}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-export { api, excelApi };
+export { api };

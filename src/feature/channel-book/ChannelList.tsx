@@ -103,6 +103,14 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
                   >
                     {formatDateString(channel.createdAt)}
                   </p>
+                  <p
+                    className='w-[12%] h-full px-2 cursor-pointer hover:bg-gray-200 transition rounded'
+                    onClick={() =>
+                      handleCopy(formatDateString(channel.dispDtime))
+                    }
+                  >
+                    {formatDateString(channel.dispDtime)}
+                  </p>
                 </div>
               );
             })}

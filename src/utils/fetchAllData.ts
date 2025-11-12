@@ -33,7 +33,36 @@ export async function fetchAllData(
     for (let page = 1; page <= totalPages; page++) {
       setProgress(`${Math.round((page / totalPages) / 2 * 100)}%`);
       const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
-      allData = allData.concat(res.data.data.dataList);
+      const dataList = res.data.data.dataList;
+
+      allData = allData.concat(dataList);
+    }
+
+    if (category === 'channel') {
+      const channelData = allData as usingChannelProps[];
+
+      for (let i = 0; i < channelData.length; i++) {
+        const channel = channelData[i];
+
+        try {
+          setProgress(`${Math.round(50 + (i / channelData.length) * 50)}%`);
+
+          const episodeRes = await api.get(
+            `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`
+          );
+
+          const episodes = episodeRes.data.data.dataList;
+
+          if (episodes && episodes.length > 0) {
+            channel.dispDtime = episodes[0].dispDtime || '';
+          } else {
+            channel.dispDtime = '';
+          }
+        } catch (err) {
+          console.error(`채널 ${channel.channelId}의 에피소드 조회 실패:`, err);
+          channel.dispDtime = '';
+        }
+      }
     }
 
     return allData;

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getGraphToken } from '../utils/auth';
+import { getGoogleToken, googleLogout, initializeGoogleAPI, initializeGIS } from '../utils/auth';
 import LoginPopup from '../feature/login/Login';
 import Button from '../components/Button';
 import type { LoginResponseData } from '../type';
@@ -12,12 +12,24 @@ const Header = () => {
   const { loginToken, setLoginToken } = useLoginTokenStore();
   const { accessToken, setAccessToken, clearAccessToken } = useAccessTokenStore();
 
+  useEffect(() => {
+    const initGoogle = async () => {
+      try {
+        await initializeGoogleAPI();
+        await initializeGIS();
+      } catch (error) {
+        console.error('Google API 초기화 실패:', error);
+      }
+    };
+    initGoogle();
+  }, []);
+
   const handleLogin = async () => {
     if (!accessToken) return toast.warn('관리자 로그인을 먼저 해주세요!');
-    const token = await getGraphToken();
+    const token = await getGoogleToken();
     if (token && localStorage.getItem('accessToken')) {
       setLoginToken(token);
-      toast.success('MS 로그인에 성공하였습니다.');
+      toast.success('Google 로그인에 성공하였습니다.');
     }
   };
 
@@ -30,6 +42,7 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem('refreshToken');
     clearAccessToken();
+    googleLogout();
     window.location.reload();
   };
 
@@ -50,7 +63,7 @@ const Header = () => {
             <Button onClick={handleLogout}>관리자 로그아웃</Button>
           )}
           {!loginToken && (
-            <Button onClick={handleLogin}>MS Graph 로그인</Button>
+            <Button onClick={handleLogin}>Google Sheets 로그인</Button>
           )}
         </div>
       </div>
