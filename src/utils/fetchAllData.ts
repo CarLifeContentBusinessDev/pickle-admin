@@ -11,19 +11,28 @@ const CURATIONSIZE = 100;
 
 export async function fetchAllData(
   category: 'channel',
-  setProgress: (message: string) => void
+  setProgress: (message: string) => void,
+  signal?: AbortSignal
 ): Promise<usingChannelProps[]>;
 export async function fetchAllData(
   category: 'episode',
-  setProgress: (message: string) => void
+  setProgress: (message: string) => void,
+  signal?: AbortSignal
 ): Promise<usingDataProps[]>;
 
 export async function fetchAllData(
   category: string,
-  setProgress: (message: string) => void
+  setProgress: (message: string) => void,
+  signal?: AbortSignal
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const firstRes = await api.get(`/admin/${category}?page=1&size=${SIZE}`);
+    if (signal?.aborted) {
+      return [];
+    }
+
+    const firstRes = await api.get(`/admin/${category}?page=1&size=${SIZE}`, {
+      signal
+    });
 
     const totalCount = firstRes.data.data.pageInfo.totalCount;
     const totalPages = Math.ceil(totalCount / SIZE);
@@ -31,8 +40,14 @@ export async function fetchAllData(
     let allData: (usingDataProps | usingChannelProps)[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
+      if (signal?.aborted) {
+        return [];
+      }
+
       setProgress(`${Math.round((page / totalPages) / 2 * 100)}%`);
-      const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`);
+      const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`, {
+        signal
+      });
       const dataList = res.data.data.dataList;
 
       allData = allData.concat(dataList);
@@ -42,13 +57,18 @@ export async function fetchAllData(
       const channelData = allData as usingChannelProps[];
 
       for (let i = 0; i < channelData.length; i++) {
+        if (signal?.aborted) {
+          return [];
+        }
+
         const channel = channelData[i];
 
         try {
           setProgress(`${Math.round(50 + (i / channelData.length) * 50)}%`);
 
           const episodeRes = await api.get(
-            `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`
+            `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`,
+            { signal }
           );
 
           const episodes = episodeRes.data.data.dataList;
@@ -59,6 +79,9 @@ export async function fetchAllData(
             channel.dispDtime = '';
           }
         } catch (err) {
+          if ((err as any).name === 'AbortError' || (err as any).name === 'CanceledError') {
+            return [];
+          }
           console.error(`채널 ${channel.channelId}의 에피소드 조회 실패:`, err);
           channel.dispDtime = '';
         }
@@ -67,6 +90,9 @@ export async function fetchAllData(
 
     return allData;
   } catch (err) {
+    if ((err as any).name === 'AbortError' || (err as any).name === 'CanceledError') {
+      return [];
+    }
     console.error('데이터 API 가져오기 실패:', err);
     return [];
   }

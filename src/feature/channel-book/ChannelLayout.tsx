@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { addMissingRows } from '../../utils/updateExcel';
@@ -30,16 +30,34 @@ const ChannelLayout = () => {
   );
   const [addData, setAddData] = useState<usingChannelProps[]>([]);
 
+  // AbortController를 ref로 관리
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     if (loginToken) {
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
     }
   }, []);
 
+  const cancelOngoingWork = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  };
+
   useEffect(() => {
-    const addData = async () => await fetchAllData(CATEGORY, setProgress);
+    cancelOngoingWork();
+
+    abortControllerRef.current = new AbortController();
+
+    const addData = async () =>
+      await fetchAllData(CATEGORY, setProgress, abortControllerRef.current!.signal);
 
     addData().then(setAddData);
+
+    return () => {
+      cancelOngoingWork();
+    };
   }, []);
 
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -54,6 +72,9 @@ const ChannelLayout = () => {
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
+      cancelOngoingWork();
+      setAddData([]);
+
       const allData = await fetchAllData(CATEGORY, setProgress);
       await addMissingRows(allData, loginToken, setProgress, CATEGORY, setAllLoading);
     }
@@ -61,10 +82,16 @@ const ChannelLayout = () => {
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
+
+    cancelOngoingWork();
+    setAddData([]);
+
     await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY, setExcelLoading);
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
+    cancelOngoingWork();
+
     setLoading(true);
     setAddData([]);
     const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
