@@ -1,16 +1,15 @@
-// 초 단위를 "hh시 mm분 ss초" 형식으로 변환
 export function formatPlayTime(seconds: number | string): string {
   const totalSeconds = typeof seconds === 'string' ? parseInt(seconds, 10) : seconds;
 
   if (isNaN(totalSeconds) || totalSeconds < 0) {
-    return '0시 0분 0초';
+    return '0시간 0분 0초';
   }
 
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const secs = totalSeconds % 60;
 
-  return `${hours}시 ${minutes}분 ${secs}초`;
+  return `${hours}시간 ${minutes}분 ${secs}초`;
 }
 
 export function parsePlayTime(timeString: string | number): number {
