@@ -2,26 +2,15 @@ import type { usingCurationExcelProps, usingCurationProps } from '../type';
 import { api } from './api';
 import { getCurationExcelData } from './updateCuration';
 
-function excelDateToJSDate(serial: number): Date {
-  const millisPerDay = 24 * 60 * 60 * 1000;
-  const excelEpochMillis = Date.UTC(1899, 11, 30);
-  const targetMillis = excelEpochMillis + serial * millisPerDay;
-
-  return new Date(targetMillis);
-}
-
-function findLatestTimeInExcel(excelData: usingCurationExcelProps[]): number {
+function findMaxEpisodeIdInExcel(
+  excelData: usingCurationExcelProps[]
+): number {
   if (excelData.length === 0) return 0;
 
-  const latestSerial = excelData.reduce((max, item) => {
-    const currentSerial = Number(item.curationCreatedAt);
-    return currentSerial > max ? currentSerial : max;
+  return excelData.reduce((maxId, item) => {
+    const currentId = item.episodeId ?? 0;
+    return currentId > maxId ? currentId : maxId;
   }, 0);
-
-  if (latestSerial === 0) return 0;
-
-  const latestDateInExcel = excelDateToJSDate(latestSerial);
-  return latestDateInExcel.getTime();
 }
 
 export async function getNewCurationData(
@@ -30,8 +19,7 @@ export async function getNewCurationData(
 ): Promise<usingCurationExcelProps[]> {
   const excelData = await getCurationExcelData(token);
 
-  if (excelData.length === 0) return [];
-  const latestTime = findLatestTimeInExcel(excelData);
+  const maxEpisodeId = findMaxEpisodeIdInExcel(excelData);
 
   const size = 100;
   const firstRes = await api.get(
@@ -53,13 +41,7 @@ export async function getNewCurationData(
       `/admin/curation?page=${page}&size=${size}&periodType=ALL`
     );
     const pageData = res.data.data.dataList;
-    const dbDate = new Date(pageData[0].createdAt);
-    const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
-
     allApiData = allApiData.concat(pageData);
-    if (pageTime <= latestTime) {
-      break;
-    }
   }
 
   let allEpiData: usingCurationExcelProps[] = [];
@@ -99,10 +81,8 @@ export async function getNewCurationData(
   }
 
   const newEpisodes = allEpiData.filter((item) => {
-    const dbDateForItem = new Date(item.curationCreatedAt);
-    const itemTime =
-      dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
-    return itemTime > latestTime + 1000;
+    const episodeId = item.episodeId ?? 0;
+    return episodeId > maxEpisodeId;
   });
 
   return newEpisodes;

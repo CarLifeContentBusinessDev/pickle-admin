@@ -1,29 +1,18 @@
 import type { usingChannelProps, usingDataProps } from '../type';
 import { api } from './api';
-import { getExcelData, getExcelLastData } from './updateExcel';
+import { getExcelData } from './updateExcel';
 
-function excelDateToJSDate(serial: number): Date {
-  const millisPerDay = 24 * 60 * 60 * 1000;
-  const excelEpochMillis = Date.UTC(1899, 11, 30);
-  const targetMillis = excelEpochMillis + serial * millisPerDay;
-
-  return new Date(targetMillis);
-}
-
-function findLatestTimeInExcel(
+function findMaxIdInExcel(
   excelData: (usingDataProps | usingChannelProps)[]
 ): number {
   if (excelData.length === 0) return 0;
 
-  const latestSerial = excelData.reduce((max, item) => {
-    const currentSerial = Number(item.createdAt);
-    return currentSerial > max ? currentSerial : max;
+  const maxId = excelData.reduce((maxId, item) => {
+    const currentId = 'episodeId' in item ? item.episodeId : item.channelId;
+    return currentId > maxId ? currentId : maxId;
   }, 0);
 
-  if (latestSerial === 0) return 0;
-
-  const latestDateInExcel = excelDateToJSDate(latestSerial);
-  return latestDateInExcel.getTime();
+  return maxId;
 }
 
 export async function getNewData(
@@ -46,9 +35,8 @@ export async function getNewData(
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   const excelData = await getExcelData(token, category);
-  if (excelData.length === 0) return [];
 
-  const latestTime = findLatestTimeInExcel(excelData);
+  const maxId = findMaxIdInExcel(excelData);
 
   const size = 1000;
   const firstRes = await api.get(`/admin/${category}?page=1&size=${size}`, {
@@ -72,23 +60,16 @@ export async function getNewData(
     });
     addProgress();
     const pageData = res.data.data.dataList;
-    const dbDate = new Date(pageData[0].createdAt);
-    const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
-
     allApiData = allApiData.concat(pageData);
-    if (pageTime <= latestTime) {
-      break;
-    }
   }
 
-  const newEpisodes = allApiData.filter((item) => {
-    const dbDateForItem = new Date(item.createdAt);
-    const itemTime =
-      dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
-    return itemTime > latestTime + 1000;
+  const newData = allApiData.filter((item) => {
+    const currentId = 'episodeId' in item ? item.episodeId :
+                      'channelId' in item ? item.channelId : 0;
+    return currentId > maxId;
   });
 
-  return newEpisodes;
+  return newData;
 }
 
 export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
@@ -99,8 +80,9 @@ export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / batchSize);
 
-  const excelLastData = await getExcelLastData();
-  const latestTime = findLatestTimeInExcel(excelLastData);
+  const token = '';
+  const allExcelData = await getExcelData(token, 'episode');
+  const maxId = findMaxIdInExcel(allExcelData);
 
   for (let i = 0; i < totalPages; i++) {
     const res = await api.get(`/admin/episode?page=${i + 1}&size=${batchSize}`);
@@ -108,21 +90,11 @@ export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
     const pageData = res.data.data.dataList;
     if (pageData.length === 0) break;
 
-    const lastIndex = pageData.length - 1;
-    const dbDate = new Date(pageData[lastIndex].createdAt);
-    const pageTime = dbDate.getTime() - dbDate.getTimezoneOffset() * 60 * 1000;
-
     allApiData = allApiData.concat(pageData);
-    if (pageTime <= latestTime) {
-      break;
-    }
   }
 
   const newEpisodes = allApiData.filter((item) => {
-    const dbDateForItem = new Date(item.createdAt);
-    const itemTime =
-      dbDateForItem.getTime() - dbDateForItem.getTimezoneOffset() * 60 * 1000;
-    return itemTime > latestTime + 1000;
+    return item.episodeId > maxId;
   });
 
   return newEpisodes;
