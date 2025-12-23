@@ -123,9 +123,9 @@ const EpisodeLayout = () => {
           loading={allLoading}
         ></LoadingOverlay>
       </div>
-      <div className='w-full rounded-2xl bg-white h-[180%] mt-4 p-8'>
+      <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
         <div className='flex justify-between items-center h-[5%]'>
-          <h3 className='mb-6 text-[#3c25cc] font-semibold'>
+          <h3 className='text-[#3c25cc] font-semibold'>
             새로운 에피소드 총{' '}
             <span className='font-extrabold'>{newEpi.length}</span>개
           </h3>
@@ -156,21 +156,7 @@ const EpisodeLayout = () => {
             <Button onClick={handleSyncExcel}>Excel 동기화</Button>
           </div>
         </div>
-        <div className='w-full h-[90%] gap-4 flex flex-col'>
-          <div className='min-w-max flex font-bold py-5'>
-            <p className='w-[7%] px-2'>에피소드ID</p>
-            <p className='w-[7%] px-2'>활성화</p>
-            <p className='w-[12%] px-2'>채널명</p>
-            <p className='w-[13%] px-2'>에피소드명</p>
-            <p className='w-[12%] px-2'>게시일</p>
-            <p className='w-[12%] px-2'>등록일</p>
-            <p className='w-[9%] px-2'>에피소드 시간</p>
-            <p className='w-[7%] px-2'>좋아요수</p>
-            <p className='w-[7%] px-2'>청취수</p>
-            <p className='w-[7%] px-2'>썸네일URL</p>
-            <p className='w-[7%] px-2'>오디오URL</p>
-            <p className='w-[7%] px-2'>채널ID</p>
-          </div>
+        <div className='w-full h-[90%] gap-4 flex flex-col mt-4'>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 에피소드 목록을 불러오는 중입니다.
             <br />
@@ -179,7 +165,8 @@ const EpisodeLayout = () => {
           {!loading && <EpisodeList data={newEpi} />}
           <h2 className='mb-6 text-[#3c25cc] font-semibold'>
             변경된 에피소드{' '}
-            <span className='font-extrabold'>{duplicateNewEpi.length}</span>개{' '}
+            <span className='font-extrabold'>{duplicateNewEpi.length}</span>
+            개{' '}
           </h2>
           {!loading && <EpisodeList data={duplicateNewEpi} />}
         </div>
