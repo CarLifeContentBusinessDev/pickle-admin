@@ -3,6 +3,30 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import type { usingDataProps } from '../../type';
 import formatDateString from '../../utils/formatDateString';
 
+const HeaderColumn = ({ label, width }: { label: string; width: string }) => {
+  return (
+    <p className='px-2 flex-shrink-0' style={{ width: width }}>
+      {label}
+    </p>
+  );
+};
+
+const ContentColumn = ({
+  className,
+  value,
+  width,
+}: {
+  className: string;
+  value: string | number;
+  width: string;
+}) => {
+  return (
+    <p className={className} style={{ width: width }}>
+      {value}
+    </p>
+  );
+};
+
 const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
   const parentRef = useRef<HTMLDivElement>(null);
 
@@ -13,108 +37,114 @@ const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
     overscan: 10,
   });
 
-  const columnWidths = {
-    episodeId: '120px',
-    usageYn: '80px',
-    channelName: '180px',
-    episodeName: '400px',
-    dispDtime: '180px',
-    createdAt: '180px',
-    playTime: '120px',
-    likeCnt: '90px',
-    listenCnt: '90px',
-    thumbnailUrl: '180px',
-    audioUrl: '180px',
-    channelId: '120px',
-  };
+  const hasData = data.length > 0;
+
+  const columns = [
+    {
+      key: 'episodeId',
+      label: '에피소드ID',
+      width: '120px',
+      noDataWidth: '100px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'usageYn',
+      label: '활성화',
+      width: '80px',
+      noDataWidth: '80px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'channelName',
+      label: '채널명',
+      width: '180px',
+      noDataWidth: '120px',
+      className: 'px-2 line-clamp-2 break-words flex-shrink-0',
+    },
+    {
+      key: 'episodeName',
+      label: '에피소드명',
+      width: '400px',
+      noDataWidth: '120px',
+      className: 'px-2 line-clamp-2 break-words flex-shrink-0',
+    },
+    {
+      key: 'dispDtime',
+      label: '게시일',
+      width: '180px',
+      noDataWidth: '100px',
+      className: 'px-2 truncate flex-shrink-0',
+    },
+    {
+      key: 'createdAt',
+      label: '등록일',
+      width: '180px',
+      noDataWidth: '100px',
+      className: 'px-2 truncate flex-shrink-0',
+    },
+    {
+      key: 'playTime',
+      label: '에피소드 시간',
+      width: '120px',
+      noDataWidth: '120px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'likeCnt',
+      label: '좋아요수',
+      width: '90px',
+      noDataWidth: '90px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'listenCnt',
+      label: '청취수',
+      width: '90px',
+      noDataWidth: '90px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'thumbnailUrl',
+      label: '썸네일 URL',
+      width: '180px',
+      noDataWidth: '100px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'audioUrl',
+      label: '오디오 URL',
+      width: '180px',
+      noDataWidth: '120px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+    {
+      key: 'channelId',
+      label: '채널ID',
+      width: '120px',
+      noDataWidth: '120px',
+      className: 'px-3 truncate flex-shrink-0',
+    },
+  ];
 
   return (
-    <div className='w-full h-[75%] flex flex-col'>
-      {/* 헤더 */}
-      <div
-        ref={parentRef}
-        className='w-full overflow-auto'
-        style={{ height: '100%' }}
-      >
-        <div style={{ minWidth: 'max-content' }}>
+    <div
+      className={`w-full flex flex-col min-h-0 ${hasData ? 'flex-[2]' : 'flex-[1]'}`}
+    >
+      <div ref={parentRef} className='w-full flex-1 overflow-auto'>
+        <div style={{ minWidth: hasData ? 'max-content' : 'auto' }}>
           {/* 고정 헤더 */}
           <div className='flex font-bold py-4 bg-white border-b-2 border-gray-300 sticky top-0 z-10'>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.episodeId }}
-            >
-              에피소드ID
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.usageYn }}
-            >
-              활성화
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.channelName }}
-            >
-              채널명
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.episodeName }}
-            >
-              에피소드명
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.dispDtime }}
-            >
-              게시일
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.createdAt }}
-            >
-              등록일
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.playTime }}
-            >
-              에피소드 시간
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.likeCnt }}
-            >
-              좋아요수
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.listenCnt }}
-            >
-              청취수
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.thumbnailUrl }}
-            >
-              썸네일URL
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.audioUrl }}
-            >
-              오디오URL
-            </p>
-            <p
-              className='px-2 flex-shrink-0'
-              style={{ width: columnWidths.channelId }}
-            >
-              채널ID
-            </p>
+            {columns.map((column) => (
+              <HeaderColumn
+                key={column.key}
+                label={column.label}
+                width={hasData ? column.width : column.noDataWidth}
+              />
+            ))}
           </div>
 
           {/* 데이터 리스트 */}
-          {data.length > 0 ? (
+          {hasData ? (
             <div
               style={{
                 height: `${rowVirtualizer.getTotalSize()}px`,
@@ -133,84 +163,26 @@ const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
                       height: `${virtualRow.size}px`,
                     }}
                   >
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.episodeId }}
-                    >
-                      {epi.episodeId}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.usageYn }}
-                    >
-                      {epi.usageYn}
-                    </p>
-                    <p
-                      className='px-2 line-clamp-2 break-words flex-shrink-0'
-                      style={{ width: columnWidths.channelName }}
-                    >
-                      {epi.channelName}
-                    </p>
-                    <p
-                      className='px-2 line-clamp-2 break-words flex-shrink-0'
-                      style={{ width: columnWidths.episodeName }}
-                    >
-                      {epi.episodeName}
-                    </p>
-                    <p
-                      className='px-2 truncate flex-shrink-0'
-                      style={{ width: columnWidths.dispDtime }}
-                    >
-                      {formatDateString(epi.dispDtime)}
-                    </p>
-                    <p
-                      className='px-2 truncate flex-shrink-0'
-                      style={{ width: columnWidths.createdAt }}
-                    >
-                      {formatDateString(epi.createdAt)}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.playTime }}
-                    >
-                      {epi.playTime}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.likeCnt }}
-                    >
-                      {epi.likeCnt}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.listenCnt }}
-                    >
-                      {epi.listenCnt}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.thumbnailUrl }}
-                    >
-                      {epi.thumbnailUrl}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.audioUrl }}
-                    >
-                      {epi.audioUrl}
-                    </p>
-                    <p
-                      className='px-3 truncate flex-shrink-0'
-                      style={{ width: columnWidths.channelId }}
-                    >
-                      {epi.channelId}
-                    </p>
+                    {columns.map((column) => (
+                      <ContentColumn
+                        key={column.key}
+                        className={column.className}
+                        value={
+                          column.key === 'dispDtime'
+                            ? formatDateString(epi.dispDtime)
+                            : column.key === 'createdAt'
+                              ? formatDateString(epi.createdAt)
+                              : (epi as any)[column.key]
+                        }
+                        width={column.width}
+                      />
+                    ))}
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className='w-full h-[100px] flex justify-center items-center'>
+            <div className='w-full flex items-center justify-center pt-10'>
               새로 등록된 에피소드가 존재하지 않습니다.
             </div>
           )}

@@ -106,7 +106,7 @@ const EpisodeLayout = () => {
   };
 
   return (
-    <div className='p-10 h-[80%]'>
+    <div className='p-10 flex flex-col h-screen'>
       <h1 className='text-3xl font-bold mb-4 indent-1'>에피소드 관리</h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 에피소드 시트로 변환</Button>
@@ -123,8 +123,8 @@ const EpisodeLayout = () => {
           loading={allLoading}
         ></LoadingOverlay>
       </div>
-      <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
-        <div className='flex justify-between items-center h-[5%]'>
+      <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
+        <div className='flex justify-between items-center flex-shrink-0'>
           <h3 className='text-[#3c25cc] font-semibold'>
             새로운 에피소드 총{' '}
             <span className='font-extrabold'>{newEpi.length}</span>개
@@ -156,17 +156,18 @@ const EpisodeLayout = () => {
             <Button onClick={handleSyncExcel}>Excel 동기화</Button>
           </div>
         </div>
-        <div className='w-full h-[90%] gap-4 flex flex-col mt-4'>
+        <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 에피소드 목록을 불러오는 중입니다.
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
+
           {!loading && <EpisodeList data={newEpi} />}
-          <h2 className='mb-6 text-[#3c25cc] font-semibold'>
-            변경된 에피소드{' '}
-            <span className='font-extrabold'>{duplicateNewEpi.length}</span>
-            개{' '}
+
+          <h2 className='mt-6 text-[#3c25cc] font-semibold flex-shrink-0'>
+            변경된 에피소드 총{' '}
+            <span className='font-extrabold'>{duplicateNewEpi.length}</span>개
           </h2>
           {!loading && <EpisodeList data={duplicateNewEpi} />}
         </div>
