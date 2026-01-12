@@ -125,7 +125,7 @@ const EpisodeLayout = () => {
       </div>
       <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
         <div className='flex justify-between items-center flex-shrink-0'>
-          <h3 className='text-[#3c25cc] font-semibold'>
+          <h3 className='text-point-color font-semibold'>
             새로운 에피소드 총{' '}
             <span className='font-extrabold'>{newEpi.length}</span>개
           </h3>
@@ -165,7 +165,7 @@ const EpisodeLayout = () => {
 
           {!loading && <EpisodeList data={newEpi} />}
 
-          <h2 className='mt-6 text-[#3c25cc] font-semibold flex-shrink-0'>
+          <h2 className='mt-6 text-point-color font-semibold flex-shrink-0'>
             변경된 에피소드 총{' '}
             <span className='font-extrabold'>{duplicateNewEpi.length}</span>개
           </h2>

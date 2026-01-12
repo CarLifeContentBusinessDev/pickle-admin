@@ -3,7 +3,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import type { usingDataProps } from '../../type';
 import formatDateString from '../../utils/formatDateString';
 
-const HeaderColumn = ({ label, width }: { label: string; width: string }) => {
+interface HeaderColumnProps {
+  label: string;
+  width: string;
+}
+
+const HeaderColumn = ({ label, width }: HeaderColumnProps) => {
   return (
     <p className='px-2 flex-shrink-0' style={{ width: width }}>
       {label}
@@ -11,15 +16,13 @@ const HeaderColumn = ({ label, width }: { label: string; width: string }) => {
   );
 };
 
-const ContentColumn = ({
-  className,
-  value,
-  width,
-}: {
+interface ContentColumnProps {
   className: string;
   value: string | number;
   width: string;
-}) => {
+}
+
+const ContentColumn = ({ className, value, width }: ContentColumnProps) => {
   return (
     <p className={className} style={{ width: width }}>
       {value}
@@ -172,7 +175,7 @@ const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
                             ? formatDateString(epi.dispDtime)
                             : column.key === 'createdAt'
                               ? formatDateString(epi.createdAt)
-                              : (epi as any)[column.key]
+                              : epi[column.key as keyof usingDataProps]
                         }
                         width={column.width}
                       />

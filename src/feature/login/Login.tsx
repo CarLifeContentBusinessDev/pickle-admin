@@ -130,7 +130,7 @@ export default function LoginPopup({
         <button
           disabled={loading}
           type='submit'
-          className='bg-[#3c25cc] cursor-pointer text-white rounded-md p-2 mt-2 hover:opacity-90 transition disabled:opacity-50'
+          className='bg-point-color cursor-pointer text-white rounded-md p-2 mt-2 hover:opacity-90 transition disabled:opacity-50'
         >
           {loading ? '로그인 중...' : '로그인'}
         </button>

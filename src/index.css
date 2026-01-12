@@ -9,6 +9,12 @@
   font-style: normal;
 }
 
+@theme {
+  --font-pre: 'Pretendard', sans-serif;
+
+  --color-point-color: #3c25cc;
+}
+
 body {
-  font-family: 'Pretendard', sans-serif;
+  font-family: var(--font-pre);
 }
