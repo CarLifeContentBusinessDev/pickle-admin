@@ -91,12 +91,16 @@ const CurationLayout = () => {
       </div>
       <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
         <div className='flex justify-between items-center h-[10%]'>
-          <h3 className='mb-6 text-[#3c25cc] font-semibold'>
+          <h3 className='mb-6 text-point-color font-semibold'>
             새로운 큐레이션 총{' '}
             <span className='font-extrabold'>{newCurations.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
-            <LoadingOverlay progress={progress} vertical={false} loading={excelLoading} />
+            <LoadingOverlay
+              progress={progress}
+              vertical={false}
+              loading={excelLoading}
+            />
             <select
               value={selectedSheet}
               onChange={handleSelectSheet}

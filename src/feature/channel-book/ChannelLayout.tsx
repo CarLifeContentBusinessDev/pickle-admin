@@ -51,7 +51,11 @@ const ChannelLayout = () => {
     abortControllerRef.current = new AbortController();
 
     const addData = async () =>
-      await fetchAllData(CATEGORY, setProgress, abortControllerRef.current!.signal);
+      await fetchAllData(
+        CATEGORY,
+        setProgress,
+        abortControllerRef.current!.signal
+      );
 
     addData().then(setAddData);
 
@@ -76,7 +80,13 @@ const ChannelLayout = () => {
       setAddData([]);
 
       const allData = await fetchAllData(CATEGORY, setProgress);
-      await addMissingRows(allData, loginToken, setProgress, CATEGORY, setAllLoading);
+      await addMissingRows(
+        allData,
+        loginToken,
+        setProgress,
+        CATEGORY,
+        setAllLoading
+      );
     }
   };
 
@@ -86,7 +96,13 @@ const ChannelLayout = () => {
     cancelOngoingWork();
     setAddData([]);
 
-    await syncNewDataToExcel(newChannels, loginToken, setProgress, CATEGORY, setExcelLoading);
+    await syncNewDataToExcel(
+      newChannels,
+      loginToken,
+      setProgress,
+      CATEGORY,
+      setExcelLoading
+    );
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
@@ -120,7 +136,7 @@ const ChannelLayout = () => {
       </div>
       <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
         <div className='flex justify-between items-center h-[10%]'>
-          <h3 className='mb-6 text-[#3c25cc] font-semibold'>
+          <h3 className='mb-6 text-point-color font-semibold'>
             새로운 채널·도서 총{' '}
             <span className='font-extrabold'>{newChannels.length}</span>개
           </h3>
