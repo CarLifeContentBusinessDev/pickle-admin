@@ -5,10 +5,7 @@ import { addMissingRows } from '../../utils/updateExcel';
 import { getNewDataWithExcel } from '../../utils/getNewData';
 import type { usingDataProps } from '../../type';
 import EpisodeList from './EpisodeList';
-import {
-  syncNewDataToExcel,
-  syncNewDuplicateDataToExcel,
-} from '../../utils/syncNewEpisodesToExcel';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
@@ -74,25 +71,41 @@ const EpisodeLayout = () => {
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
-    await syncNewDataToExcel(
-      newEpi,
-      loginToken,
-      setProgress,
-      CATEGORY,
-      setExcelLoading
-    );
+    // 선택된 시트에 새 데이터 추가
+    const currentSheet = localStorage.getItem('sheetName') || '';
+    if (!currentSheet) {
+      return toast.warn('시트를 먼저 선택해주세요!');
+    }
 
-    localStorage.setItem('sheetName', 'Episode_Logs');
-    setSelectedSheet('Episode_Logs');
+    try {
+      await appendNewDataToTop(
+        newEpi,
+        setProgress,
+        CATEGORY,
+        setExcelLoading,
+        currentSheet
+      );
 
-    await syncNewDuplicateDataToExcel(
-      duplicateNewEpi,
-      loginToken,
-      setProgress,
-      CATEGORY,
-      setExcelLoading,
-      'Episode_Logs'
-    );
+      // Episode_Logs 시트에 변경된 데이터 추가
+      if (duplicateNewEpi.length > 0) {
+        localStorage.setItem('sheetName', 'Episode_Logs');
+        setSelectedSheet('Episode_Logs');
+
+        await appendNewDataToTop(
+          duplicateNewEpi,
+          setProgress,
+          CATEGORY,
+          setExcelLoading,
+          'Episode_Logs'
+        );
+      }
+    } catch (error) {
+      console.error('Excel 동기화 실패:', error);
+      // 에러는 appendNewDataToTop에서 이미 toast로 표시되므로 여기서는 로그만
+    } finally {
+      setExcelLoading(false);
+      setProgress('');
+    }
   };
 
   const handleSearchNew = async () => {
