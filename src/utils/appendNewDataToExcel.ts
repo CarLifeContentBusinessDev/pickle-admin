@@ -90,17 +90,11 @@ export async function appendNewDataToTop(
     });
 
     console.log(
-      `총 ${sortedData.length}개 데이터를 게시일/등록일 최신순으로 최하단에 추가`
+      `총 ${sortedData.length}개 데이터를 게시일/등록일 최신순으로 최상단에 추가`
     );
 
-    // 현재 시트의 마지막 행 찾기
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
-      range: `${sheetName}!A:A`,
-    });
-
-    const existingRows = response.result.values?.length || 0;
-    let nextRow = Math.max(existingRows + 1, STARTROW);
+    // 시트 ID 가져오기
+    const sheetId = await getSheetId(sheetName);
 
     // 배치로 나눠서 추가
     const batchSize = 5000;
@@ -116,7 +110,6 @@ export async function appendNewDataToTop(
       );
 
       let values;
-      let range;
 
       if (category === 'episode') {
         values = (batchData as usingDataProps[]).map((row) => {
@@ -138,9 +131,6 @@ export async function appendNewDataToTop(
             row.channelId,
           ];
         });
-        const startRow = nextRow;
-        const endRow = nextRow + batchData.length - 1;
-        range = `${sheetName}!B${startRow}:M${endRow}`;
       } else {
         values = (batchData as usingChannelProps[]).map((row) => {
           const createdAtStr = excelDateTime(row.createdAt);
@@ -161,19 +151,37 @@ export async function appendNewDataToTop(
             row.thumbnailUrl,
           ];
         });
-        const startRow = nextRow;
-        const endRow = nextRow + batchData.length - 1;
-        range = `${sheetName}!B${startRow}:M${endRow}`;
       }
 
-      await sheets.spreadsheets.values.append({
+      // STARTROW 위치에 새 행 삽입
+      await sheets.spreadsheets.batchUpdate({
         spreadsheetId,
-        range: `${sheetName}!B${nextRow}`,
+        resource: {
+          requests: [
+            {
+              insertDimension: {
+                range: {
+                  sheetId: sheetId,
+                  dimension: 'ROWS',
+                  startIndex: STARTROW - 1, // 0-based index
+                  endIndex: STARTROW - 1 + batchData.length,
+                },
+                inheritFromBefore: false,
+              },
+            },
+          ],
+        },
+      });
+
+      // 새로 삽입된 행에 데이터 입력
+      const range = `${sheetName}!B${STARTROW}:M${STARTROW + batchData.length - 1}`;
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range,
         valueInputOption: 'USER_ENTERED',
         resource: { values },
       });
 
-      nextRow += batchData.length;
       await delay(100);
     }
 
@@ -206,30 +214,11 @@ async function getSheetId(sheetName: string): Promise<number> {
     const availableSheets =
       response.result.sheets?.map((s) => s.properties?.title) || [];
 
-    console.log('=== 시트 검색 디버깅 ===');
-    console.log(
-      '찾으려는 시트:',
-      `"${sheetName}"`,
-      'length:',
-      sheetName.length
-    );
-    console.log('사용 가능한 시트들:');
-    availableSheets.forEach((title, idx) => {
-      console.log(
-        `  [${idx}] "${title}" length: ${title?.length}, 일치:`,
-        title === sheetName
-      );
-    });
-
     const sheet = response.result.sheets?.find((s) => {
       const title = s.properties?.title;
       // trim으로 양쪽 공백 제거 후 비교
       return title?.trim() === sheetName.trim();
     });
-
-    console.log('찾은 시트 객체:', sheet);
-    console.log('시트 properties:', sheet?.properties);
-    console.log('시트 ID:', sheet?.properties?.sheetId);
 
     if (!sheet || sheet.properties?.sheetId === undefined) {
       throw new Error(
