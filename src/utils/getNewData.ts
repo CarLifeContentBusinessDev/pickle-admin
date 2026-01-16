@@ -64,38 +64,87 @@ export async function getNewData(
   }
 
   const newData = allApiData.filter((item) => {
-    const currentId = 'episodeId' in item ? item.episodeId :
-                      'channelId' in item ? item.channelId : 0;
+    const currentId =
+      'episodeId' in item
+        ? item.episodeId
+        : 'channelId' in item
+          ? item.channelId
+          : 0;
     return currentId > maxId;
   });
 
   return newData;
 }
 
-export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
+export async function getNewDataWithExcel(
+  setProgress?: (message: string) => void
+): Promise<usingDataProps[]> {
   const batchSize = 10000;
-  let allApiData: usingDataProps[] = [];
 
-  const firstRes = await api.get(`/admin/episode?page=1&size=1`);
+  // 전체 진행률 계산 (엑셀 조회 20%, API 조회 60%, 변경 확인은 외부에서 20%)
+  const updateProgress = (
+    stage: string,
+    stageProgress: number,
+    stageWeight: number,
+    stageStart: number
+  ) => {
+    const overall = Math.round(
+      stageStart + (stageProgress * stageWeight) / 100
+    );
+    setProgress?.(`[전체 ${overall}%] ${stage}`);
+  };
+
+  updateProgress('엑셀 데이터 조회 중...', 0, 20, 0);
+
+  // 1. 첫 페이지 조회와 엑셀 데이터 조회를 병렬로 실행
+  const [firstRes, allExcelData] = await Promise.all([
+    api.get(`/admin/episode?page=1&size=1`),
+    getExcelData('', 'episode'),
+  ]);
+
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / batchSize);
-
-  const token = '';
-  const allExcelData = await getExcelData(token, 'episode');
   const maxId = findMaxIdInExcel(allExcelData);
 
-  for (let i = 0; i < totalPages; i++) {
-    const res = await api.get(`/admin/episode?page=${i + 1}&size=${batchSize}`);
+  updateProgress('API 데이터 조회 중... 0%', 0, 60, 20);
 
-    const pageData = res.data.data.dataList;
-    if (pageData.length === 0) break;
+  // 2. 동시 연결 풀을 사용한 병렬 처리 (하나 완료되면 즉시 다음 시작)
+  const allApiData: usingDataProps[] = [];
+  let completedPages = 0;
+  const concurrentLimit = 15;
 
-    allApiData = allApiData.concat(pageData);
+  const fetchPage = async (page: number): Promise<usingDataProps[]> => {
+    try {
+      const res = await api.get(
+        `/admin/episode?page=${page}&size=${batchSize}`
+      );
+      completedPages++;
+      const stageProgress = Math.round((completedPages / totalPages) * 100);
+      updateProgress(
+        `API 데이터 조회 중... ${stageProgress}%`,
+        stageProgress,
+        60,
+        20
+      );
+      return res.data.data.dataList || [];
+    } catch (err) {
+      completedPages++;
+      console.error(`페이지 ${page} 조회 실패:`, err);
+      return [];
+    }
+  };
+
+  // 동시성 제한이 있는 병렬 실행
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  for (let i = 0; i < pages.length; i += concurrentLimit) {
+    const chunk = pages.slice(i, i + concurrentLimit);
+    const results = await Promise.all(chunk.map((page) => fetchPage(page)));
+    results.forEach((data) => allApiData.push(...data));
   }
 
-  const newEpisodes = allApiData.filter((item) => {
-    return item.episodeId > maxId;
-  });
+  // 3. maxId보다 큰 것만 필터링
+  const newEpisodes = allApiData.filter((item) => item.episodeId > maxId);
 
   return newEpisodes;
 }

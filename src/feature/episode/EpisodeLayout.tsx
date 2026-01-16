@@ -101,7 +101,6 @@ const EpisodeLayout = () => {
       }
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
-      // 에러는 appendNewDataToTop에서 이미 toast로 표시되므로 여기서는 로그만
     } finally {
       setExcelLoading(false);
       setProgress('');
@@ -110,8 +109,8 @@ const EpisodeLayout = () => {
 
   const handleSearchNew = async () => {
     setLoading(true);
-    const newList = await getNewDataWithExcel();
-    const duplicateNewData = await findUpdateData(newList);
+    const newList = await getNewDataWithExcel(setProgress);
+    const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
     setNewEpi(newList);
     setDuplicateNewEpi(duplicateNewData);
