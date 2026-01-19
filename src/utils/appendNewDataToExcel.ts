@@ -40,21 +40,24 @@ export async function appendNewDataToTop(
   setProgress: (progress: string) => void,
   category: 'channel',
   setLoading: (loading: boolean) => void,
-  sheetName: string
+  sheetName: string,
+  showToast?: boolean
 ): Promise<void>;
 export async function appendNewDataToTop(
   newData: usingDataProps[],
   setProgress: (progress: string) => void,
   category: 'episode',
   setLoading: (loading: boolean) => void,
-  sheetName: string
+  sheetName: string,
+  showToast?: boolean
 ): Promise<void>;
 export async function appendNewDataToTop(
   newData: (usingDataProps | usingChannelProps)[],
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
   setLoading: (loading: boolean) => void,
-  sheetName: string
+  sheetName: string,
+  showToast?: boolean
 ): Promise<void>;
 
 export async function appendNewDataToTop(
@@ -62,10 +65,13 @@ export async function appendNewDataToTop(
   setProgress: (progress: string) => void,
   category: 'episode' | 'channel',
   setLoading: (loading: boolean) => void,
-  sheetName: string
+  sheetName: string,
+  showToast: boolean = true
 ) {
   if (newData.length === 0) {
-    toast.info('추가할 데이터가 없습니다.');
+    if (showToast) {
+      toast.info('추가할 데이터가 없습니다.');
+    }
     return;
   }
 
@@ -187,7 +193,9 @@ export async function appendNewDataToTop(
 
     setProgress('');
     setLoading(false);
-    toast.success(`${newData.length}개의 데이터가 추가되었습니다!`);
+    if (showToast) {
+      toast.success(`${newData.length}개의 데이터가 추가되었습니다!`);
+    }
   } catch (err: any) {
     console.error('데이터 추가 실패:', err);
     console.error('에러 상세:', err.result?.error);

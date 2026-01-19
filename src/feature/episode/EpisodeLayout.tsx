@@ -78,12 +78,15 @@ const EpisodeLayout = () => {
     }
 
     try {
+      setExcelLoading(true);
+
       await appendNewDataToTop(
         newEpi,
         setProgress,
         CATEGORY,
         setExcelLoading,
-        currentSheet
+        currentSheet,
+        false // 토스트 메시지 표시 안 함
       );
 
       // Episode_Logs 시트에 변경된 데이터 추가
@@ -96,9 +99,16 @@ const EpisodeLayout = () => {
           setProgress,
           CATEGORY,
           setExcelLoading,
-          'Episode_Logs'
+          'Episode_Logs',
+          false // 토스트 메시지 표시 안 함
         );
       }
+
+      // 모든 작업 완료 후 통합 토스트 메시지
+      const totalCount = newEpi.length + duplicateNewEpi.length;
+      toast.success(
+        `총 ${totalCount}개의 데이터가 추가되었습니다! (새로운 에피소드: ${newEpi.length}개${duplicateNewEpi.length > 0 ? `, 변경된 에피소드: ${duplicateNewEpi.length}개` : ''})`
+      );
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
     } finally {
@@ -165,7 +175,9 @@ const EpisodeLayout = () => {
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
             </button>
-            <Button onClick={handleSyncExcel}>Excel 동기화</Button>
+            <Button onClick={handleSyncExcel} disabled={excelLoading}>
+              Excel 동기화
+            </Button>
           </div>
         </div>
         <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>
