@@ -63,6 +63,14 @@ export async function getNewData(
     allApiData = allApiData.concat(pageData);
   }
 
+  // Excel에 있는 ID 목록 추출
+  const excelIds = new Set(
+    excelData.map((item) =>
+      'episodeId' in item ? item.episodeId : item.channelId
+    )
+  );
+
+  // Excel에 없는 데이터만 필터링
   const newData = allApiData.filter((item) => {
     const currentId =
       'episodeId' in item
@@ -70,7 +78,7 @@ export async function getNewData(
         : 'channelId' in item
           ? item.channelId
           : 0;
-    return currentId > maxId;
+    return !excelIds.has(currentId);
   });
 
   return newData;
@@ -143,8 +151,11 @@ export async function getNewDataWithExcel(
     results.forEach((data) => allApiData.push(...data));
   }
 
-  // 3. maxId보다 큰 것만 필터링
-  const newEpisodes = allApiData.filter((item) => item.episodeId > maxId);
+  // 3. Excel에 없는 데이터만 필터링
+  const excelIds = new Set(allExcelData.map((item) => item.episodeId));
+  const newEpisodes = allApiData.filter(
+    (item) => !excelIds.has(item.episodeId)
+  );
 
   return newEpisodes;
 }

@@ -20,6 +20,7 @@ const CurationLayout = () => {
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [syncCompleted, setSyncCompleted] = useState(false);
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -70,6 +71,7 @@ const CurationLayout = () => {
         setExcelLoading,
         currentSheet
       );
+      setSyncCompleted(true);
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
     } finally {
@@ -80,6 +82,7 @@ const CurationLayout = () => {
 
   const handleSearchNew = async (token: string) => {
     setLoading(true);
+    setSyncCompleted(false);
     const newList = await getNewCurationData(token, setProgress);
     setProgress('');
     setNewCurations(newList);
@@ -134,7 +137,12 @@ const CurationLayout = () => {
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
             </button>
-            <Button onClick={handleSyncExcel}>Excel 동기화</Button>
+            <Button
+              onClick={handleSyncExcel}
+              disabled={excelLoading || syncCompleted}
+            >
+              {syncCompleted ? 'Excel 동기화 완료' : 'Excel 동기화'}
+            </Button>
           </div>
         </div>
         <div className='w-full flex-1 flex flex-col mt-4 min-h-0'>

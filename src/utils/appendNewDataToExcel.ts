@@ -99,94 +99,120 @@ export async function appendNewDataToTop(
       `총 ${sortedData.length}개 데이터를 게시일/등록일 최신순으로 최상단에 추가`
     );
 
-    // 시트 ID 가져오기
+    // getNewDataWithExcel에서 이미 중복 제거됨
+    // 추가 중복 확인은 필요 없으므로 전달받은 newData를 그대로 사용
+    const filteredData = sortedData;
+
+    if (filteredData.length === 0) {
+      setProgress('');
+      setLoading(false);
+      if (showToast) {
+        toast.info('추가할 새로운 데이터가 없습니다.');
+      }
+      return;
+    }
+
+    console.log(
+      `${filteredData.length}개 데이터를 게시일/등록일 최신순으로 추가 중...`
+    );
+
+    // Step 1: 시트 ID 가져오기 (행 삽입을 위해 필요)
     const sheetId = await getSheetId(sheetName);
 
-    // 배치로 나눠서 추가
-    const batchSize = 5000;
-    const batches = Math.ceil(sortedData.length / batchSize);
+    // Step 2: 새 행 삽입 (기존 데이터는 자동으로 아래로 밀림)
+    setProgress(`새 행 ${filteredData.length}개 삽입 중...`);
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      resource: {
+        requests: [
+          {
+            insertDimension: {
+              range: {
+                sheetId: sheetId,
+                dimension: 'ROWS',
+                startIndex: STARTROW - 1, // 0-based index
+                endIndex: STARTROW - 1 + filteredData.length,
+              },
+              inheritFromBefore: false,
+            },
+          },
+        ],
+      },
+    });
+
+    // Step 3: 새 데이터 변환
+    let allNewValues;
+    if (category === 'episode') {
+      allNewValues = (filteredData as usingDataProps[]).map((row) => {
+        const createdAtStr = excelDateTime(row.createdAt);
+        const dispDtimeStr = excelDateTime(row.dispDtime);
+
+        return [
+          row.episodeId,
+          row.usageYn,
+          row.channelName,
+          row.episodeName,
+          dispDtimeStr,
+          createdAtStr,
+          formatPlayTime(row.playTime),
+          row.likeCnt,
+          row.listenCnt,
+          row.thumbnailUrl,
+          row.audioUrl,
+          row.channelId,
+        ];
+      });
+    } else {
+      allNewValues = (filteredData as usingChannelProps[]).map((row) => {
+        const createdAtStr = excelDateTime(row.createdAt);
+        const dispDtimeStr = excelDateTime(row.dispDtime);
+
+        return [
+          row.channelId,
+          row.usageYn,
+          row.channelName,
+          row.vendorName,
+          row.categoryName,
+          dispDtimeStr,
+          row.channelTypeName,
+          row.likeCnt,
+          row.listenCnt,
+          createdAtStr,
+          row.interfaceUrl,
+          row.thumbnailUrl,
+        ];
+      });
+    }
+
+    // Step 4: 새 데이터만 배치로 쓰기 (기존 데이터는 이미 아래로 밀렸음)
+    const batchSize = 500; // 더 작은 배치로 진행률 표시 개선
+    const batches = Math.ceil(allNewValues.length / batchSize);
+    let totalWritten = 0;
 
     for (let batchIdx = 0; batchIdx < batches; batchIdx++) {
       const batchStart = batchIdx * batchSize;
-      const batchEnd = Math.min((batchIdx + 1) * batchSize, sortedData.length);
-      const batchData = sortedData.slice(batchStart, batchEnd);
-
-      setProgress(
-        `데이터 추가 중... (${batchIdx + 1}/${batches} 배치, ${Math.round((batchEnd / sortedData.length) * 100)}%)`
+      const batchEnd = Math.min(
+        (batchIdx + 1) * batchSize,
+        allNewValues.length
       );
+      const batchData = allNewValues.slice(batchStart, batchEnd);
 
-      let values;
+      const startRow = STARTROW + batchStart;
+      const range = `${sheetName}!B${startRow}`;
 
-      if (category === 'episode') {
-        values = (batchData as usingDataProps[]).map((row) => {
-          const createdAtStr = excelDateTime(row.createdAt);
-          const dispDtimeStr = excelDateTime(row.dispDtime);
-
-          return [
-            row.episodeId,
-            row.usageYn,
-            row.channelName,
-            row.episodeName,
-            dispDtimeStr,
-            createdAtStr,
-            formatPlayTime(row.playTime),
-            row.likeCnt,
-            row.listenCnt,
-            row.thumbnailUrl,
-            row.audioUrl,
-            row.channelId,
-          ];
-        });
-      } else {
-        values = (batchData as usingChannelProps[]).map((row) => {
-          const createdAtStr = excelDateTime(row.createdAt);
-          const dispDtimeStr = excelDateTime(row.dispDtime);
-
-          return [
-            row.channelId,
-            row.usageYn,
-            row.channelName,
-            row.vendorName,
-            row.categoryName,
-            dispDtimeStr,
-            row.channelTypeName,
-            row.likeCnt,
-            row.listenCnt,
-            createdAtStr,
-            row.interfaceUrl,
-            row.thumbnailUrl,
-          ];
-        });
-      }
-
-      // STARTROW 위치에 새 행 삽입
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        resource: {
-          requests: [
-            {
-              insertDimension: {
-                range: {
-                  sheetId: sheetId,
-                  dimension: 'ROWS',
-                  startIndex: STARTROW - 1, // 0-based index
-                  endIndex: STARTROW - 1 + batchData.length,
-                },
-                inheritFromBefore: false,
-              },
-            },
-          ],
-        },
-      });
-
-      // 새로 삽입된 행에 데이터 입력
-      const range = `${sheetName}!B${STARTROW}:M${STARTROW + batchData.length - 1}`;
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range,
         valueInputOption: 'USER_ENTERED',
-        resource: { values },
+        resource: { values: batchData },
       });
+
+      // 배치 완료 후 진행률 업데이트
+      totalWritten += batchData.length;
+      const percentage = Math.round((totalWritten / allNewValues.length) * 100);
+      setProgress(
+        `데이터 쓰기 중... (${totalWritten}/${allNewValues.length}, ${percentage}%)`
+      );
 
       await delay(100);
     }
@@ -194,7 +220,14 @@ export async function appendNewDataToTop(
     setProgress('');
     setLoading(false);
     if (showToast) {
-      toast.success(`${newData.length}개의 데이터가 추가되었습니다!`);
+      const skippedCount = newData.length - filteredData.length;
+      if (skippedCount > 0) {
+        toast.success(
+          `${filteredData.length}개의 데이터가 추가되었습니다! (${skippedCount}개 중복 제외)`
+        );
+      } else {
+        toast.success(`${filteredData.length}개의 데이터가 추가되었습니다!`);
+      }
     }
   } catch (err: any) {
     console.error('데이터 추가 실패:', err);

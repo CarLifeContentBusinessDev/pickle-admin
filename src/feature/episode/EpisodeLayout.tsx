@@ -22,6 +22,7 @@ const EpisodeLayout = () => {
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [syncCompleted, setSyncCompleted] = useState(false);
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -91,6 +92,9 @@ const EpisodeLayout = () => {
 
       // Episode_Logs 시트에 변경된 데이터 추가
       if (duplicateNewEpi.length > 0) {
+        setProgress(
+          `Episode_Logs 시트에 변경된 데이터 ${duplicateNewEpi.length}개 추가 중...`
+        );
         localStorage.setItem('sheetName', 'Episode_Logs');
         setSelectedSheet('Episode_Logs');
 
@@ -105,10 +109,10 @@ const EpisodeLayout = () => {
       }
 
       // 모든 작업 완료 후 통합 토스트 메시지
-      const totalCount = newEpi.length + duplicateNewEpi.length;
       toast.success(
-        `총 ${totalCount}개의 데이터가 추가되었습니다! (새로운 에피소드: ${newEpi.length}개${duplicateNewEpi.length > 0 ? `, 변경된 에피소드: ${duplicateNewEpi.length}개` : ''})`
+        `새로운 에피소드 ${newEpi.length}개, 변경된 에피소드 ${duplicateNewEpi.length}개 \n 동기화에 성공했습니다!`
       );
+      setSyncCompleted(true);
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
     } finally {
@@ -119,6 +123,7 @@ const EpisodeLayout = () => {
 
   const handleSearchNew = async () => {
     setLoading(true);
+    setSyncCompleted(false);
     const newList = await getNewDataWithExcel(setProgress);
     const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
@@ -175,8 +180,11 @@ const EpisodeLayout = () => {
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
             </button>
-            <Button onClick={handleSyncExcel} disabled={excelLoading}>
-              Excel 동기화
+            <Button
+              onClick={handleSyncExcel}
+              disabled={excelLoading || syncCompleted}
+            >
+              {syncCompleted ? 'Excel 동기화 완료' : 'Excel 동기화'}
             </Button>
           </div>
         </div>

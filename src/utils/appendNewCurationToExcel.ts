@@ -70,26 +70,51 @@ export async function appendNewCurationToExcel(
       `총 ${sortedData.length}개 큐레이션 데이터를 게시일/생성일 최신순으로 최하단에 추가`
     );
 
-    // 현재 시트의 마지막 행 찾기
+    // 현재 시트의 모든 데이터 읽기 (thumbnailTitle을 고유 ID로 사용)
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:A`,
+      range: `${sheetName}!B${STARTROW}:W`,
     });
 
+    const existingData = response.result.values || [];
     const existingRows = response.result.values?.length || 0;
-    let nextRow = Math.max(existingRows + 1, STARTROW);
+    let nextRow = Math.max(existingRows + STARTROW, STARTROW);
+
+    // 기존 데이터의 thumbnailTitle 목록 추출 (0번 인덱스)
+    const existingTitles = new Set(
+      existingData.map((row) => row[0]?.toString()).filter(Boolean)
+    );
+
+    // 중복되지 않은 데이터만 필터링
+    const filteredData = sortedData.filter((item) => {
+      return !existingTitles.has(item.thumbnailTitle);
+    });
+
+    if (filteredData.length === 0) {
+      setProgress('');
+      setLoading(false);
+      toast.info('추가할 새로운 데이터가 없습니다. (모두 이미 존재)');
+      return;
+    }
+
+    console.log(
+      `중복 제외 후 ${filteredData.length}개 데이터 추가 (전체 ${sortedData.length}개 중 ${sortedData.length - filteredData.length}개 중복)`
+    );
 
     // 배치로 나눠서 추가
     const batchSize = 1000;
-    const batches = Math.ceil(sortedData.length / batchSize);
+    const batches = Math.ceil(filteredData.length / batchSize);
 
     for (let batchIdx = 0; batchIdx < batches; batchIdx++) {
       const batchStart = batchIdx * batchSize;
-      const batchEnd = Math.min((batchIdx + 1) * batchSize, sortedData.length);
-      const batchData = sortedData.slice(batchStart, batchEnd);
+      const batchEnd = Math.min(
+        (batchIdx + 1) * batchSize,
+        filteredData.length
+      );
+      const batchData = filteredData.slice(batchStart, batchEnd);
 
       setProgress(
-        `데이터 추가 중... (${batchIdx + 1}/${batches} 배치, ${Math.round((batchEnd / sortedData.length) * 100)}%)`
+        `데이터 추가 중... (${batchIdx + 1}/${batches} 배치, ${Math.round((batchEnd / filteredData.length) * 100)}%)`
       );
 
       const values = batchData.map((row) => [
@@ -130,7 +155,14 @@ export async function appendNewCurationToExcel(
 
     setProgress('');
     setLoading(false);
-    toast.success(`${newData.length}개의 데이터가 추가되었습니다!`);
+    const skippedCount = newData.length - filteredData.length;
+    if (skippedCount > 0) {
+      toast.success(
+        `${filteredData.length}개의 데이터가 추가되었습니다! (${skippedCount}개 중복 제외)`
+      );
+    } else {
+      toast.success(`${filteredData.length}개의 데이터가 추가되었습니다!`);
+    }
   } catch (err: any) {
     console.error('데이터 추가 실패:', err);
     console.error('에러 상세:', err.result?.error);
