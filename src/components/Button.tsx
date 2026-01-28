@@ -19,9 +19,14 @@ const Button = ({
   target,
   rel,
 }: ButtonProps) => {
-  const baseStyle = `border cursor-pointer bg-point-color text-white shadow-[0_2px_0_rgba(72,5,255,0.06)]
-                     px-5 py-2 rounded-md hover:bg-[#624ad9] transition-colors duration-100
-                     ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+  const baseStyle = `border text-white shadow-[0_2px_0_rgba(72,5,255,0.06)]
+                     px-5 py-2 rounded-md transition-colors duration-100
+                     ${
+                       disabled
+                         ? 'bg-gray-400 cursor-not-allowed'
+                         : 'bg-point-color cursor-pointer hover:bg-[#624ad9]'
+                     }
+                     ${className}`;
 
   if (href) {
     return (

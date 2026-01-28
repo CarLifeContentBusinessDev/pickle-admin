@@ -159,6 +159,7 @@ const EpisodeList = ({ data }: { data: usingDataProps[] }) => {
                 return (
                   <div
                     key={virtualRow.key}
+                    data-index={virtualRow.index}
                     ref={rowVirtualizer.measureElement}
                     className='absolute left-0 right-0 flex items-center border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition'
                     style={{

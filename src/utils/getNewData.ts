@@ -2,19 +2,6 @@ import type { usingChannelProps, usingDataProps } from '../type';
 import { api } from './api';
 import { getExcelData } from './updateExcel';
 
-function findMaxIdInExcel(
-  excelData: (usingDataProps | usingChannelProps)[]
-): number {
-  if (excelData.length === 0) return 0;
-
-  const maxId = excelData.reduce((maxId, item) => {
-    const currentId = 'episodeId' in item ? item.episodeId : item.channelId;
-    return currentId > maxId ? currentId : maxId;
-  }, 0);
-
-  return maxId;
-}
-
 export async function getNewData(
   token: string,
   accessToken: string,
@@ -35,8 +22,6 @@ export async function getNewData(
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   const excelData = await getExcelData(token, category);
-
-  const maxId = findMaxIdInExcel(excelData);
 
   const size = 1000;
   const firstRes = await api.get(`/admin/${category}?page=1&size=${size}`, {
@@ -63,39 +48,98 @@ export async function getNewData(
     allApiData = allApiData.concat(pageData);
   }
 
+  // Excel에 있는 ID 목록 추출
+  const excelIds = new Set(
+    excelData.map((item) =>
+      'episodeId' in item ? item.episodeId : item.channelId
+    )
+  );
+
+  // Excel에 없는 데이터만 필터링
   const newData = allApiData.filter((item) => {
-    const currentId = 'episodeId' in item ? item.episodeId :
-                      'channelId' in item ? item.channelId : 0;
-    return currentId > maxId;
+    const currentId =
+      'episodeId' in item
+        ? item.episodeId
+        : 'channelId' in item
+          ? item.channelId
+          : 0;
+    return !excelIds.has(currentId);
   });
 
   return newData;
 }
 
-export async function getNewDataWithExcel(): Promise<usingDataProps[]> {
+export async function getNewDataWithExcel(
+  setProgress?: (message: string) => void
+): Promise<usingDataProps[]> {
   const batchSize = 10000;
-  let allApiData: usingDataProps[] = [];
 
-  const firstRes = await api.get(`/admin/episode?page=1&size=1`);
+  // 전체 진행률 계산 (엑셀 조회 20%, API 조회 60%, 변경 확인은 외부에서 20%)
+  const updateProgress = (
+    stage: string,
+    stageProgress: number,
+    stageWeight: number,
+    stageStart: number
+  ) => {
+    const overall = Math.round(
+      stageStart + (stageProgress * stageWeight) / 100
+    );
+    setProgress?.(`[전체 ${overall}%] ${stage}`);
+  };
+
+  updateProgress('엑셀 데이터 조회 중...', 0, 20, 0);
+
+  // 1. 첫 페이지 조회와 엑셀 데이터 조회를 병렬로 실행
+  const [firstRes, allExcelData] = await Promise.all([
+    api.get(`/admin/episode?page=1&size=1`),
+    getExcelData('', 'episode'),
+  ]);
+
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / batchSize);
 
-  const token = '';
-  const allExcelData = await getExcelData(token, 'episode');
-  const maxId = findMaxIdInExcel(allExcelData);
+  updateProgress('API 데이터 조회 중... 0%', 0, 60, 20);
 
-  for (let i = 0; i < totalPages; i++) {
-    const res = await api.get(`/admin/episode?page=${i + 1}&size=${batchSize}`);
+  // 2. 동시 연결 풀을 사용한 병렬 처리 (하나 완료되면 즉시 다음 시작)
+  const allApiData: usingDataProps[] = [];
+  let completedPages = 0;
+  const concurrentLimit = 15;
 
-    const pageData = res.data.data.dataList;
-    if (pageData.length === 0) break;
+  const fetchPage = async (page: number): Promise<usingDataProps[]> => {
+    try {
+      const res = await api.get(
+        `/admin/episode?page=${page}&size=${batchSize}`
+      );
+      completedPages++;
+      const stageProgress = Math.round((completedPages / totalPages) * 100);
+      updateProgress(
+        `API 데이터 조회 중... ${stageProgress}%`,
+        stageProgress,
+        60,
+        20
+      );
+      return res.data.data.dataList || [];
+    } catch (err) {
+      completedPages++;
+      console.error(`페이지 ${page} 조회 실패:`, err);
+      return [];
+    }
+  };
 
-    allApiData = allApiData.concat(pageData);
+  // 동시성 제한이 있는 병렬 실행
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  for (let i = 0; i < pages.length; i += concurrentLimit) {
+    const chunk = pages.slice(i, i + concurrentLimit);
+    const results = await Promise.all(chunk.map((page) => fetchPage(page)));
+    results.forEach((data) => allApiData.push(...data));
   }
 
-  const newEpisodes = allApiData.filter((item) => {
-    return item.episodeId > maxId;
-  });
+  // 3. Excel에 없는 데이터만 필터링
+  const excelIds = new Set(allExcelData.map((item) => item.episodeId));
+  const newEpisodes = allApiData.filter(
+    (item) => !excelIds.has(item.episodeId)
+  );
 
   return newEpisodes;
 }

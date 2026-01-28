@@ -15,8 +15,8 @@ const LoadingOverlay = ({
   let spinnerStyle = 'w-12 h-12 border-white';
 
   if (!vertical) {
-    boxStyle = 'text-black';
-    spinnerStyle = 'w-8 h-8 border-black';
+    boxStyle = 'text-black flex-shrink-0 min-w-fit';
+    spinnerStyle = 'w-8 h-8 border-black flex-shrink-0';
   }
 
   return (
@@ -25,11 +25,11 @@ const LoadingOverlay = ({
         <div
           className={`flex gap-4 items-center justify-center box-border ${boxStyle}`}
         >
-          <p className='text-center font-bold'>{children}</p>
+          <p className='text-center font-bold whitespace-nowrap'>{children}</p>
           <div
             className={`border-4 ${spinnerStyle} border-t-transparent rounded-full animate-spin`}
           ></div>
-          {progress && <span>{progress}</span>}
+          {progress && <span className='whitespace-nowrap'>{progress}</span>}
         </div>
       )}
     </>

@@ -34,7 +34,20 @@ export async function findChangedData(allData: usingDataProps[]) {
   return episodesToInsert;
 }
 
-export async function findUpdateData(newData: usingDataProps[]) {
+export async function findUpdateData(
+  newData: usingDataProps[],
+  setProgress?: (message: string) => void
+) {
+  // 전체 진행률: 80~100% (마지막 20%)
+  const updateProgress = (stageProgress: number) => {
+    const overall = Math.round(80 + stageProgress * 0.2);
+    setProgress?.(
+      `[전체 ${overall}%] 변경 데이터 확인 중... ${stageProgress}%`
+    );
+  };
+
+  updateProgress(0);
+
   const excelData = (await getExcelData(
     localStorage.getItem('loginToken')!,
     'episode'
@@ -50,24 +63,55 @@ export async function findUpdateData(newData: usingDataProps[]) {
 
   const episodesToUpdate: usingDataProps[] = [];
 
-  const getEpisodeState = async (episodeId: number) => {
-    const data = api.get(`admin/episode/${episodeId}`);
-    return data;
-  };
+  // 매칭되는 항목들을 먼저 찾기
+  const matchingItems = newData
+    .map((newItem) => ({
+      newItem,
+      matchingExcelItem: excelTitleMap.get(String(newItem.episodeName).trim()),
+    }))
+    .filter(({ matchingExcelItem }) => matchingExcelItem !== undefined);
 
-  for (const newItem of newData) {
-    const newTitle = String(newItem.episodeName).trim();
+  if (matchingItems.length === 0) {
+    return episodesToUpdate;
+  }
 
-    const matchingExcelItem = excelTitleMap.get(newTitle);
+  // 모든 에피소드 상태를 병렬로 조회
+  const concurrentLimit = 10;
 
-    if (matchingExcelItem) {
-      const itemData = await getEpisodeState(matchingExcelItem?.episodeId);
-      const dataUsage = itemData.data.data.usageYn;
+  for (let i = 0; i < matchingItems.length; i += concurrentLimit) {
+    const batch = matchingItems.slice(i, i + concurrentLimit);
+
+    const stageProgress = Math.round(
+      ((i + batch.length) / matchingItems.length) * 100
+    );
+    updateProgress(stageProgress);
+
+    const results = await Promise.all(
+      batch.map(({ matchingExcelItem }) =>
+        api
+          .get(`admin/episode/${matchingExcelItem!.episodeId}`)
+          .then((res) => ({
+            episodeId: matchingExcelItem!.episodeId,
+            usageYn: res.data.data.usageYn,
+          }))
+          .catch((err) => {
+            console.error(
+              `에피소드 ${matchingExcelItem!.episodeId} 조회 실패:`,
+              err
+            );
+            return { episodeId: matchingExcelItem!.episodeId, usageYn: 'Y' };
+          })
+      )
+    );
+
+    // 결과 처리
+    batch.forEach(({ newItem, matchingExcelItem }, idx) => {
+      const { usageYn } = results[idx];
       episodesToUpdate.push(newItem);
-      if (dataUsage === 'N') {
-        episodesToUpdate.push(matchingExcelItem);
+      if (usageYn === 'N') {
+        episodesToUpdate.push(matchingExcelItem!);
       }
-    }
+    });
   }
 
   return episodesToUpdate;
