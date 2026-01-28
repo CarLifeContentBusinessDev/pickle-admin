@@ -24,7 +24,7 @@ const Button = ({
                      ${
                        disabled
                          ? 'bg-gray-400 cursor-not-allowed'
-                         : 'bg-point-color cursor-pointer'
+                         : 'bg-point-color cursor-pointer hover:bg-[#624ad9]'
                      }
                      ${className}`;
 

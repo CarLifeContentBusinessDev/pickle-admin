@@ -77,6 +77,8 @@ const CurationList = ({ data }: { data: usingCurationExcelProps[] }) => {
       width: '320px',
       noDataWidth: '200px',
       className: 'px-2 text-sm truncate flex-shrink-0',
+      render: (curation: usingCurationExcelProps) =>
+        `${formatDateString(curation.dispStartDtime)} ~ ${formatDateString(curation.dispEndDtime)}`,
     },
     {
       key: 'curationCreatedAt',
@@ -84,6 +86,8 @@ const CurationList = ({ data }: { data: usingCurationExcelProps[] }) => {
       width: '180px',
       noDataWidth: '120px',
       className: 'px-2 truncate flex-shrink-0',
+      render: (curation: usingCurationExcelProps) =>
+        formatDateString(curation.curationCreatedAt),
     },
     {
       key: 'channelName',
@@ -140,18 +144,14 @@ const CurationList = ({ data }: { data: usingCurationExcelProps[] }) => {
                     }}
                   >
                     {columns.map((column) => {
-                      let value = '';
-                      if (column.key === 'dispPeriod') {
-                        value = `${formatDateString(curation.dispStartDtime)} ~ ${formatDateString(curation.dispEndDtime)}`;
-                      } else if (column.key === 'curationCreatedAt') {
-                        value = formatDateString(curation.curationCreatedAt);
-                      } else {
-                        value = String(
-                          curation[
-                            column.key as keyof usingCurationExcelProps
-                          ] || ''
-                        );
-                      }
+                      const value = column.render
+                        ? column.render(curation)
+                        : String(
+                            curation[
+                              column.key as keyof usingCurationExcelProps
+                            ] || ''
+                          );
+
                       return (
                         <ContentColumn
                           key={column.key}

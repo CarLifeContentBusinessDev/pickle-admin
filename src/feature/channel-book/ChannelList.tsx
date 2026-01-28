@@ -91,6 +91,8 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
       width: '180px',
       noDataWidth: '120px',
       className: 'px-2 truncate flex-shrink-0',
+      render: (channel: usingChannelProps) =>
+        formatDateString(channel.createdAt),
     },
     {
       key: 'dispDtime',
@@ -98,6 +100,8 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
       width: '180px',
       noDataWidth: '180px',
       className: 'px-2 truncate flex-shrink-0',
+      render: (channel: usingChannelProps) =>
+        formatDateString(channel.dispDtime),
     },
   ];
 
@@ -139,20 +143,22 @@ const ChannelList = ({ data }: { data: usingChannelProps[] }) => {
                       height: `${virtualRow.size}px`,
                     }}
                   >
-                    {columns.map((column) => (
-                      <ContentColumn
-                        key={column.key}
-                        className={column.className}
-                        value={
-                          column.key === 'createdAt'
-                            ? formatDateString(channel.createdAt)
-                            : column.key === 'dispDtime'
-                              ? formatDateString(channel.dispDtime)
-                              : channel[column.key as keyof usingChannelProps]
-                        }
-                        width={column.width}
-                      />
-                    ))}
+                    {columns.map((column) => {
+                      const value = column.render
+                        ? column.render(channel)
+                        : String(
+                            channel[column.key as keyof usingChannelProps] || ''
+                          );
+
+                      return (
+                        <ContentColumn
+                          key={column.key}
+                          className={column.className}
+                          value={value}
+                          width={column.width}
+                        />
+                      );
+                    })}
                   </div>
                 );
               })}
