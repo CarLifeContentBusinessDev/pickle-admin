@@ -8,7 +8,7 @@ import getSheetList from '../../utils/getSheetList';
 import { addMissingCurationRows } from '../../utils/updateCuration';
 import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
-import syncNewCurationToExcel from '../../utils/syncNewCurationToExcel';
+import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 
 const CurationLayout = () => {
@@ -20,6 +20,7 @@ const CurationLayout = () => {
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [syncCompleted, setSyncCompleted] = useState(false);
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -57,14 +58,31 @@ const CurationLayout = () => {
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
-    setExcelLoading(true);
-    await syncNewCurationToExcel(newCurations, loginToken, setProgress);
-    setProgress('');
-    setExcelLoading(false);
+
+    const currentSheet = localStorage.getItem('sheetName') || '';
+    if (!currentSheet) {
+      return toast.warn('시트를 먼저 선택해주세요!');
+    }
+
+    try {
+      await appendNewCurationToExcel(
+        newCurations,
+        setProgress,
+        setExcelLoading,
+        currentSheet
+      );
+      setSyncCompleted(true);
+    } catch (error) {
+      console.error('Excel 동기화 실패:', error);
+    } finally {
+      setExcelLoading(false);
+      setProgress('');
+    }
   };
 
   const handleSearchNew = async (token: string) => {
     setLoading(true);
+    setSyncCompleted(false);
     const newList = await getNewCurationData(token, setProgress);
     setProgress('');
     setNewCurations(newList);
@@ -72,7 +90,7 @@ const CurationLayout = () => {
   };
 
   return (
-    <div className='p-10 h-[80%]'>
+    <div className='p-10 flex flex-col h-[90vh]'>
       <h1 className='text-3xl font-bold mb-4 indent-1'>큐레이션 관리</h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 큐레이션 시트로 변환</Button>
@@ -89,9 +107,9 @@ const CurationLayout = () => {
           loading={allLoading}
         ></LoadingOverlay>
       </div>
-      <div className='w-full rounded-2xl bg-white h-full mt-4 p-8'>
-        <div className='flex justify-between items-center h-[10%]'>
-          <h3 className='mb-6 text-point-color font-semibold'>
+      <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
+        <div className='flex justify-between items-center flex-shrink-0'>
+          <h3 className='text-point-color font-semibold'>
             새로운 큐레이션 총{' '}
             <span className='font-extrabold'>{newCurations.length}</span>개
           </h3>
@@ -119,20 +137,15 @@ const CurationLayout = () => {
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
             </button>
-            <Button onClick={handleSyncExcel}>Excel 동기화</Button>
+            <Button
+              onClick={handleSyncExcel}
+              disabled={excelLoading || syncCompleted}
+            >
+              {syncCompleted ? 'Excel 동기화 완료' : 'Excel 동기화'}
+            </Button>
           </div>
         </div>
-        <div className='w-full h-[90%] flex flex-col'>
-          <div className='min-w-max flex font-bold py-5'>
-            <p className='w-[10%] px-1'>큐레이션 타입</p>
-            <p className='w-[7%] px-1'>상태</p>
-            <p className='w-[13%] line-clamp-2 px-1'>큐레이션명</p>
-            <p className='w-[12%] line-clamp-2 px-1'>큐레이션 설명</p>
-            <p className='w-[17%] px-1'>게시 기간</p>
-            <p className='w-[9%] px-1'>등록 일시</p>
-            <p className='w-[12%] px-1'>채널명</p>
-            <p className='w-[13%] px-1'>에피소드명</p>
-          </div>
+        <div className='w-full flex-1 flex flex-col mt-4 min-h-0'>
           <LoadingOverlay progress={progress} loading={loading}>
             새로운 큐레이션 목록을 불러오는 중입니다.
             <br />

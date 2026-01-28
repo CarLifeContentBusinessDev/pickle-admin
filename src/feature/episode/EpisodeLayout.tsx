@@ -5,10 +5,7 @@ import { addMissingRows } from '../../utils/updateExcel';
 import { getNewDataWithExcel } from '../../utils/getNewData';
 import type { usingDataProps } from '../../type';
 import EpisodeList from './EpisodeList';
-import {
-  syncNewDataToExcel,
-  syncNewDuplicateDataToExcel,
-} from '../../utils/syncNewEpisodesToExcel';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
@@ -25,6 +22,7 @@ const EpisodeLayout = () => {
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
   const [progress, setProgress] = useState('');
+  const [syncCompleted, setSyncCompleted] = useState(false);
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
@@ -74,31 +72,60 @@ const EpisodeLayout = () => {
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
-    await syncNewDataToExcel(
-      newEpi,
-      loginToken,
-      setProgress,
-      CATEGORY,
-      setExcelLoading
-    );
+    // 선택된 시트에 새 데이터 추가
+    const currentSheet = localStorage.getItem('sheetName') || '';
+    if (!currentSheet) {
+      return toast.warn('시트를 먼저 선택해주세요!');
+    }
 
-    localStorage.setItem('sheetName', 'Episode_Logs');
-    setSelectedSheet('Episode_Logs');
+    try {
+      setExcelLoading(true);
 
-    await syncNewDuplicateDataToExcel(
-      duplicateNewEpi,
-      loginToken,
-      setProgress,
-      CATEGORY,
-      setExcelLoading,
-      'Episode_Logs'
-    );
+      await appendNewDataToTop(
+        newEpi,
+        setProgress,
+        CATEGORY,
+        setExcelLoading,
+        currentSheet,
+        false // 토스트 메시지 표시 안 함
+      );
+
+      // Episode_Logs 시트에 변경된 데이터 추가
+      if (duplicateNewEpi.length > 0) {
+        setProgress(
+          `Episode_Logs 시트에 변경된 데이터 ${duplicateNewEpi.length}개 추가 중...`
+        );
+        localStorage.setItem('sheetName', 'Episode_Logs');
+        setSelectedSheet('Episode_Logs');
+
+        await appendNewDataToTop(
+          duplicateNewEpi,
+          setProgress,
+          CATEGORY,
+          setExcelLoading,
+          'Episode_Logs',
+          false // 토스트 메시지 표시 안 함
+        );
+      }
+
+      // 모든 작업 완료 후 통합 토스트 메시지
+      toast.success(
+        `새로운 에피소드 ${newEpi.length}개, 변경된 에피소드 ${duplicateNewEpi.length}개 \n 동기화에 성공했습니다!`
+      );
+      setSyncCompleted(true);
+    } catch (error) {
+      console.error('Excel 동기화 실패:', error);
+    } finally {
+      setExcelLoading(false);
+      setProgress('');
+    }
   };
 
   const handleSearchNew = async () => {
     setLoading(true);
-    const newList = await getNewDataWithExcel();
-    const duplicateNewData = await findUpdateData(newList);
+    setSyncCompleted(false);
+    const newList = await getNewDataWithExcel(setProgress);
+    const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
     setNewEpi(newList);
     setDuplicateNewEpi(duplicateNewData);
@@ -153,7 +180,12 @@ const EpisodeLayout = () => {
             >
               <img src='/redo.svg' alt='재검색' width={22} height={22} />
             </button>
-            <Button onClick={handleSyncExcel}>Excel 동기화</Button>
+            <Button
+              onClick={handleSyncExcel}
+              disabled={excelLoading || syncCompleted}
+            >
+              {syncCompleted ? 'Excel 동기화 완료' : 'Excel 동기화'}
+            </Button>
           </div>
         </div>
         <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>
