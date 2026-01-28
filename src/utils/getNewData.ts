@@ -2,19 +2,6 @@ import type { usingChannelProps, usingDataProps } from '../type';
 import { api } from './api';
 import { getExcelData } from './updateExcel';
 
-function findMaxIdInExcel(
-  excelData: (usingDataProps | usingChannelProps)[]
-): number {
-  if (excelData.length === 0) return 0;
-
-  const maxId = excelData.reduce((maxId, item) => {
-    const currentId = 'episodeId' in item ? item.episodeId : item.channelId;
-    return currentId > maxId ? currentId : maxId;
-  }, 0);
-
-  return maxId;
-}
-
 export async function getNewData(
   token: string,
   accessToken: string,
@@ -35,8 +22,6 @@ export async function getNewData(
   category: 'episode' | 'channel'
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   const excelData = await getExcelData(token, category);
-
-  const maxId = findMaxIdInExcel(excelData);
 
   const size = 1000;
   const firstRes = await api.get(`/admin/${category}?page=1&size=${size}`, {
@@ -112,7 +97,6 @@ export async function getNewDataWithExcel(
 
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / batchSize);
-  const maxId = findMaxIdInExcel(allExcelData);
 
   updateProgress('API 데이터 조회 중... 0%', 0, 60, 20);
 
