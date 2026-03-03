@@ -47,6 +47,8 @@ const MenuGroupItem = ({
       onMouseLeave={() => !isSidebarOpen && setIsHovered(false)}
     >
       <button
+        type='button'
+        aria-disabled={!isSidebarOpen}
         onClick={() => isSidebarOpen && setIsExpanded((prev) => !prev)}
         className={`w-full flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors ${
           isSidebarOpen ? 'justify-between' : 'justify-center cursor-default'

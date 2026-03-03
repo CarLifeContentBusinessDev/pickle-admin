@@ -5,13 +5,21 @@ interface MenuChild {
   icon?: React.ReactNode;
 }
 
-interface MenuGroup {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  children?: MenuChild[];
-  to?: string;
-}
+type MenuGroup =
+  | {
+      id: string;
+      label: string;
+      icon: React.ReactNode;
+      children: MenuChild[];
+      to?: never;
+    }
+  | {
+      id: string;
+      label: string;
+      icon: React.ReactNode;
+      children?: never;
+      to: string;
+    };
 
 export const MENU_GROUPS: MenuGroup[] = [
   {
