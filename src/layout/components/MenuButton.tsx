@@ -7,8 +7,9 @@ interface MenuButtonProps {
 }
 
 const MenuButton = ({ children, to, isOpen }: MenuButtonProps) => {
-  const activeLinkClass = 'bg-indigo-500 text-white font-bold';
-  const defaultLinkClass = 'text-gray-400 hover:bg-gray-700 hover:text-white';
+  const activeLinkClass = 'bg-indigo-500 text-white font-bold rounded-xl';
+  const defaultLinkClass =
+    'text-gray-400 hover:bg-gray-700 hover:text-white hover:rounded-xl';
 
   return (
     <NavLink

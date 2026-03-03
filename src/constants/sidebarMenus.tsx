@@ -1,0 +1,26 @@
+export const MENU_GROUPS = [
+  {
+    id: 'data-management',
+    label: '상용 콘텐츠 관리',
+    icon: (
+      <img src='/radio.svg' width={24} height={24} alt='상용 콘텐츠 관리' />
+    ),
+    children: [
+      {
+        id: 'curation-list',
+        to: '/curation-list',
+        label: '큐레이션 관리',
+      },
+      {
+        id: 'channel-book-list',
+        to: '/channel-book-list',
+        label: '채널·도서 관리',
+      },
+      {
+        id: 'episode',
+        to: '/',
+        label: '에피소드 관리',
+      },
+    ],
+  },
+];
