@@ -1,11 +1,19 @@
 import { useState } from 'react';
+import MenuButton from './MenuButton';
+
+interface MenuItem {
+  id: string;
+  to: string;
+  label: string;
+  icon?: React.ReactNode;
+}
 
 interface MenuGroupItemProps {
   label: string;
   icon: React.ReactNode;
   isSidebarOpen: boolean;
   isActive: boolean;
-  children: React.ReactNode;
+  items: MenuItem[];
 }
 
 const ChevronIcon = ({ isOpen }: { isOpen: boolean }) => (
@@ -27,12 +35,17 @@ const MenuGroupItem = ({
   icon,
   isSidebarOpen,
   isActive,
-  children,
+  items,
 }: MenuGroupItemProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div>
+    <div
+      className='relative'
+      onMouseEnter={() => !isSidebarOpen && setIsHovered(true)}
+      onMouseLeave={() => !isSidebarOpen && setIsHovered(false)}
+    >
       <button
         onClick={() => isSidebarOpen && setIsExpanded((prev) => !prev)}
         className={`w-full flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors ${
@@ -40,10 +53,10 @@ const MenuGroupItem = ({
         }`}
       >
         <div className='flex items-center gap-3'>
-          {icon}
+          {icon && icon}
           {isSidebarOpen && (
             <span
-              className={`text-md font-semibold ${isActive ? 'text-white' : 'text-gray-400'}`}
+              className={`text-md font-semibold ${isActive ? 'text-white' : ''}`}
             >
               {label}
             </span>
@@ -52,13 +65,33 @@ const MenuGroupItem = ({
         {isSidebarOpen && <ChevronIcon isOpen={isExpanded} />}
       </button>
 
+      {/* 사이드바 열렸을 때: 인라인 서브메뉴 */}
       {isSidebarOpen && (
         <div
-          className={`overflow-hidden transition-all duration-300 bg-[#000c17] ${
+          className={`overflow-hidden transition-all duration-300 ${
             isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className='m-1 border-white/10'>{children}</div>
+          <div>
+            {items.map((item) => (
+              <MenuButton key={item.id} to={item.to} isOpen={true}>
+                {item.icon && item.icon}
+                <span>{item.label}</span>
+              </MenuButton>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 사이드바 접혔을 때: 호버 시 플로팅 서브메뉴 */}
+      {!isSidebarOpen && isHovered && (
+        <div className='absolute left-full top-0 ml-1 w-48 bg-[#1B1E2F] z-50 rounded-md overflow-hidden'>
+          {items.map((item) => (
+            <MenuButton key={item.id} to={item.to} isOpen={true}>
+              {item.icon && item.icon}
+              <span>{item.label}</span>
+            </MenuButton>
+          ))}
         </div>
       )}
     </div>

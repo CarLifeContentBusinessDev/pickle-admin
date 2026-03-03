@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Button from '../components/Button';
 import { MENU_GROUPS } from '../constants/sidebarMenus';
-import MenuButton from './components/MenuButton';
 import MenuGroupItem from './components/MenuGroupItem';
+import MenuButton from './components/MenuButton';
 
 const Sidebar = () => {
   const { pathname } = useLocation();
@@ -31,24 +31,30 @@ const Sidebar = () => {
 
       <nav className='mt-5 flex flex-col gap-1'>
         {MENU_GROUPS.map((group, index) => {
-          const isActive = group.children.some((item) => item.to === pathname);
+          const isActive = group.children
+            ? group.children.some((item) => item.to === pathname)
+            : pathname === group.to;
 
           return (
             <div key={group.id}>
               {index > 0 && <hr className='border-white/10 mx-4' />}
-              <MenuGroupItem
-                key={group.id}
-                label={group.label}
-                icon={group.icon}
-                isSidebarOpen={isOpen}
-                isActive={isActive}
-              >
-                {group.children.map((item) => (
-                  <MenuButton key={item.id} to={item.to} isOpen={isOpen}>
-                    {isOpen && <span className='pl-8'>{item.label}</span>}
-                  </MenuButton>
-                ))}
-              </MenuGroupItem>
+
+              {group.children ? (
+                // 서브메뉴가 있는 경우
+                <MenuGroupItem
+                  label={group.label}
+                  icon={group.icon}
+                  isSidebarOpen={isOpen}
+                  isActive={isActive}
+                  items={group.children}
+                />
+              ) : (
+                // 단일 메뉴 버튼인 경우
+                <MenuButton to={group.to!} isOpen={isOpen}>
+                  {group.icon}
+                  {isOpen && <span>{group.label}</span>}
+                </MenuButton>
+              )}
             </div>
           );
         })}

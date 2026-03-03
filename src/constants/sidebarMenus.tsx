@@ -1,4 +1,19 @@
-export const MENU_GROUPS = [
+interface MenuChild {
+  id: string;
+  to: string;
+  label: string;
+  icon?: React.ReactNode;
+}
+
+interface MenuGroup {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  children?: MenuChild[];
+  to?: string;
+}
+
+export const MENU_GROUPS: MenuGroup[] = [
   {
     id: 'data-management',
     label: '상용 콘텐츠 관리',
