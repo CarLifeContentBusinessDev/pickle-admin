@@ -1,19 +1,13 @@
 import { useState } from 'react';
 import MenuButton from './MenuButton';
-
-interface MenuItem {
-  id: string;
-  to: string;
-  label: string;
-  icon?: React.ReactNode;
-}
+import type { MenuChild } from '../../constants/sidebarMenus';
 
 interface MenuGroupItemProps {
   label: string;
   icon: React.ReactNode;
   isSidebarOpen: boolean;
   isActive: boolean;
-  items: MenuItem[];
+  items: MenuChild[];
 }
 
 const ChevronIcon = ({ isOpen }: { isOpen: boolean }) => (
