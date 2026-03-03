@@ -1,18 +1,24 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Button from '../components/Button';
+import { MENU_GROUPS } from '../constants/sidebarMenus';
+import MenuGroupItem from './components/MenuGroupItem';
 import MenuButton from './components/MenuButton';
 
 const Sidebar = () => {
+  const { pathname } = useLocation();
   const [isOpen, setIsOpen] = useState(true);
 
   return (
     <aside
-      className={`flex-shrink-0 bg-[#1B1E2F] shadow-md transition-all duration-300 ${isOpen ? 'w-80' : 'w-20'}`}
+      className={`flex-shrink-0 bg-[#1B1E2F] shadow-md transition-all duration-300 ${
+        isOpen ? 'w-80' : 'w-20'
+      }`}
     >
       <div className='flex justify-end my-3 px-3'>
         <Button
           className='!border-none !px-4'
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setIsOpen((prev) => !prev)}
         >
           <img
             src={isOpen ? '/close.svg' : '/open.svg'}
@@ -23,19 +29,35 @@ const Sidebar = () => {
         </Button>
       </div>
 
-      <nav className='mt-5'>
-        <MenuButton to='/curation-list' isOpen={isOpen}>
-          <img src='/quration.svg' width={24} height={24} alt='큐레이션' />
-          {isOpen && <span>큐레이션 관리</span>}
-        </MenuButton>
-        <MenuButton to='/channel-book-list' isOpen={isOpen}>
-          <img src='/channel-book.svg' width={24} height={24} alt='채널·도서' />
-          {isOpen && <span>채널·도서 관리</span>}
-        </MenuButton>
-        <MenuButton to='/' isOpen={isOpen}>
-          <img src='/episode.svg' width={24} height={24} alt='에피소드' />
-          {isOpen && <span>에피소드 관리</span>}
-        </MenuButton>
+      <nav className='mt-5 flex flex-col gap-1'>
+        {MENU_GROUPS.map((group, index) => {
+          const isActive = group.children
+            ? group.children.some((item) => item.to === pathname)
+            : pathname === group.to;
+
+          return (
+            <div key={group.id}>
+              {index > 0 && <hr className='border-white/10 mx-4' />}
+
+              {group.children ? (
+                // 서브메뉴가 있는 경우
+                <MenuGroupItem
+                  label={group.label}
+                  icon={group.icon}
+                  isSidebarOpen={isOpen}
+                  isActive={isActive}
+                  items={group.children}
+                />
+              ) : (
+                // 단일 메뉴 버튼인 경우
+                <MenuButton to={group.to!} isOpen={isOpen}>
+                  {group.icon}
+                  {isOpen && <span>{group.label}</span>}
+                </MenuButton>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </aside>
   );
