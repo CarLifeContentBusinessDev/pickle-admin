@@ -1,4 +1,4 @@
-interface MenuChild {
+export interface MenuChild {
   id: string;
   to: string;
   label: string;
