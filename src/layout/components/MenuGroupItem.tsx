@@ -76,7 +76,7 @@ const MenuGroupItem = ({
             {items.map((item) => (
               <MenuButton key={item.id} to={item.to} isOpen={true}>
                 {item.icon && item.icon}
-                <span>{item.label}</span>
+                <span className='pl-10'>{item.label}</span>
               </MenuButton>
             ))}
           </div>
