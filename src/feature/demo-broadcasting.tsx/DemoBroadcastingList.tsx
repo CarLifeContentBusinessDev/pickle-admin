@@ -2,35 +2,37 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Table from '../../components/Table';
 
-interface DemoCategoryListProps {
-  categories: any[];
+interface DemoBroadcastingListProps {
+  broadcasting: any[];
   selectedLang: string;
 }
 
 const gridCols =
-  'minmax(40px,1fr) minmax(120px,2fr) minmax(120px,2fr) minmax(60px,1fr) minmax(80px,2fr) minmax(100px,1fr) minmax(90px,90px)';
+  'minmax(40px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(120px,1fr) minmax(60px,1fr) minmax(80px,1fr) minmax(100px,1fr) minmax(90px,90px)';
 
 const columns = [
-  { key: 'id', label: 'id' },
+  { key: 'id', label: 'ID' },
   { key: 'title', label: 'title' },
-  { key: 'img_url', label: 'thumbnail' },
-  { key: 'order', label: 'order' },
-  { key: 'language', label: 'language' },
+  { key: 'channel', label: 'channel' },
+  { key: 'frequency', label: 'frequency' },
+  { key: 'img_url', label: '썸네일' },
+  { key: 'order', label: '순위' },
+  { key: 'language', label: '국가' },
   { key: 'programsCount', label: '프로그램 수' },
   { key: 'edit', label: '' },
 ];
 
-const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
-  categories,
+const DemoBroadcastingList: React.FC<DemoBroadcastingListProps> = ({
+  broadcasting,
   selectedLang,
 }) => {
   const navigate = useNavigate();
 
-  const renderCell = (key: string, cat: any) => {
+  const renderCell = (key: string, broad: any) => {
     if (key === 'img_url') {
-      return cat.img_url ? (
+      return broad.img_url ? (
         <img
-          src={cat.img_url}
+          src={broad.img_url}
           alt=''
           className='h-20 max-w-24 object-contain rounded shadow'
         />
@@ -40,8 +42,8 @@ const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
     }
 
     if (key === 'language') {
-      return Array.isArray(cat.language)
-        ? cat.language.map((lang: string) => (
+      return Array.isArray(broad.language)
+        ? broad.language.map((lang: string) => (
             <span
               key={lang}
               className='bg-gray-200 text-gray-700 rounded px-2 py-0.5 text-xs mr-1'
@@ -49,7 +51,7 @@ const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
               {lang}
             </span>
           ))
-        : cat.language;
+        : broad.language;
     }
 
     if (key === 'edit') {
@@ -57,7 +59,9 @@ const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
         <button
           className='flex items-center gap-1 px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition text-sm'
           onClick={() =>
-            navigate(`/demo/category-list/edit/${cat.id}?lang=${selectedLang}`)
+            navigate(
+              `/demo/broadcasting-list/edit/${broad.id}?lang=${selectedLang}`
+            )
           }
         >
           편집
@@ -65,17 +69,17 @@ const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
       );
     }
 
-    return Array.isArray(cat[key]) ? cat[key].join(', ') : cat[key];
+    return Array.isArray(broad[key]) ? broad[key].join(', ') : broad[key];
   };
 
   return (
     <Table
       columns={columns}
-      data={categories}
+      data={broadcasting}
       gridTemplateColumns={gridCols}
       renderCell={renderCell}
     />
   );
 };
 
-export default DemoCategoryList;
+export default DemoBroadcastingList;

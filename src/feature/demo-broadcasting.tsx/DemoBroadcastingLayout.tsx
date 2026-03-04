@@ -1,22 +1,13 @@
 import { useEffect, useState } from 'react';
 import Dropdown from '../../components/Dropdown';
-import {
-  LANGUAGES,
-  LANG_COLUMN_MAP,
-  type LanguageCode,
-} from '../../constants/languages';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { supabase } from '../../lib/supabase';
-import DemoCategoryList from './DemoCategoryList';
+import type { Broadcasting } from '../../types/demoContents';
+import DemoBroadcastingList from './DemoBroadcastingList';
+import { LANGUAGES, type LanguageCode } from '../../constants/languages';
 
-interface Category {
-  id: number;
-  title: string;
-  [key: string]: any;
-}
-
-const DemoCategoryLayout = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+const DemoBroadcastingLayout = () => {
+  const [broadcasting, setBroadcasting] = useState<Broadcasting[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedLang, setSelectedLang] = useState<LanguageCode>('ko');
@@ -24,21 +15,16 @@ const DemoCategoryLayout = () => {
     {}
   );
 
-  // 언어별로 보여줄 컬럼명 매핑 (공통 상수 사용)
-  const langColumnMap = LANG_COLUMN_MAP;
-
-  // programs 테이블에서 category_id별 프로그램 수 조회
+  // programs 테이블에서 broadcasting_id별 프로그램 수 조회 (언어 필터 적용)
   useEffect(() => {
     const fetchProgramCounts = async () => {
       const { data, error } = await supabase
         .from('programs')
-        .select('category_id, language')
-        .returns<{ category_id: number; language: string | string[] }[]>();
+        .select('broadcasting_id, language')
+        .returns<{ broadcasting_id: number; language: string | string[] }[]>();
       if (error || !data) return;
-      // 언어별로 카운트
       const counts: Record<number, number> = {};
       data.forEach((row) => {
-        // 언어 필터: 선택된 언어가 포함된 프로그램만 카운트
         let langs: string[] = [];
         if (Array.isArray(row.language)) {
           langs = row.language;
@@ -50,7 +36,7 @@ const DemoCategoryLayout = () => {
           }
         }
         if (langs.includes(selectedLang)) {
-          counts[row.category_id] = (counts[row.category_id] || 0) + 1;
+          counts[row.broadcasting_id] = (counts[row.broadcasting_id] || 0) + 1;
         }
       });
       setProgramCounts(counts);
@@ -58,42 +44,57 @@ const DemoCategoryLayout = () => {
     fetchProgramCounts();
   }, [selectedLang]);
 
-  // 필터링된 데이터 생성
-  const filteredCategories = categories.map((cat) => ({
-    id: cat.id,
-    title: cat[langColumnMap[selectedLang].title],
-    img_url: cat[langColumnMap[selectedLang].img_url],
-    order: cat.order,
-    created_at: cat.created_at,
-    language: cat.language,
-    programsCount: programCounts[cat.id] || 0,
-  }));
+  // 선택한 언어가 포함된 방송사만 필터링
+  const filteredBroadcasting = broadcasting
+    .filter((brod) => {
+      // 방송사 객체에 language 필드가 있고, 배열 또는 JSON string일 수 있음
+      let langs: string[] = [];
+      if (Array.isArray(brod.language)) {
+        langs = brod.language;
+      } else if (typeof brod.language === 'string') {
+        try {
+          langs = JSON.parse(brod.language);
+        } catch {
+          langs = [brod.language];
+        }
+      }
+      return langs.includes(selectedLang);
+    })
+    .map((brod) => ({
+      ...brod,
+      programsCount: programCounts[brod.id] || 0,
+    }));
 
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchBroadcasting = async () => {
       setLoading(true);
       setError('');
       const { data, error } = await supabase
-        .from('categories')
+        .from('broadcastings')
         .select('*')
-        .order('order', { ascending: true });
+        .order('order', { ascending: true })
+        .order('id', { ascending: true });
       if (error) {
         setError(error.message);
       } else {
-        setCategories(data || []);
+        setBroadcasting(data || []);
       }
       setLoading(false);
     };
-    fetchCategories();
+    fetchBroadcasting();
   }, []);
 
   return (
     <div className='p-10 flex flex-col h-screen'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>데모 카테고리 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>데모 방송사 관리</h1>
       <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
         <div className='flex justify-between items-center flex-shrink-0'>
           <h3 className='text-point-color font-semibold'>
-            총 <span className='font-extrabold'>{categories.length}</span>개
+            총{' '}
+            <span className='font-extrabold'>
+              {filteredBroadcasting.length}
+            </span>
+            개
           </h3>
           <div className='flex gap-8 items-center'>
             <Dropdown
@@ -114,8 +115,8 @@ const DemoCategoryLayout = () => {
           )}
           {!loading && !error && (
             <div className='flex-1 overflow-y-auto max-h-[calc(100vh-200px)]'>
-              <DemoCategoryList
-                categories={filteredCategories}
+              <DemoBroadcastingList
+                broadcasting={filteredBroadcasting}
                 selectedLang={selectedLang}
               />
             </div>
@@ -126,4 +127,4 @@ const DemoCategoryLayout = () => {
   );
 };
 
-export default DemoCategoryLayout;
+export default DemoBroadcastingLayout;

@@ -12,3 +12,14 @@ export interface Category {
   jp_title?: string;
   jp_img_url?: string;
 }
+
+export interface Broadcasting {
+  id: number;
+  title: string;
+  channel: string;
+  frequency: string;
+  img_url: string;
+  order: number;
+  created_at: string;
+  language: string[];
+}

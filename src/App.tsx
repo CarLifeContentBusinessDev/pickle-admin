@@ -5,6 +5,8 @@ import ChannelLayout from './feature/channel-book/ChannelLayout';
 import CurationLayout from './feature/curation/CurationLayout';
 import DemoCategoryLayout from './feature/demo-category/DemoCategoryLayout';
 import DemoCategoryEdit from './feature/demo-category/DemoCategoryEdit';
+import DemoBroadcastingLayout from './feature/demo-broadcasting.tsx/DemoBroadcastingLayout';
+import DemoBroadcastingEdit from './feature/demo-broadcasting.tsx/DemoBroadcastingEdit';
 
 function App() {
   return (
@@ -19,6 +21,14 @@ function App() {
             <Route
               path='category-list/edit/:id'
               element={<DemoCategoryEdit />}
+            />
+            <Route
+              path='broadcasting-list'
+              element={<DemoBroadcastingLayout />}
+            />
+            <Route
+              path='broadcasting-list/edit/:id'
+              element={<DemoBroadcastingEdit />}
             />
           </Route>
         </Route>
