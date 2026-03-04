@@ -8,6 +8,7 @@ import DemoCategoryEdit from './feature/demo-category/DemoCategoryEdit';
 import DemoBroadcastingLayout from './feature/demo-broadcasting.tsx/DemoBroadcastingLayout';
 import DemoBroadcastingEdit from './feature/demo-broadcasting.tsx/DemoBroadcastingEdit';
 import DemoCategoryAdd from './feature/demo-category/DemoCategoryAdd';
+import DemoBroadcastingAdd from './feature/demo-broadcasting.tsx/DemoBroadcastingAdd';
 
 function App() {
   return (
@@ -31,6 +32,10 @@ function App() {
             <Route
               path='broadcasting-list/edit/:id'
               element={<DemoBroadcastingEdit />}
+            />
+            <Route
+              path='broadcasting-list/add'
+              element={<DemoBroadcastingAdd />}
             />
           </Route>
         </Route>

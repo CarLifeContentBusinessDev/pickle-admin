@@ -106,14 +106,14 @@ const DemoBroadcastingLayout = () => {
               options={[...LANGUAGES]}
               onChange={(v) => setSelectedLang(v as LanguageCode)}
             />
-            <Button onClick={() => navigate('/demo/broadcasting/add')}>
+            <Button onClick={() => navigate('/demo/broadcasting-list/add')}>
               방송사 추가
             </Button>
           </div>
         </div>
         <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>
           <LoadingOverlay loading={loading}>
-            카테고리 목록을 불러오는 중입니다.
+            방송사 목록을 불러오는 중입니다.
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
