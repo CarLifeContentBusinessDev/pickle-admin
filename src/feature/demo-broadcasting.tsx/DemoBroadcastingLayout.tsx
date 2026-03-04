@@ -5,8 +5,11 @@ import { supabase } from '../../lib/supabase';
 import type { Broadcasting } from '../../types/demoContents';
 import DemoBroadcastingList from './DemoBroadcastingList';
 import { LANGUAGES, type LanguageCode } from '../../constants/languages';
+import Button from '../../components/Button';
+import { useNavigate } from 'react-router-dom';
 
 const DemoBroadcastingLayout = () => {
+  const navigate = useNavigate();
   const [broadcasting, setBroadcasting] = useState<Broadcasting[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,22 +68,23 @@ const DemoBroadcastingLayout = () => {
       programsCount: programCounts[brod.id] || 0,
     }));
 
+  const fetchBroadcasting = async () => {
+    setLoading(true);
+    setError('');
+    const { data, error } = await supabase
+      .from('broadcastings')
+      .select('*')
+      .order('order', { ascending: true })
+      .order('id', { ascending: true });
+    if (error) {
+      setError(error.message);
+    } else {
+      setBroadcasting(data || []);
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchBroadcasting = async () => {
-      setLoading(true);
-      setError('');
-      const { data, error } = await supabase
-        .from('broadcastings')
-        .select('*')
-        .order('order', { ascending: true })
-        .order('id', { ascending: true });
-      if (error) {
-        setError(error.message);
-      } else {
-        setBroadcasting(data || []);
-      }
-      setLoading(false);
-    };
     fetchBroadcasting();
   }, []);
 
@@ -96,12 +100,15 @@ const DemoBroadcastingLayout = () => {
             </span>
             개
           </h3>
-          <div className='flex gap-8 items-center'>
+          <div className='flex gap-4 items-center'>
             <Dropdown
               value={selectedLang}
               options={[...LANGUAGES]}
               onChange={(v) => setSelectedLang(v as LanguageCode)}
             />
+            <Button onClick={() => navigate('/demo/broadcasting/add')}>
+              방송사 추가
+            </Button>
           </div>
         </div>
         <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>
@@ -118,6 +125,7 @@ const DemoBroadcastingLayout = () => {
               <DemoBroadcastingList
                 broadcasting={filteredBroadcasting}
                 selectedLang={selectedLang}
+                onDeleted={fetchBroadcasting}
               />
             </div>
           )}

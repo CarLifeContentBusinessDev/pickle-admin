@@ -6,7 +6,7 @@ import Table from '../../components/Table';
 interface DemoCategoryListProps {
   categories: any[];
   selectedLang: string;
-  onDeleted?: () => void; // 🔥 삭제 후 새로고침용 (선택)
+  onDeleted?: () => void;
 }
 
 const gridCols =
