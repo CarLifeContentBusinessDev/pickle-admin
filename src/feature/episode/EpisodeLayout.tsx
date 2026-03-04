@@ -11,6 +11,7 @@ import LoadingOverlay from '../../components/LoadingOverlay';
 import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 import { findChangedData, findUpdateData } from '../../utils/updateLogs';
+import Dropdown from '../../components/Dropdown';
 
 const CATEGORY = 'episode';
 
@@ -36,8 +37,7 @@ const EpisodeLayout = () => {
     }
   }, [loginToken]);
 
-  const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleSelectSheetDropdown = (value: string) => {
     setSelectedSheet(value);
     localStorage.setItem('sheetName', value);
   };
@@ -162,18 +162,14 @@ const EpisodeLayout = () => {
               vertical={false}
               loading={excelLoading}
             />
-            <select
+            <Dropdown
               value={selectedSheet}
-              onChange={handleSelectSheet}
-              className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
-            >
-              <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
-            </select>
+              options={sheetList.map((sheet) => ({
+                value: sheet.name,
+                label: sheet.name,
+              }))}
+              onChange={handleSelectSheetDropdown}
+            />
             <button
               onClick={() => handleSearchNew()}
               className='cursor-pointer'

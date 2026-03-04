@@ -10,6 +10,7 @@ import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
 import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import SheetSelect from '../../components/SheetSelect';
 
 const CurationLayout = () => {
   const { loginToken } = useLoginTokenStore();
@@ -34,8 +35,7 @@ const CurationLayout = () => {
     }
   }, []);
 
-  const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleSelectSheetDropdown = (value: string) => {
     setSelectedSheet(value);
     localStorage.setItem('sheetName', value);
   };
@@ -119,18 +119,11 @@ const CurationLayout = () => {
               vertical={false}
               loading={excelLoading}
             />
-            <select
+            <SheetSelect
               value={selectedSheet}
-              onChange={handleSelectSheet}
-              className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
-            >
-              <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
-            </select>
+              options={sheetList}
+              onChange={handleSelectSheetDropdown}
+            />
             <button
               onClick={() => handleSearchNew(loginToken)}
               className='cursor-pointer'
