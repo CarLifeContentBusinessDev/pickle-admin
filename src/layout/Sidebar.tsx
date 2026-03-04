@@ -37,8 +37,6 @@ const Sidebar = () => {
 
           return (
             <div key={group.id}>
-              {index > 0 && <hr className='border-white/10 mx-4' />}
-
               {group.children ? (
                 // 서브메뉴가 있는 경우
                 <MenuGroupItem
