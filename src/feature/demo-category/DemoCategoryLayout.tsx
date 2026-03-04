@@ -8,6 +8,8 @@ import {
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { supabase } from '../../lib/supabase';
 import DemoCategoryList from './DemoCategoryList';
+import Button from '../../components/Button';
+import { useNavigate } from 'react-router-dom';
 
 interface Category {
   id: number;
@@ -16,6 +18,8 @@ interface Category {
 }
 
 const DemoCategoryLayout = () => {
+  const navigate = useNavigate();
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -95,12 +99,15 @@ const DemoCategoryLayout = () => {
           <h3 className='text-point-color font-semibold'>
             총 <span className='font-extrabold'>{categories.length}</span>개
           </h3>
-          <div className='flex gap-8 items-center'>
+          <div className='flex gap-4 items-center'>
             <Dropdown
               value={selectedLang}
               options={[...LANGUAGES]}
               onChange={(v) => setSelectedLang(v as LanguageCode)}
             />
+            <Button onClick={() => navigate('/demo/category-list/add')}>
+              카테고리 추가
+            </Button>
           </div>
         </div>
         <div className='w-full flex-1 gap-4 flex flex-col mt-4 min-h-0'>

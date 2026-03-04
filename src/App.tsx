@@ -7,6 +7,7 @@ import DemoCategoryLayout from './feature/demo-category/DemoCategoryLayout';
 import DemoCategoryEdit from './feature/demo-category/DemoCategoryEdit';
 import DemoBroadcastingLayout from './feature/demo-broadcasting.tsx/DemoBroadcastingLayout';
 import DemoBroadcastingEdit from './feature/demo-broadcasting.tsx/DemoBroadcastingEdit';
+import DemoCategoryAdd from './feature/demo-category/DemoCategoryAdd';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
               path='category-list/edit/:id'
               element={<DemoCategoryEdit />}
             />
+            <Route path='category-list/add' element={<DemoCategoryAdd />} />
             <Route
               path='broadcasting-list'
               element={<DemoBroadcastingLayout />}
