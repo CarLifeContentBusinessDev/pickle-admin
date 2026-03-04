@@ -4,6 +4,7 @@ import EpisodeLayout from './feature/episode/EpisodeLayout';
 import ChannelLayout from './feature/channel-book/ChannelLayout';
 import CurationLayout from './feature/curation/CurationLayout';
 import DemoCategoryLayout from './feature/demo-category/DemoCategoryLayout';
+import DemoCategoryEdit from './feature/demo-category/DemoCategoryEdit';
 
 function App() {
   return (
@@ -15,6 +16,10 @@ function App() {
           <Route path='/curation-list' element={<CurationLayout />} />
           <Route path='/demo'>
             <Route path='category-list' element={<DemoCategoryLayout />} />
+            <Route
+              path='category-list/edit/:id'
+              element={<DemoCategoryEdit />}
+            />
           </Route>
         </Route>
       </Routes>

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import LoadingOverlay from '../../components/LoadingOverlay';
-import DemoCategoryList from './DemoCategoryList';
+import { useEffect, useState } from 'react';
 import Dropdown from '../../components/Dropdown';
+import LoadingOverlay from '../../components/LoadingOverlay';
+import { supabase } from '../../lib/supabase';
+import DemoCategoryList from './DemoCategoryList';
 
 interface Category {
   id: number;
@@ -78,7 +78,7 @@ const DemoCategoryLayout = () => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('id', { ascending: true });
+        .order('order', { ascending: true });
       if (error) {
         setError(error.message);
       } else {
@@ -95,8 +95,7 @@ const DemoCategoryLayout = () => {
       <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
         <div className='flex justify-between items-center flex-shrink-0'>
           <h3 className='text-point-color font-semibold'>
-            새로운 카테고리 총{' '}
-            <span className='font-extrabold'>{categories.length}</span>개
+            총 <span className='font-extrabold'>{categories.length}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
             <Dropdown
@@ -122,7 +121,10 @@ const DemoCategoryLayout = () => {
           )}
           {!loading && !error && (
             <div className='flex-1 overflow-y-auto max-h-[calc(100vh-200px)]'>
-              <DemoCategoryList categories={filteredCategories} />
+              <DemoCategoryList
+                categories={filteredCategories}
+                selectedLang={selectedLang}
+              />
             </div>
           )}
         </div>
