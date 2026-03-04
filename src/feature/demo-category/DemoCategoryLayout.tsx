@@ -73,21 +73,25 @@ const DemoCategoryLayout = () => {
     programsCount: programCounts[cat.id] || 0,
   }));
 
+  const fetchCategories = async () => {
+    setLoading(true);
+    setError('');
+
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('order', { ascending: true });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setCategories(data || []);
+    }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchCategories = async () => {
-      setLoading(true);
-      setError('');
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('order', { ascending: true });
-      if (error) {
-        setError(error.message);
-      } else {
-        setCategories(data || []);
-      }
-      setLoading(false);
-    };
     fetchCategories();
   }, []);
 
@@ -124,6 +128,7 @@ const DemoCategoryLayout = () => {
               <DemoCategoryList
                 categories={filteredCategories}
                 selectedLang={selectedLang}
+                onDeleted={fetchCategories}
               />
             </div>
           )}
