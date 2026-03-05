@@ -1,26 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import FormActionsButton from '../../components/FormActionButton';
+import FormField from '../../components/FormField';
+import FormLayout from '../../components/FormLayout';
+import FormTabs from '../../components/FormTabs';
 import { ThumbnailPreview } from '../../components/ThumbnailPreview';
 import { supabase } from '../../lib/supabase';
 import type { Broadcasting } from '../../types/demoContents';
-
-const Field = ({
-  label,
-  children,
-  hint,
-}: {
-  label: string;
-  children: React.ReactNode;
-  hint?: string;
-}) => (
-  <div className='flex flex-col gap-1.5'>
-    <label className='text-xs font-semibold uppercase tracking-widest text-gray-400'>
-      {label}
-    </label>
-    {children}
-    {hint && <p className='text-xs text-gray-400'>{hint}</p>}
-  </div>
-);
 
 const DemoBroadcastingEdit = () => {
   const { id } = useParams();
@@ -29,7 +15,7 @@ const DemoBroadcastingEdit = () => {
 
   // URL의 lang 파라미터로 초기 탭 결정
   const initLang = searchParams.get('lang') ?? 'ko';
-  const [activeTab, setActiveTab] = useState<'basic' | 'localize'>(
+  const [activeTab, setActiveTab] = useState(
     initLang === 'ko' ? 'basic' : 'localize'
   );
 
@@ -118,64 +104,34 @@ const DemoBroadcastingEdit = () => {
   if (!broadcasting) return null;
 
   return (
-    <div className='p-10 flex flex-col h-screen'>
-      <div className='flex items-center gap-3 mb-4'>
-        <h1 className='text-3xl font-bold indent-1'>방송사 편집</h1>
-        <span className='ml-2 px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-sm font-mono'>
-          ID #{broadcasting.id}
-        </span>
+    <FormLayout title='방송사 편집' id={broadcasting.id}>
+      {/* 탭 + 버튼 행 */}
+      <div className='flex justify-between items-center flex-shrink-0 mb-6'>
+        <FormTabs
+          tabs={[{ key: 'basic', label: '기본 정보' }]}
+          active={activeTab}
+          onChange={setActiveTab}
+        />
+
+        <FormActionsButton
+          saving={saving}
+          error={error}
+          onCancel={() => navigate(-1)}
+          onSave={handleSave}
+        />
       </div>
 
-      <div className='w-full rounded-2xl bg-white flex-1 mt-4 p-8 flex flex-col min-h-0'>
-        {/* 탭 + 버튼 행 */}
-        <div className='flex justify-between items-center flex-shrink-0 mb-6'>
-          <div className='flex gap-1 p-1 bg-gray-100 rounded-xl w-fit'>
-            {[{ key: 'basic', label: '기본 정보' }].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as 'basic' | 'localize')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                  activeTab === tab.key
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className='flex gap-3'>
-            <button
-              onClick={() => navigate(-1)}
-              className='px-5 py-2 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 transition'
-            >
-              취소
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className='px-5 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2'
-            >
-              {saving && (
-                <div className='w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin' />
-              )}
-              {saving ? '저장 중...' : '저장하기'}
-            </button>
-          </div>
-        </div>
-
-        {/* 탭 콘텐츠 */}
-        <div className='flex-1 overflow-y-auto min-h-0'>
-          {activeTab === 'basic' && (
-            <div className='flex flex-col gap-6'>
+      {/* 탭 콘텐츠 */}
+      <div className='flex-1'>
+        {activeTab === 'basic' && (
+          <div className='flex flex-col gap-6'>
+            <div className='flex gap-5'>
               <ThumbnailPreview
                 url={broadcasting.img_url || ''}
                 title={broadcasting.title || ''}
               />
-
-              <div className='grid grid-cols-2 gap-6'>
-                <Field label='Title'>
+              <div className='flex flex-col gap-2'>
+                <FormField label='Title'>
                   <input
                     className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
                     name='title'
@@ -183,8 +139,8 @@ const DemoBroadcastingEdit = () => {
                     onChange={handleChange}
                     placeholder='title'
                   />
-                </Field>
-                <Field label='channel'>
+                </FormField>
+                <FormField label='channel'>
                   <input
                     className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
                     name='channel'
@@ -192,8 +148,8 @@ const DemoBroadcastingEdit = () => {
                     onChange={handleChange}
                     placeholder='channel'
                   />
-                </Field>
-                <Field label='frequency'>
+                </FormField>
+                <FormField label='frequency'>
                   <input
                     className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
                     name='frequency'
@@ -201,30 +157,22 @@ const DemoBroadcastingEdit = () => {
                     onChange={handleChange}
                     placeholder='frequency'
                   />
-                </Field>
-                <Field label='Order'>
-                  <input
-                    className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
-                    name='order'
-                    type='number'
-                    value={broadcasting.order ?? ''}
-                    onChange={handleChange}
-                    placeholder='0'
-                  />
-                </Field>
+                </FormField>
               </div>
+            </div>
 
-              <Field label='Thumbnail URL'>
-                <input
-                  className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition font-mono'
-                  name='img_url'
-                  value={broadcasting.img_url || ''}
-                  onChange={handleChange}
-                  placeholder='https://...'
-                />
-              </Field>
+            <FormField label='Thumbnail URL'>
+              <input
+                className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition font-mono'
+                name='img_url'
+                value={broadcasting.img_url || ''}
+                onChange={handleChange}
+                placeholder='https://...'
+              />
+            </FormField>
 
-              <Field
+            <div className='grid grid-cols-2 gap-6'>
+              <FormField
                 label='Language'
                 hint='지원할 언어를 쉼표로 구분하여 입력하세요. 예: ko, en, de, jp'
               >
@@ -252,12 +200,23 @@ const DemoBroadcastingEdit = () => {
                       ))}
                     </div>
                   )}
-              </Field>
+              </FormField>
+
+              <FormField label='Order'>
+                <input
+                  className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
+                  name='order'
+                  type='number'
+                  value={broadcasting.order ?? ''}
+                  onChange={handleChange}
+                  placeholder='0'
+                />
+              </FormField>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
+    </FormLayout>
   );
 };
 

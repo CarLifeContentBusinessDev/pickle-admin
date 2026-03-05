@@ -36,4 +36,11 @@
 
 body {
   font-family: var(--font-pre);
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: transparent transparent;
+}
+
+body::-webkit-scrollbar {
+  width: 0px; /* Chrome/Safari */
+  background: transparent; /* Chrome/Safari */
 }

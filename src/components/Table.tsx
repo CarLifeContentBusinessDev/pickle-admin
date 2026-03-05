@@ -39,7 +39,7 @@ function Table<T>({
         {data.length > 0 ? (
           data.map((row: T, rowIndex) => (
             <div
-              key={rowIndex}
+              key={(row as any).id ?? rowIndex}
               className='grid border-b border-gray-200 items-center hover:bg-gray-50 transition'
               style={{ gridTemplateColumns }}
             >
