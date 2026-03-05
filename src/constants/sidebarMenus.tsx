@@ -30,9 +30,9 @@ export const MENU_GROUPS: MenuGroup[] = [
     ),
     children: [
       {
-        id: 'curation-list',
-        to: '/curation-list',
-        label: '큐레이션 관리',
+        id: 'episode',
+        to: '/',
+        label: '에피소드 관리',
       },
       {
         id: 'channel-book-list',
@@ -40,9 +40,24 @@ export const MENU_GROUPS: MenuGroup[] = [
         label: '채널·도서 관리',
       },
       {
-        id: 'episode',
-        to: '/',
-        label: '에피소드 관리',
+        id: 'curation-list',
+        to: '/curation-list',
+        label: '큐레이션 관리',
+      },
+      {
+        id: 'stg_episode',
+        to: '/stg/episode-list',
+        label: '에피소드 관리 (스테이징)',
+      },
+      {
+        id: 'stg_channel-book-list',
+        to: '/stg/channel-book-list',
+        label: '채널·도서 관리 (스테이징)',
+      },
+      {
+        id: 'stg_curation-list',
+        to: '/stg/curation-list',
+        label: '큐레이션 관리 (스테이징)',
       },
     ],
   },

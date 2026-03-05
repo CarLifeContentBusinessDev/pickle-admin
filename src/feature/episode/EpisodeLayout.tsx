@@ -1,20 +1,23 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllData } from '../../utils/fetchAllData';
-import { addMissingRows } from '../../utils/updateExcel';
-import { getNewDataWithExcel } from '../../utils/getNewData';
-import type { usingDataProps } from '../../type';
-import EpisodeList from './EpisodeList';
-import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingDataProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
+import { fetchAllData } from '../../utils/fetchAllData';
+import { getNewDataWithExcel } from '../../utils/getNewData';
+import getSheetList from '../../utils/getSheetList';
+import { addMissingRows } from '../../utils/updateExcel';
 import { findChangedData, findUpdateData } from '../../utils/updateLogs';
+import EpisodeList from './EpisodeList';
 
 const CATEGORY = 'episode';
 
 const EpisodeLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [duplicateNewEpi, setDuplicateNewEpi] = useState<usingDataProps[]>([]);
@@ -29,6 +32,10 @@ const EpisodeLayout = () => {
   const [selectedSheet, setSelectedSheet] = useState(
     localStorage.getItem('sheetName') || ''
   );
+
+  const isStaging = pathname.startsWith('/stg');
+  const apiInstance = isStaging ? stgApi : api;
+  const getSheetName = (name: string) => (isStaging ? `stg_${name}` : name);
 
   useEffect(() => {
     if (loginToken) {
@@ -48,7 +55,12 @@ const EpisodeLayout = () => {
       `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
-      const allData = await fetchAllData(CATEGORY, setProgress);
+      const allData = await fetchAllData(
+        CATEGORY,
+        setProgress,
+        undefined,
+        apiInstance
+      );
       const duplicateData = await findChangedData(allData);
       await addMissingRows(
         allData,
@@ -57,8 +69,9 @@ const EpisodeLayout = () => {
         CATEGORY,
         setAllLoading
       );
-      localStorage.setItem('sheetName', 'Episode_Logs');
-      setSelectedSheet('Episode_Logs');
+
+      localStorage.setItem('sheetName', getSheetName('Episode_Logs'));
+      setSelectedSheet(getSheetName('Episode_Logs'));
       await addMissingRows(
         duplicateData,
         loginToken,
@@ -95,16 +108,17 @@ const EpisodeLayout = () => {
         setProgress(
           `Episode_Logs 시트에 변경된 데이터 ${duplicateNewEpi.length}개 추가 중...`
         );
-        localStorage.setItem('sheetName', 'Episode_Logs');
-        setSelectedSheet('Episode_Logs');
+
+        localStorage.setItem('sheetName', getSheetName('Episode_Logs'));
+        setSelectedSheet(getSheetName('Episode_Logs'));
 
         await appendNewDataToTop(
           duplicateNewEpi,
           setProgress,
           CATEGORY,
           setExcelLoading,
-          'Episode_Logs',
-          false // 토스트 메시지 표시 안 함
+          getSheetName('Episode_Logs'),
+          false
         );
       }
 
@@ -124,7 +138,7 @@ const EpisodeLayout = () => {
   const handleSearchNew = async () => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewDataWithExcel(setProgress);
+    const newList = await getNewDataWithExcel(setProgress, apiInstance);
     const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
     setNewEpi(newList);
@@ -168,11 +182,17 @@ const EpisodeLayout = () => {
               className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
             >
               <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
             </select>
             <button
               onClick={() => handleSearchNew()}

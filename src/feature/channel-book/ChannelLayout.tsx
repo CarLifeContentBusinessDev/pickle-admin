@@ -1,20 +1,23 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllData } from '../../utils/fetchAllData';
-import { addMissingRows } from '../../utils/updateExcel';
-import { getNewData } from '../../utils/getNewData';
-import type { usingChannelProps } from '../../type';
-import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import getSheetList from '../../utils/getSheetList';
-import ChannelList from './ChannelList';
-import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 import { useAccessTokenStore } from '../../store/useAccessTokenStore';
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingChannelProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
+import { fetchAllData } from '../../utils/fetchAllData';
+import { getNewData } from '../../utils/getNewData';
+import getSheetList from '../../utils/getSheetList';
+import { addMissingRows } from '../../utils/updateExcel';
+import ChannelList from './ChannelList';
 
 const CATEGORY = 'channel';
 
 const ChannelLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
   const { accessToken } = useAccessTokenStore();
   const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
@@ -29,6 +32,9 @@ const ChannelLayout = () => {
     localStorage.getItem('sheetName') || ''
   );
   const [addData, setAddData] = useState<usingChannelProps[]>([]);
+
+  const isStaging = pathname.startsWith('/stg');
+  const apiInstance = isStaging ? stgApi : api;
 
   // AbortController를 ref로 관리
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -54,7 +60,8 @@ const ChannelLayout = () => {
       await fetchAllData(
         CATEGORY,
         setProgress,
-        abortControllerRef.current!.signal
+        abortControllerRef.current!.signal,
+        apiInstance
       );
 
     addData().then(setAddData);
@@ -79,7 +86,13 @@ const ChannelLayout = () => {
       cancelOngoingWork();
       setAddData([]);
 
-      const allData = await fetchAllData(CATEGORY, setProgress);
+      const allData = await fetchAllData(
+        CATEGORY,
+        setProgress,
+        undefined,
+        apiInstance
+      );
+
       await addMissingRows(
         allData,
         loginToken,
@@ -122,7 +135,14 @@ const ChannelLayout = () => {
 
     setLoading(true);
     setAddData([]);
-    const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
+    const newList = await getNewData(
+      token,
+      accessToken,
+      setProgress,
+      CATEGORY,
+      apiInstance
+    );
+
     setProgress('');
     setNewChannels(newList);
     setLoading(false);
@@ -164,11 +184,17 @@ const ChannelLayout = () => {
               className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
             >
               <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
             </select>
             <button
               onClick={() => handleSearchNew(loginToken, accessToken)}

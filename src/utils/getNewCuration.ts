@@ -1,10 +1,9 @@
+import type { AxiosInstance } from 'axios';
 import type { usingCurationExcelProps, usingCurationProps } from '../type';
 import { api } from './api';
 import { getCurationExcelData } from './updateCuration';
 
-function findMaxEpisodeIdInExcel(
-  excelData: usingCurationExcelProps[]
-): number {
+function findMaxEpisodeIdInExcel(excelData: usingCurationExcelProps[]): number {
   if (excelData.length === 0) return 0;
 
   return excelData.reduce((maxId, item) => {
@@ -15,14 +14,15 @@ function findMaxEpisodeIdInExcel(
 
 export async function getNewCurationData(
   token: string,
-  setProgress: (message: string) => void
+  setProgress: (message: string) => void,
+  apiInstance: AxiosInstance = api
 ): Promise<usingCurationExcelProps[]> {
   const excelData = await getCurationExcelData(token);
 
   const maxEpisodeId = findMaxEpisodeIdInExcel(excelData);
 
   const size = 100;
-  const firstRes = await api.get(
+  const firstRes = await apiInstance.get(
     `/admin/curation?page=1&size=${size}&periodType=ALL`
   );
   const totalCount = firstRes.data.data.pageInfo.totalCount;
@@ -37,7 +37,7 @@ export async function getNewCurationData(
   let allApiData: usingCurationProps[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
-    const res = await api.get(
+    const res = await apiInstance.get(
       `/admin/curation?page=${page}&size=${size}&periodType=ALL`
     );
     const pageData = res.data.data.dataList;
@@ -47,7 +47,9 @@ export async function getNewCurationData(
   let allEpiData: usingCurationExcelProps[] = [];
 
   for (let i = 0; i < allApiData.length; i++) {
-    const epiRes = await api.get(`/admin/curation/${allApiData[i].curationId}`);
+    const epiRes = await apiInstance.get(
+      `/admin/curation/${allApiData[i].curationId}`
+    );
     addProgress();
     const detailData = epiRes.data.data;
     const episodes = detailData.episodes || [];

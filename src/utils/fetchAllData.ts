@@ -1,8 +1,9 @@
+import type { AxiosInstance } from 'axios';
 import type {
-  usingChannelProps,
-  usingDataProps,
   CurationListIdProps,
+  usingChannelProps,
   usingCurationExcelProps,
+  usingDataProps,
 } from '../type';
 import { api } from './api';
 
@@ -12,27 +13,33 @@ const CURATIONSIZE = 100;
 export async function fetchAllData(
   category: 'channel',
   setProgress: (message: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  apiInstance?: AxiosInstance
 ): Promise<usingChannelProps[]>;
 export async function fetchAllData(
   category: 'episode',
   setProgress: (message: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  apiInstance?: AxiosInstance
 ): Promise<usingDataProps[]>;
 
 export async function fetchAllData(
   category: string,
   setProgress: (message: string) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  apiInstance: AxiosInstance = api
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
     if (signal?.aborted) {
       return [];
     }
 
-    const firstRes = await api.get(`/admin/${category}?page=1&size=${SIZE}`, {
-      signal
-    });
+    const firstRes = await apiInstance.get(
+      `/admin/${category}?page=1&size=${SIZE}`,
+      {
+        signal,
+      }
+    );
 
     const totalCount = firstRes.data.data.pageInfo.totalCount;
     const totalPages = Math.ceil(totalCount / SIZE);
@@ -44,10 +51,12 @@ export async function fetchAllData(
         return [];
       }
 
-      setProgress(`${Math.round((page / totalPages) / 2 * 100)}%`);
-      const res = await api.get(`/admin/${category}?page=${page}&size=${SIZE}`, {
-        signal
-      });
+      setProgress(`${Math.round((page / totalPages / 2) * 100)}%`);
+      const res = await apiInstance.get(
+        `/admin/${category}?page=${page}&size=${SIZE}`,
+        { signal }
+      );
+
       const dataList = res.data.data.dataList;
 
       allData = allData.concat(dataList);
@@ -66,7 +75,7 @@ export async function fetchAllData(
         try {
           setProgress(`${Math.round(50 + (i / channelData.length) * 50)}%`);
 
-          const episodeRes = await api.get(
+          const episodeRes = await apiInstance.get(
             `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`,
             { signal }
           );
@@ -79,7 +88,10 @@ export async function fetchAllData(
             channel.dispDtime = '';
           }
         } catch (err) {
-          if ((err as any).name === 'AbortError' || (err as any).name === 'CanceledError') {
+          if (
+            (err as any).name === 'AbortError' ||
+            (err as any).name === 'CanceledError'
+          ) {
             return [];
           }
           console.error(`채널 ${channel.channelId}의 에피소드 조회 실패:`, err);
@@ -90,7 +102,10 @@ export async function fetchAllData(
 
     return allData;
   } catch (err) {
-    if ((err as any).name === 'AbortError' || (err as any).name === 'CanceledError') {
+    if (
+      (err as any).name === 'AbortError' ||
+      (err as any).name === 'CanceledError'
+    ) {
       return [];
     }
     console.error('데이터 API 가져오기 실패:', err);
@@ -98,11 +113,11 @@ export async function fetchAllData(
   }
 }
 
-export async function fetchAllCurationData(): Promise<
-  usingCurationExcelProps[]
-> {
+export async function fetchAllCurationData(
+  apiInstance: AxiosInstance = api
+): Promise<usingCurationExcelProps[]> {
   try {
-    const firstRes = await api.get(
+    const firstRes = await apiInstance.get(
       `/admin/curation?page=1&size=${CURATIONSIZE}&periodType=ALL`
     );
 
@@ -111,7 +126,7 @@ export async function fetchAllCurationData(): Promise<
     let curationIds: CurationListIdProps[] = [];
 
     for (let page = 1; page <= totalPages; page++) {
-      const curationListRes = await api.get(
+      const curationListRes = await apiInstance.get(
         `/admin/curation?page=${page}&size=${CURATIONSIZE}&periodType=ALL`
       );
       const pageCurationIds = curationListRes.data.data.dataList.map(
@@ -123,7 +138,10 @@ export async function fetchAllCurationData(): Promise<
     const allCurationData: usingCurationExcelProps[] = [];
 
     for (const { curationId } of curationIds) {
-      const detailRes = await api.get(`/admin/curation/${curationId}`, {});
+      const detailRes = await apiInstance.get(
+        `/admin/curation/${curationId}`,
+        {}
+      );
       const detailData = detailRes.data.data;
 
       const episodes = detailData.episodes || [];

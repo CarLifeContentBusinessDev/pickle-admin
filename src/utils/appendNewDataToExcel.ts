@@ -1,8 +1,8 @@
-import type { usingChannelProps, usingDataProps } from '../type';
 import { toast } from 'react-toastify';
+import type { usingChannelProps, usingDataProps } from '../type';
+import { getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime } from './formatPlayTime';
-import { getSheetsClient } from './auth';
 
 const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 const STARTROW = 4;
@@ -116,29 +116,61 @@ export async function appendNewDataToTop(
       `${filteredData.length}개 데이터를 게시일/등록일 최신순으로 추가 중...`
     );
 
-    // Step 1: 시트 ID 가져오기 (행 삽입을 위해 필요)
+    // Step 1: 시트 ID 가져오기
     const sheetId = await getSheetId(sheetName);
 
-    // Step 2: 새 행 삽입 (기존 데이터는 자동으로 아래로 밀림)
-    setProgress(`새 행 ${filteredData.length}개 삽입 중...`);
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId,
-      resource: {
-        requests: [
-          {
-            insertDimension: {
-              range: {
-                sheetId: sheetId,
-                dimension: 'ROWS',
-                startIndex: STARTROW - 1, // 0-based index
-                endIndex: STARTROW - 1 + filteredData.length,
+    // Step 2: 비어있으면 행 확장, 있으면 행 삽입
+    const isEmpty = await isSheetEmpty(sheetName);
+
+    if (isEmpty) {
+      // 최초 데이터: 행 삽입 없이 시트 크기만 확장
+      const neededRows = STARTROW - 1 + filteredData.length + 100;
+      setProgress(`시트 크기 확장 중... (${neededRows}행)`);
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        resource: {
+          requests: [
+            {
+              updateSheetProperties: {
+                properties: {
+                  sheetId,
+                  gridProperties: { rowCount: neededRows },
+                },
+                fields: 'gridProperties.rowCount',
               },
-              inheritFromBefore: false,
             },
+          ],
+        },
+      });
+    } else {
+      // 기존 데이터 있음: 배치로 행 삽입
+      const INSERT_BATCH_SIZE = 10000;
+      for (let i = 0; i < filteredData.length; i += INSERT_BATCH_SIZE) {
+        const batchCount = Math.min(INSERT_BATCH_SIZE, filteredData.length - i);
+        const startIndex = STARTROW - 1 + i;
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId,
+          resource: {
+            requests: [
+              {
+                insertDimension: {
+                  range: {
+                    sheetId,
+                    dimension: 'ROWS',
+                    startIndex,
+                    endIndex: startIndex + batchCount,
+                  },
+                  inheritFromBefore: false,
+                },
+              },
+            ],
           },
-        ],
-      },
-    });
+        });
+        setProgress(
+          `행 삽입 중... (${Math.min(i + INSERT_BATCH_SIZE, filteredData.length)}/${filteredData.length})`
+        );
+      }
+    }
 
     // Step 3: 새 데이터 변환
     let allNewValues;
@@ -185,7 +217,7 @@ export async function appendNewDataToTop(
     }
 
     // Step 4: 새 데이터만 배치로 쓰기 (기존 데이터는 이미 아래로 밀렸음)
-    const batchSize = 500; // 더 작은 배치로 진행률 표시 개선
+    const batchSize = 2000;
     const batches = Math.ceil(allNewValues.length / batchSize);
     let totalWritten = 0;
 
@@ -214,7 +246,7 @@ export async function appendNewDataToTop(
         `데이터 쓰기 중... (${totalWritten}/${allNewValues.length}, ${percentage}%)`
       );
 
-      await delay(100);
+      await delay(500);
     }
 
     setProgress('');
@@ -242,9 +274,7 @@ export async function appendNewDataToTop(
   }
 }
 
-/**
- * 시트 이름으로 시트 ID를 가져옴
- */
+// 시트 이름으로 시트 ID를 가져옴
 async function getSheetId(sheetName: string): Promise<number> {
   try {
     const sheets = getSheetsClient();
@@ -272,4 +302,14 @@ async function getSheetId(sheetName: string): Promise<number> {
     console.error('시트 ID 조회 실패:', err);
     throw err;
   }
+}
+
+async function isSheetEmpty(sheetName: string): Promise<boolean> {
+  const sheets = getSheetsClient();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${sheetName}!B${STARTROW}:B${STARTROW}`,
+  });
+  const values = response.result.values;
+  return !values || values.length === 0;
 }

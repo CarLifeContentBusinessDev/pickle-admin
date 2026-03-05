@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllCurationData } from '../../utils/fetchAllData';
-import type { usingCurationExcelProps } from '../../type';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingCurationExcelProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
+import { fetchAllCurationData } from '../../utils/fetchAllData';
+import { getNewCurationData } from '../../utils/getNewCuration';
 import getSheetList from '../../utils/getSheetList';
 import { addMissingCurationRows } from '../../utils/updateCuration';
-import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
-import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
-import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 
 const CurationLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
   const [newCurations, setNewCurations] = useState<usingCurationExcelProps[]>(
     []
@@ -27,6 +30,9 @@ const CurationLayout = () => {
   const [selectedSheet, setSelectedSheet] = useState(
     localStorage.getItem('sheetName') || ''
   );
+
+  const isStaging = pathname.startsWith('/stg');
+  const apiInstance = isStaging ? stgApi : api;
 
   useEffect(() => {
     if (loginToken) {
@@ -49,7 +55,7 @@ const CurationLayout = () => {
 
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllCurationData();
+      const allData = await fetchAllCurationData(apiInstance);
       await addMissingCurationRows(allData, loginToken, setProgress);
       setProgress('');
       setAllLoading(false);
@@ -83,7 +89,7 @@ const CurationLayout = () => {
   const handleSearchNew = async (token: string) => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewCurationData(token, setProgress);
+    const newList = await getNewCurationData(token, setProgress, apiInstance);
     setProgress('');
     setNewCurations(newList);
     setLoading(false);
@@ -125,11 +131,17 @@ const CurationLayout = () => {
               className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
             >
               <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
             </select>
             <button
               onClick={() => handleSearchNew(loginToken)}
