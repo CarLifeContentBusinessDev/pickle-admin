@@ -1,24 +1,27 @@
+import { toast } from 'react-toastify';
 import type { usingChannelProps, usingDataProps } from '../type';
+import { getGoogleToken, getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime, parsePlayTime } from './formatPlayTime';
-import { getGoogleToken, getSheetsClient } from './auth';
-import { toast } from 'react-toastify';
 
-const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 const MAX_ROWS = 300000;
 const STARTROW = 4;
 
 // Google Sheets에서 마지막 데이터 행 조회
-export async function getUsedRange(sheetName?: string): Promise<number | null> {
+export async function getUsedRange(
+  sheetName?: string,
+  spreadsheetId?: string
+): Promise<number | null> {
   try {
     const token = await getGoogleToken();
     if (!token) throw new Error('인증 토큰이 없습니다');
 
-    const targetSheet = sheetName || localStorage.getItem('sheetName') || '시트를 선택해주세요.';
+    const targetSheet =
+      sheetName || localStorage.getItem('sheetName') || '시트를 선택해주세요.';
     const sheets = getSheetsClient();
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
+      spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range: `${targetSheet}!D1:D${MAX_ROWS}`,
     });
 
@@ -44,26 +47,31 @@ export async function getUsedRange(sheetName?: string): Promise<number | null> {
 export async function getExcelData(
   token: string,
   category: 'channel',
-  sheetName?: string
+  sheetName?: string,
+  spreadSheetId?: string
 ): Promise<usingChannelProps[]>;
 export async function getExcelData(
   token: string,
   category: 'episode',
-  sheetName?: string
+  sheetName?: string,
+  spreadSheetId?: string
 ): Promise<usingDataProps[]>;
 export async function getExcelData(
   token: string,
   category: 'episode' | 'channel',
-  sheetName?: string
+  sheetName?: string,
+  spreadSheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]>;
 
 export async function getExcelData(
   _token: string,
   category: 'episode' | 'channel' = 'episode',
-  sheetName?: string
+  sheetName?: string,
+  spreadSheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const targetSheet =
+      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
     const totalRows = await getUsedRange(targetSheet);
 
     if (!totalRows || totalRows < STARTROW) {
@@ -75,7 +83,7 @@ export async function getExcelData(
     const range = `${targetSheet}!B${STARTROW}:${lastColumn}${totalRows}`;
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
+      spreadsheetId: spreadSheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range,
     });
 
@@ -134,7 +142,9 @@ export async function getExcelData(
 }
 
 // 첫 번째 행(최신 데이터)만 가져오기
-export async function getExcelLastData() {
+export async function getExcelLastData({
+  spreadsheetId,
+}: { spreadsheetId?: string } = {}): Promise<usingDataProps[]> {
   try {
     const token = await getGoogleToken();
     if (!token) throw new Error('인증 토큰이 없습니다');
@@ -145,7 +155,7 @@ export async function getExcelLastData() {
     const range = `${sheetName}!B${STARTROW}:${LASTCOLUMN}${STARTROW}`;
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId,
+      spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range,
     });
 
@@ -184,7 +194,9 @@ export async function getExcelLastData() {
 }
 
 const filterRows = (rows: any[][]) => {
-  return rows.filter((row) => row[0] !== null && row[0] !== undefined && row[0] !== '');
+  return rows.filter(
+    (row) => row[0] !== null && row[0] !== undefined && row[0] !== ''
+  );
 };
 
 // 데이터 업데이트
@@ -193,14 +205,16 @@ export async function addMissingRows(
   token: string,
   setProgress: (message: string) => void,
   category: 'channel',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  spreadsheetId?: string
 ): Promise<void>;
 export async function addMissingRows(
   allData: usingDataProps[],
   token: string,
   setProgress: (message: string) => void,
   category: 'episode',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  spreadsheetId?: string
 ): Promise<void>;
 
 export async function addMissingRows(
@@ -208,7 +222,8 @@ export async function addMissingRows(
   token: string,
   setProgress: (message: string) => void,
   category: 'episode' | 'channel',
-  setAllLoading: (loading: boolean) => void
+  setAllLoading: (loading: boolean) => void,
+  spreadsheetId?: string
 ) {
   try {
     setAllLoading(true);
@@ -221,7 +236,9 @@ export async function addMissingRows(
             ('episodeId' in row &&
               'episodeId' in item &&
               row.episodeId === item.episodeId) ||
-            ('channelId' in row && 'channelId' in item && row.channelId === item.channelId)
+            ('channelId' in row &&
+              'channelId' in item &&
+              row.channelId === item.channelId)
         )
     );
 
@@ -265,7 +282,10 @@ export async function addMissingRows(
           if (index === 0) {
             console.log('Excel 저장 - 첫 번째 채널 데이터:', row);
             console.log('Excel 저장 - dispDtime 원본 값:', row.dispDtime);
-            console.log('Excel 저장 - dispDtime 포맷 후:', formatDateString(row.dispDtime));
+            console.log(
+              'Excel 저장 - dispDtime 포맷 후:',
+              formatDateString(row.dispDtime)
+            );
           }
 
           return [
@@ -293,7 +313,7 @@ export async function addMissingRows(
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
 
       await sheets.spreadsheets.values.update({
-        spreadsheetId,
+        spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
         range,
         valueInputOption: 'USER_ENTERED',
         resource: { values },
@@ -309,9 +329,21 @@ export async function addMissingRows(
       const newToken = await getGoogleToken();
       if (newToken) {
         if (category === 'episode') {
-          return addMissingRows(allData as usingDataProps[], newToken, setProgress, 'episode', setAllLoading);
+          return addMissingRows(
+            allData as usingDataProps[],
+            newToken,
+            setProgress,
+            'episode',
+            setAllLoading
+          );
         } else {
-          return addMissingRows(allData as usingChannelProps[], newToken, setProgress, 'channel', setAllLoading);
+          return addMissingRows(
+            allData as usingChannelProps[],
+            newToken,
+            setProgress,
+            'channel',
+            setAllLoading
+          );
         }
       }
     }
@@ -328,10 +360,12 @@ export async function overwriteExcelData(
   data: (usingDataProps | usingChannelProps)[],
   _token: string,
   category: 'episode' | 'channel',
-  sheetName?: string
+  sheetName?: string,
+  spreadsheetId?: string
 ) {
   try {
-    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const targetSheet =
+      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
     const sheets = getSheetsClient();
     let values;
     let lastColumn;
@@ -374,13 +408,13 @@ export async function overwriteExcelData(
 
     const clearRange = `${targetSheet}!B${STARTROW}:${lastColumn}${MAX_ROWS}`;
     await sheets.spreadsheets.values.clear({
-      spreadsheetId,
+      spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range: clearRange,
       resource: {},
     });
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId,
+      spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range,
       valueInputOption: 'USER_ENTERED',
       resource: { values },
@@ -395,7 +429,13 @@ export async function overwriteExcelData(
     if ((err as any)?.status === 401) {
       const newToken = await getGoogleToken();
       if (newToken) {
-        return overwriteExcelData(data, newToken, category, sheetName);
+        return overwriteExcelData(
+          data,
+          newToken,
+          category,
+          sheetName,
+          spreadsheetId
+        );
       }
     }
 
@@ -404,17 +444,22 @@ export async function overwriteExcelData(
 }
 
 // 범위 삭제
-export async function clearExcelRange(range: string, sheetName?: string) {
+export async function clearExcelRange(
+  range: string,
+  sheetName?: string,
+  spreadSheetId?: string
+) {
   try {
     const token = await getGoogleToken();
     if (!token) throw new Error('인증 토큰이 없습니다');
 
-    const targetSheet = sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const targetSheet =
+      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
     const sheets = getSheetsClient();
     const fullRange = `${targetSheet}!${range}`;
 
     await sheets.spreadsheets.values.clear({
-      spreadsheetId,
+      spreadsheetId: spreadSheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range: fullRange,
       resource: {},
     });

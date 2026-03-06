@@ -35,7 +35,11 @@ const EpisodeLayout = () => {
 
   const isStaging = pathname.startsWith('/stg');
   const apiInstance = isStaging ? stgApi : api;
+
   const getSheetName = (name: string) => (isStaging ? `stg_${name}` : name);
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
 
   useEffect(() => {
     if (loginToken) {
@@ -67,7 +71,8 @@ const EpisodeLayout = () => {
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
 
       localStorage.setItem('sheetName', getSheetName('Episode_Logs'));
@@ -77,7 +82,8 @@ const EpisodeLayout = () => {
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
     }
   };
@@ -100,7 +106,8 @@ const EpisodeLayout = () => {
         CATEGORY,
         setExcelLoading,
         currentSheet,
-        false // 토스트 메시지 표시 안 함
+        false, // 토스트 메시지 표시 안 함
+        spreadsheetId
       );
 
       // Episode_Logs 시트에 변경된 데이터 추가
@@ -118,7 +125,8 @@ const EpisodeLayout = () => {
           CATEGORY,
           setExcelLoading,
           getSheetName('Episode_Logs'),
-          false
+          false,
+          spreadsheetId
         );
       }
 
@@ -138,7 +146,11 @@ const EpisodeLayout = () => {
   const handleSearchNew = async () => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewDataWithExcel(setProgress, apiInstance);
+    const newList = await getNewDataWithExcel(
+      setProgress,
+      apiInstance,
+      spreadsheetId
+    );
     const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
     setNewEpi(newList);

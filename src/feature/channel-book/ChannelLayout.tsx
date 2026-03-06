@@ -36,6 +36,10 @@ const ChannelLayout = () => {
   const isStaging = pathname.startsWith('/stg');
   const apiInstance = isStaging ? stgApi : api;
 
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
+
   // AbortController를 ref로 관리
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -98,7 +102,8 @@ const ChannelLayout = () => {
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
     }
   };
@@ -120,7 +125,9 @@ const ChannelLayout = () => {
         setProgress,
         CATEGORY,
         setExcelLoading,
-        currentSheet
+        currentSheet,
+        true,
+        spreadsheetId
       );
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
@@ -140,7 +147,8 @@ const ChannelLayout = () => {
       accessToken,
       setProgress,
       CATEGORY,
-      apiInstance
+      apiInstance,
+      spreadsheetId
     );
 
     setProgress('');

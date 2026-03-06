@@ -1,45 +1,27 @@
-import type { usingCurationExcelProps } from '../type';
 import { toast } from 'react-toastify';
+import type { usingCurationExcelProps } from '../type';
+import { getGoogleToken, getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime } from './formatPlayTime';
-import { getSheetsClient } from './auth';
 
-const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 const STARTROW = 4;
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function excelDateToJSDate(serial: number): Date {
-  const excelEpoch = new Date(1899, 11, 30);
-  const millisPerDay = 24 * 60 * 60 * 1000;
-  return new Date(excelEpoch.getTime() + serial * millisPerDay);
-}
-
 function excelDateTime(date?: string | number) {
   if (!date) return '';
-
-  if (typeof date === 'number') {
-    return formatDateString(excelDateToJSDate(date).toISOString());
-  }
-
-  if (!isNaN(Number(date))) {
-    return formatDateString(excelDateToJSDate(Number(date)).toISOString());
-  }
-
   const d = new Date(date);
   return isNaN(d.getTime()) ? '' : formatDateString(d.toISOString());
 }
 
-/**
- * 새 큐레이션 데이터를 시트에 추가
- */
 export async function appendNewCurationToExcel(
   newData: usingCurationExcelProps[],
   setProgress: (progress: string) => void,
   setLoading: (loading: boolean) => void,
-  sheetName: string
+  sheetName: string,
+  spreadsheetId: string = import.meta.env.VITE_SPREADSHEET_ID
 ) {
   if (newData.length === 0) {
     toast.info('추가할 데이터가 없습니다.');
@@ -48,29 +30,23 @@ export async function appendNewCurationToExcel(
 
   try {
     setLoading(true);
+
+    // 작업 시작 전 토큰 갱신
+    await getGoogleToken();
     const sheets = getSheetsClient();
 
-    // 큐레이션 생성일 기준 최신순으로 정렬 (내림차순)
     const sortedData = [...newData].sort((a, b) => {
-      // 1차: 게시 시작일 비교
       const dispStartA = new Date(a.dispStartDtime).getTime();
       const dispStartB = new Date(b.dispStartDtime).getTime();
-
-      if (dispStartB !== dispStartA) {
-        return dispStartB - dispStartA;
-      }
-
-      // 2차: 큐레이션 생성일 비교
-      const createdDateA = new Date(a.curationCreatedAt).getTime();
-      const createdDateB = new Date(b.curationCreatedAt).getTime();
-      return createdDateB - createdDateA;
+      if (dispStartB !== dispStartA) return dispStartB - dispStartA;
+      return (
+        new Date(b.curationCreatedAt).getTime() -
+        new Date(a.curationCreatedAt).getTime()
+      );
     });
 
-    console.log(
-      `총 ${sortedData.length}개 큐레이션 데이터를 게시일/생성일 최신순으로 최하단에 추가`
-    );
-
-    // 현재 시트의 모든 데이터 읽기 (thumbnailTitle을 고유 ID로 사용)
+    // 기존 데이터 읽기 전 토큰 체크
+    await getGoogleToken();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
       range: `${sheetName}!B${STARTROW}:W`,
@@ -80,32 +56,26 @@ export async function appendNewCurationToExcel(
     const existingRows = response.result.values?.length || 0;
     let nextRow = Math.max(existingRows + STARTROW, STARTROW);
 
-    // 기존 데이터의 thumbnailTitle 목록 추출 (0번 인덱스)
     const existingTitles = new Set(
       existingData.map((row) => row[0]?.toString()).filter(Boolean)
     );
-
-    // 중복되지 않은 데이터만 필터링
-    const filteredData = sortedData.filter((item) => {
-      return !existingTitles.has(item.thumbnailTitle);
-    });
+    const filteredData = sortedData.filter(
+      (item) => !existingTitles.has(item.thumbnailTitle)
+    );
 
     if (filteredData.length === 0) {
-      setProgress('');
       setLoading(false);
-      toast.info('추가할 새로운 데이터가 없습니다. (모두 이미 존재)');
+      toast.info('추가할 새로운 데이터가 없습니다.');
       return;
     }
 
-    console.log(
-      `중복 제외 후 ${filteredData.length}개 데이터 추가 (전체 ${sortedData.length}개 중 ${sortedData.length - filteredData.length}개 중복)`
-    );
-
-    // 배치로 나눠서 추가
     const batchSize = 1000;
     const batches = Math.ceil(filteredData.length / batchSize);
 
     for (let batchIdx = 0; batchIdx < batches; batchIdx++) {
+      // 배치 추가 직전마다 토큰 자동 갱신
+      await getGoogleToken();
+
       const batchStart = batchIdx * batchSize;
       const batchEnd = Math.min(
         (batchIdx + 1) * batchSize,
@@ -155,21 +125,10 @@ export async function appendNewCurationToExcel(
 
     setProgress('');
     setLoading(false);
-    const skippedCount = newData.length - filteredData.length;
-    if (skippedCount > 0) {
-      toast.success(
-        `${filteredData.length}개의 데이터가 추가되었습니다! (${skippedCount}개 중복 제외)`
-      );
-    } else {
-      toast.success(`${filteredData.length}개의 데이터가 추가되었습니다!`);
-    }
+    toast.success(`${filteredData.length}개의 데이터가 추가되었습니다!`);
   } catch (err: any) {
-    console.error('데이터 추가 실패:', err);
-    console.error('에러 상세:', err.result?.error);
-    console.error('에러 메시지:', err.result?.error?.message);
     setLoading(false);
     setProgress('');
-
     const errorMessage = err.result?.error?.message || '알 수 없는 오류';
     toast.error(`데이터 추가에 실패했습니다: ${errorMessage}`);
     throw err;

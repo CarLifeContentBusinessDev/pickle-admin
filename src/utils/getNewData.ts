@@ -1,6 +1,7 @@
 import type { AxiosInstance } from 'axios';
 import type { usingChannelProps, usingDataProps } from '../type';
 import { api } from './api';
+import { getGoogleToken } from './auth';
 import { getExcelData } from './updateExcel';
 
 export async function getNewData(
@@ -8,14 +9,16 @@ export async function getNewData(
   accessToken: string,
   setProgress: (message: string) => void,
   category: 'channel',
-  apiInstance?: AxiosInstance
+  apiInstance?: AxiosInstance,
+  spreadsheetId?: string
 ): Promise<usingChannelProps[]>;
 export async function getNewData(
   token: string,
   accessToken: string,
   setProgress: (message: string) => void,
   category: 'episode',
-  apiInstance?: AxiosInstance
+  apiInstance?: AxiosInstance,
+  spreadsheetId?: string
 ): Promise<usingDataProps[]>;
 
 export async function getNewData(
@@ -23,9 +26,15 @@ export async function getNewData(
   accessToken: string,
   setProgress: (message: string) => void,
   category: 'episode' | 'channel',
-  apiInstance: AxiosInstance = api
+  apiInstance: AxiosInstance = api,
+  spreadsheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
-  const excelData = await getExcelData(token, category);
+  const excelData = await getExcelData(
+    token,
+    category,
+    undefined,
+    spreadsheetId
+  );
 
   const size = 1000;
   const firstRes = await apiInstance.get(
@@ -81,7 +90,8 @@ export async function getNewData(
 
 export async function getNewDataWithExcel(
   setProgress?: (message: string) => void,
-  apiInstance: AxiosInstance = api
+  apiInstance: AxiosInstance = api,
+  spreadsheetId?: string
 ): Promise<usingDataProps[]> {
   const batchSize = 10000;
 
@@ -103,7 +113,7 @@ export async function getNewDataWithExcel(
   // 1. 첫 페이지 조회와 엑셀 데이터 조회를 병렬로 실행
   const [firstRes, allExcelData] = await Promise.all([
     apiInstance.get(`/admin/episode?page=1&size=1`),
-    getExcelData('', 'episode'),
+    getExcelData('', 'episode', undefined, spreadsheetId),
   ]);
 
   const totalCount = firstRes.data.data.pageInfo.totalCount;
@@ -141,6 +151,8 @@ export async function getNewDataWithExcel(
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   for (let i = 0; i < pages.length; i += concurrentLimit) {
+    await getGoogleToken();
+
     const chunk = pages.slice(i, i + concurrentLimit);
     const results = await Promise.all(chunk.map((page) => fetchPage(page)));
     results.forEach((data) => allApiData.push(...data));

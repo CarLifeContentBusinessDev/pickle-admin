@@ -15,9 +15,13 @@ function findMaxEpisodeIdInExcel(excelData: usingCurationExcelProps[]): number {
 export async function getNewCurationData(
   token: string,
   setProgress: (message: string) => void,
-  apiInstance: AxiosInstance = api
+  apiInstance: AxiosInstance = api,
+  spreadsheetId?: string
 ): Promise<usingCurationExcelProps[]> {
-  const excelData = await getCurationExcelData(token);
+  const excelData = await getCurationExcelData(
+    token,
+    spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID
+  );
 
   const maxEpisodeId = findMaxEpisodeIdInExcel(excelData);
 

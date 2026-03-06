@@ -34,6 +34,10 @@ const CurationLayout = () => {
   const isStaging = pathname.startsWith('/stg');
   const apiInstance = isStaging ? stgApi : api;
 
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
+
   useEffect(() => {
     if (loginToken) {
       getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
@@ -56,7 +60,12 @@ const CurationLayout = () => {
     if (result) {
       setAllLoading(true);
       const allData = await fetchAllCurationData(apiInstance);
-      await addMissingCurationRows(allData, loginToken, setProgress);
+      await addMissingCurationRows(
+        allData,
+        loginToken,
+        setProgress,
+        spreadsheetId
+      );
       setProgress('');
       setAllLoading(false);
     }
@@ -75,7 +84,8 @@ const CurationLayout = () => {
         newCurations,
         setProgress,
         setExcelLoading,
-        currentSheet
+        currentSheet,
+        spreadsheetId
       );
       setSyncCompleted(true);
     } catch (error) {
@@ -89,7 +99,12 @@ const CurationLayout = () => {
   const handleSearchNew = async (token: string) => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewCurationData(token, setProgress, apiInstance);
+    const newList = await getNewCurationData(
+      token,
+      setProgress,
+      apiInstance,
+      spreadsheetId
+    );
     setProgress('');
     setNewCurations(newList);
     setLoading(false);
