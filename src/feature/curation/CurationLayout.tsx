@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllCurationData } from '../../utils/fetchAllData';
-import type { usingCurationExcelProps } from '../../type';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingCurationExcelProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
+import { fetchAllCurationData } from '../../utils/fetchAllData';
+import { getNewCurationData } from '../../utils/getNewCuration';
 import getSheetList from '../../utils/getSheetList';
 import { addMissingCurationRows } from '../../utils/updateCuration';
-import { getNewCurationData } from '../../utils/getNewCuration';
 import CurationList from './CurationList';
-import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
-import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 
 const CurationLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
+  const isStaging = pathname.startsWith('/stg');
   const [newCurations, setNewCurations] = useState<usingCurationExcelProps[]>(
     []
   );
@@ -24,33 +28,76 @@ const CurationLayout = () => {
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
+  const defaultSheetName = isStaging ? 'stg_큐레이션 DB' : '큐레이션 DB';
+  const sheetStorageKey = isStaging
+    ? 'sheetName:curation:stg'
+    : 'sheetName:curation:prod';
   const [selectedSheet, setSelectedSheet] = useState(
-    localStorage.getItem('sheetName') || ''
+    localStorage.getItem(sheetStorageKey) || defaultSheetName
   );
+
+  const apiInstance = isStaging ? stgApi : api;
+
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
 
   useEffect(() => {
     if (loginToken) {
-      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
+      getSheetList(spreadsheetId).then((list) => {
+        setSheetList(list);
+
+        const filteredSheets = list.filter((sheet) =>
+          isStaging
+            ? sheet.name.startsWith('stg_')
+            : !sheet.name.startsWith('stg_')
+        );
+        const savedSheet = localStorage.getItem(sheetStorageKey);
+        const isSavedSheetValid = filteredSheets.some(
+          (sheet) => sheet.name === savedSheet
+        );
+        const hasDefaultSheet = filteredSheets.some(
+          (sheet) => sheet.name === defaultSheetName
+        );
+
+        const nextSheet = isSavedSheetValid
+          ? savedSheet!
+          : hasDefaultSheet
+            ? defaultSheetName
+            : '';
+
+        setSelectedSheet(nextSheet);
+        if (nextSheet) {
+          localStorage.setItem(sheetStorageKey, nextSheet);
+        } else {
+          localStorage.removeItem(sheetStorageKey);
+        }
+      });
     }
-  }, []);
+  }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedSheet(value);
-    localStorage.setItem('sheetName', value);
+    localStorage.setItem(sheetStorageKey, value);
   };
 
   const handleUpdateExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
     const result = window.confirm(
-      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+      `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
 
     if (result) {
       setAllLoading(true);
-      const allData = await fetchAllCurationData();
-      await addMissingCurationRows(allData, loginToken, setProgress);
+      const allData = await fetchAllCurationData(apiInstance);
+      await addMissingCurationRows(
+        allData,
+        loginToken,
+        setProgress,
+        spreadsheetId
+      );
       setProgress('');
       setAllLoading(false);
     }
@@ -59,7 +106,7 @@ const CurationLayout = () => {
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
-    const currentSheet = localStorage.getItem('sheetName') || '';
+    const currentSheet = localStorage.getItem(sheetStorageKey) || selectedSheet;
     if (!currentSheet) {
       return toast.warn('시트를 먼저 선택해주세요!');
     }
@@ -69,7 +116,8 @@ const CurationLayout = () => {
         newCurations,
         setProgress,
         setExcelLoading,
-        currentSheet
+        currentSheet,
+        spreadsheetId
       );
       setSyncCompleted(true);
     } catch (error) {
@@ -83,7 +131,12 @@ const CurationLayout = () => {
   const handleSearchNew = async (token: string) => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewCurationData(token, setProgress);
+    const newList = await getNewCurationData(
+      token,
+      setProgress,
+      apiInstance,
+      spreadsheetId
+    );
     setProgress('');
     setNewCurations(newList);
     setLoading(false);
@@ -91,15 +144,21 @@ const CurationLayout = () => {
 
   return (
     <div className='p-10 flex flex-col h-[90vh]'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>큐레이션 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>
+        큐레이션 관리{isStaging ? ' (스테이징)' : ''}
+      </h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 큐레이션 시트로 변환</Button>
         <Button
-          href={import.meta.env.VITE_ADMIN_EPI_URL}
+          href={
+            isStaging
+              ? `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_STG_SPREADSHEET_ID}/edit?gid=1243772316#gid=1243772316`
+              : `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_SPREADSHEET_ID}/edit?gid=991347809#gid=991347809`
+          }
           target='_blank'
           rel='noopener noreferrer'
         >
-          대시보드 이동
+          Excel 바로가기
         </Button>
         <LoadingOverlay
           progress={progress}
@@ -125,11 +184,17 @@ const CurationLayout = () => {
               className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
             >
               <option value=''>시트 선택</option>
-              {sheetList.map((sheet) => (
-                <option key={sheet.id} value={sheet.name}>
-                  {sheet.name}
-                </option>
-              ))}
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
             </select>
             <button
               onClick={() => handleSearchNew(loginToken)}
