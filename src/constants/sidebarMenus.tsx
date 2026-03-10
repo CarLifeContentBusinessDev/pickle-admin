@@ -67,14 +67,28 @@ export const MENU_GROUPS: MenuGroup[] = [
   {
     id: 'prod-admin',
     label: '상용 어드민 바로가기',
-    icon: '',
+    icon: (
+      <img
+        src='/admin-line.svg'
+        width={24}
+        height={24}
+        alt='상용 어드민 바로가기'
+      />
+    ),
     to: import.meta.env.VITE_ADMIN_EPI_URL,
     openInNewTab: true,
   },
   {
     id: 'stg-admin',
     label: '검증 어드민 바로가기',
-    icon: '',
+    icon: (
+      <img
+        src='/admin-fill.svg'
+        width={24}
+        height={24}
+        alt='검증 어드민 바로가기'
+      />
+    ),
     to: import.meta.env.VITE_ADMIN_EPI_URL,
     openInNewTab: true,
   },
