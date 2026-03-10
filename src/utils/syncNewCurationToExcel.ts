@@ -13,10 +13,7 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function clearExcelFromRow(
-  startRow: number,
-  endRow: number
-) {
+async function clearExcelFromRow(startRow: number, endRow: number) {
   try {
     const sheets = getSheetsClient();
     const range = `${sheetName}!B${startRow}:W${endRow}`;
@@ -118,7 +115,7 @@ async function syncNewCurationToExcel(
   token: string,
   setProgress: (progress: string) => void
 ) {
-  const excelData = await getCurationExcelData(token);
+  const excelData = await getCurationExcelData(token, spreadsheetId);
 
   const excelKeys = new Set(
     excelData.map((item) => `${item.curationCreatedAt}`)
