@@ -1,24 +1,29 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllData } from '../../utils/fetchAllData';
-import { addMissingRows } from '../../utils/updateExcel';
-import { getNewData } from '../../utils/getNewData';
-import type { usingChannelProps } from '../../type';
-import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import getSheetList from '../../utils/getSheetList';
-import ChannelList from './ChannelList';
-import { useLoginTokenStore } from '../../store/useLoginTokenStore';
 import { useAccessTokenStore } from '../../store/useAccessTokenStore';
-import SheetSelect from '../../components/SheetSelect';
+import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingChannelProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
+import { fetchAllData } from '../../utils/fetchAllData';
+import { getNewData } from '../../utils/getNewData';
+import getSheetList from '../../utils/getSheetList';
+import { addMissingRows } from '../../utils/updateExcel';
+import ChannelList from './ChannelList';
 
 const CATEGORY = 'channel';
 
 const ChannelLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
   const { accessToken } = useAccessTokenStore();
-  const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
+  const isStaging = pathname.startsWith('/stg');
+  const [newChannels, setNewChannels] = useState<usingChannelProps[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
@@ -26,19 +31,57 @@ const ChannelLayout = () => {
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
+  const defaultSheetName = isStaging ? 'stg_채널 DB' : '채널 DB';
+  const sheetStorageKey = isStaging
+    ? 'sheetName:channel:stg'
+    : 'sheetName:channel:prod';
   const [selectedSheet, setSelectedSheet] = useState(
-    localStorage.getItem('sheetName') || ''
+    localStorage.getItem(sheetStorageKey) || defaultSheetName
   );
   const [addData, setAddData] = useState<usingChannelProps[]>([]);
+
+  const apiInstance = isStaging ? stgApi : api;
+
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
 
   // AbortController를 ref로 관리
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (loginToken) {
-      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
+      getSheetList(spreadsheetId).then((list) => {
+        setSheetList(list);
+
+        const filteredSheets = list.filter((sheet) =>
+          isStaging
+            ? sheet.name.startsWith('stg_')
+            : !sheet.name.startsWith('stg_')
+        );
+        const savedSheet = localStorage.getItem(sheetStorageKey);
+        const isSavedSheetValid = filteredSheets.some(
+          (sheet) => sheet.name === savedSheet
+        );
+        const hasDefaultSheet = filteredSheets.some(
+          (sheet) => sheet.name === defaultSheetName
+        );
+
+        const nextSheet = isSavedSheetValid
+          ? savedSheet!
+          : hasDefaultSheet
+            ? defaultSheetName
+            : '';
+
+        setSelectedSheet(nextSheet);
+        if (nextSheet) {
+          localStorage.setItem(sheetStorageKey, nextSheet);
+        } else {
+          localStorage.removeItem(sheetStorageKey);
+        }
+      });
     }
-  }, []);
+  }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
   const cancelOngoingWork = () => {
     if (abortControllerRef.current) {
@@ -55,7 +98,8 @@ const ChannelLayout = () => {
       await fetchAllData(
         CATEGORY,
         setProgress,
-        abortControllerRef.current!.signal
+        abortControllerRef.current!.signal,
+        apiInstance
       );
 
     addData().then(setAddData);
@@ -67,33 +111,41 @@ const ChannelLayout = () => {
 
   const handleSelectSheetDropdown = (value: string) => {
     setSelectedSheet(value);
-    localStorage.setItem('sheetName', value);
+    localStorage.setItem(sheetStorageKey, value);
   };
 
   const handleUpdateExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     const result = window.confirm(
-      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+      `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
       cancelOngoingWork();
       setAddData([]);
 
-      const allData = await fetchAllData(CATEGORY, setProgress);
+      const allData = await fetchAllData(
+        CATEGORY,
+        setProgress,
+        undefined,
+        apiInstance
+      );
+
       await addMissingRows(
         allData,
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
     }
   };
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
+    if (!newChannels) return toast.warn('먼저 새로운 채널을 검색해주세요!');
 
-    const currentSheet = localStorage.getItem('sheetName') || '';
+    const currentSheet = localStorage.getItem(sheetStorageKey) || selectedSheet;
     if (!currentSheet) {
       return toast.warn('시트를 먼저 선택해주세요!');
     }
@@ -107,7 +159,9 @@ const ChannelLayout = () => {
         setProgress,
         CATEGORY,
         setExcelLoading,
-        currentSheet
+        currentSheet,
+        true,
+        spreadsheetId
       );
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
@@ -118,11 +172,20 @@ const ChannelLayout = () => {
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
+    setNewChannels(null);
     cancelOngoingWork();
 
     setLoading(true);
     setAddData([]);
-    const newList = await getNewData(token, accessToken, setProgress, CATEGORY);
+    const newList = await getNewData(
+      token,
+      accessToken,
+      setProgress,
+      CATEGORY,
+      apiInstance,
+      spreadsheetId
+    );
+
     setProgress('');
     setNewChannels(newList);
     setLoading(false);
@@ -130,15 +193,21 @@ const ChannelLayout = () => {
 
   return (
     <div className='p-10 flex flex-col h-[90vh]'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>채널·도서 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>
+        채널·도서 관리{isStaging ? ' (스테이징)' : ''}
+      </h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 채널·도서 시트로 변환</Button>
         <Button
-          href={import.meta.env.VITE_ADMIN_EPI_URL}
+          href={
+            isStaging
+              ? `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_STG_SPREADSHEET_ID}/edit?gid=902383353#gid=902383353`
+              : `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_SPREADSHEET_ID}/edit?gid=934666118#gid=934666118`
+          }
           target='_blank'
           rel='noopener noreferrer'
         >
-          대시보드 이동
+          Excel 바로가기
         </Button>
         <LoadingOverlay
           progress={progress}
@@ -150,7 +219,7 @@ const ChannelLayout = () => {
         <div className='flex justify-between items-center flex-shrink-0'>
           <h3 className='text-point-color font-semibold'>
             새로운 채널·도서 총{' '}
-            <span className='font-extrabold'>{newChannels.length}</span>개
+            <span className='font-extrabold'>{newChannels?.length ?? 0}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
             <LoadingOverlay
@@ -158,11 +227,24 @@ const ChannelLayout = () => {
               vertical={false}
               loading={excelLoading}
             />
-            <SheetSelect
+            <select
               value={selectedSheet}
-              options={sheetList}
-              onChange={handleSelectSheetDropdown}
-            />
+              onChange={(e) => handleSelectSheetDropdown(e.target.value)}
+              className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
+            >
+              <option value=''>시트 선택</option>
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
+            </select>
             <button
               onClick={() => handleSearchNew(loginToken, accessToken)}
               className='cursor-pointer'
@@ -178,10 +260,8 @@ const ChannelLayout = () => {
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {!loading && newChannels.length === 0 && (
-            <ChannelList data={addData} />
-          )}
-          {!loading && newChannels.length > 0 && (
+          {!loading && newChannels === null && <ChannelList data={addData} />}
+          {!loading && newChannels !== null && (
             <ChannelList data={newChannels} />
           )}
         </div>

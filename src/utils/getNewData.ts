@@ -1,32 +1,48 @@
+import type { AxiosInstance } from 'axios';
 import type { usingChannelProps, usingDataProps } from '../type';
 import { api } from './api';
+import { getGoogleToken } from './auth';
 import { getExcelData } from './updateExcel';
 
 export async function getNewData(
   token: string,
   accessToken: string,
   setProgress: (message: string) => void,
-  category: 'channel'
+  category: 'channel',
+  apiInstance?: AxiosInstance,
+  spreadsheetId?: string
 ): Promise<usingChannelProps[]>;
 export async function getNewData(
   token: string,
   accessToken: string,
   setProgress: (message: string) => void,
-  category: 'episode'
+  category: 'episode',
+  apiInstance?: AxiosInstance,
+  spreadsheetId?: string
 ): Promise<usingDataProps[]>;
 
 export async function getNewData(
   token: string,
   accessToken: string,
   setProgress: (message: string) => void,
-  category: 'episode' | 'channel'
+  category: 'episode' | 'channel',
+  apiInstance: AxiosInstance = api,
+  spreadsheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
-  const excelData = await getExcelData(token, category);
+  const excelData = await getExcelData(
+    token,
+    category,
+    undefined,
+    spreadsheetId
+  );
 
   const size = 1000;
-  const firstRes = await api.get(`/admin/${category}?page=1&size=${size}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const firstRes = await apiInstance.get(
+    `/admin/${category}?page=1&size=${size}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
 
   const totalCount = firstRes.data.data.pageInfo.totalCount;
   const totalPages = Math.ceil(totalCount / size);
@@ -40,9 +56,12 @@ export async function getNewData(
   let allApiData: (usingDataProps | usingChannelProps)[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
-    const res = await api.get(`/admin/${category}?page=${page}&size=${size}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const res = await apiInstance.get(
+      `/admin/${category}?page=${page}&size=${size}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }
+    );
     addProgress();
     const pageData = res.data.data.dataList;
     allApiData = allApiData.concat(pageData);
@@ -70,7 +89,9 @@ export async function getNewData(
 }
 
 export async function getNewDataWithExcel(
-  setProgress?: (message: string) => void
+  setProgress?: (message: string) => void,
+  apiInstance: AxiosInstance = api,
+  spreadsheetId?: string
 ): Promise<usingDataProps[]> {
   const batchSize = 10000;
 
@@ -91,8 +112,8 @@ export async function getNewDataWithExcel(
 
   // 1. 첫 페이지 조회와 엑셀 데이터 조회를 병렬로 실행
   const [firstRes, allExcelData] = await Promise.all([
-    api.get(`/admin/episode?page=1&size=1`),
-    getExcelData('', 'episode'),
+    apiInstance.get(`/admin/episode?page=1&size=1`),
+    getExcelData('', 'episode', undefined, spreadsheetId),
   ]);
 
   const totalCount = firstRes.data.data.pageInfo.totalCount;
@@ -107,7 +128,7 @@ export async function getNewDataWithExcel(
 
   const fetchPage = async (page: number): Promise<usingDataProps[]> => {
     try {
-      const res = await api.get(
+      const res = await apiInstance.get(
         `/admin/episode?page=${page}&size=${batchSize}`
       );
       completedPages++;
@@ -130,6 +151,8 @@ export async function getNewDataWithExcel(
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   for (let i = 0; i < pages.length; i += concurrentLimit) {
+    await getGoogleToken();
+
     const chunk = pages.slice(i, i + concurrentLimit);
     const results = await Promise.all(chunk.map((page) => fetchPage(page)));
     results.forEach((data) => allApiData.push(...data));

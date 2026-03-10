@@ -1,8 +1,6 @@
 import { getGoogleToken, getSheetsClient } from './auth';
 
-const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
-
-const getSheetList = async (_loginToken: string, _fileId: string) => {
+const getSheetList = async (spreadsheetId: string) => {
   try {
     const token = await getGoogleToken();
     if (!token) {

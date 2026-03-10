@@ -1,6 +1,4 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import Layout from './layout/Layout';
-import EpisodeLayout from './feature/episode/EpisodeLayout';
 import ChannelLayout from './feature/channel-book/ChannelLayout';
 import CurationLayout from './feature/curation/CurationLayout';
 import DemoCategoryLayout from './feature/demo-category/DemoCategoryLayout';
@@ -9,6 +7,8 @@ import DemoBroadcastingLayout from './feature/demo-broadcasting/DemoBroadcasting
 import DemoBroadcastingEdit from './feature/demo-broadcasting/DemoBroadcastingEdit';
 import DemoCategoryAdd from './feature/demo-category/DemoCategoryAdd';
 import DemoBroadcastingAdd from './feature/demo-broadcasting/DemoBroadcastingAdd';
+import EpisodeLayout from './feature/episode/EpisodeLayout';
+import Layout from './layout/Layout';
 
 function App() {
   return (
@@ -17,7 +17,10 @@ function App() {
         <Route path='/' element={<Layout />}>
           <Route index element={<EpisodeLayout />} />
           <Route path='/channel-book-list' element={<ChannelLayout />} />
-          <Route path='/curation-list' element={<CurationLayout />} />
+          <Route path='/curation-list' element={<CurationLayout />} />{' '}
+          <Route path='/stg/episode-list' element={<EpisodeLayout />} />
+          <Route path='/stg/channel-book-list' element={<ChannelLayout />} />
+          <Route path='/stg/curation-list' element={<CurationLayout />} />
           <Route path='/demo'>
             <Route path='category-list' element={<DemoCategoryLayout />} />
             <Route

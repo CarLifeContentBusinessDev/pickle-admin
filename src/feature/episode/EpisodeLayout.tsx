@@ -1,22 +1,25 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { fetchAllData } from '../../utils/fetchAllData';
-import { addMissingRows } from '../../utils/updateExcel';
-import { getNewDataWithExcel } from '../../utils/getNewData';
-import type { usingDataProps } from '../../type';
-import EpisodeList from './EpisodeList';
-import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import getSheetList from '../../utils/getSheetList';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
+import type { usingDataProps } from '../../type';
+import { api, stgApi } from '../../utils/api';
+import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
+import { fetchAllData } from '../../utils/fetchAllData';
+import { getNewDataWithExcel } from '../../utils/getNewData';
+import getSheetList from '../../utils/getSheetList';
+import { addMissingRows } from '../../utils/updateExcel';
 import { findChangedData, findUpdateData } from '../../utils/updateLogs';
-import Dropdown from '../../components/Dropdown';
+import EpisodeList from './EpisodeList';
 
 const CATEGORY = 'episode';
 
 const EpisodeLayout = () => {
+  const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
+  const isStaging = pathname.startsWith('/stg');
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [duplicateNewEpi, setDuplicateNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,44 +30,91 @@ const EpisodeLayout = () => {
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
+  const defaultSheetName = isStaging ? 'stg_에피소드 DB' : '에피소드 DB';
+  const sheetStorageKey = isStaging
+    ? 'sheetName:episode:stg'
+    : 'sheetName:episode:prod';
   const [selectedSheet, setSelectedSheet] = useState(
-    localStorage.getItem('sheetName') || ''
+    localStorage.getItem(sheetStorageKey) || defaultSheetName
   );
+
+  const apiInstance = isStaging ? stgApi : api;
+
+  const getSheetName = (name: string) => (isStaging ? `stg_${name}` : name);
+  const spreadsheetId = isStaging
+    ? import.meta.env.VITE_STG_SPREADSHEET_ID
+    : import.meta.env.VITE_SPREADSHEET_ID;
 
   useEffect(() => {
     if (loginToken) {
-      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
+      getSheetList(spreadsheetId).then((list) => {
+        setSheetList(list);
+
+        const filteredSheets = list.filter((sheet) =>
+          isStaging
+            ? sheet.name.startsWith('stg_')
+            : !sheet.name.startsWith('stg_')
+        );
+        const savedSheet = localStorage.getItem(sheetStorageKey);
+        const isSavedSheetValid = filteredSheets.some(
+          (sheet) => sheet.name === savedSheet
+        );
+        const hasDefaultSheet = filteredSheets.some(
+          (sheet) => sheet.name === defaultSheetName
+        );
+
+        const nextSheet = isSavedSheetValid
+          ? savedSheet!
+          : hasDefaultSheet
+            ? defaultSheetName
+            : '';
+
+        setSelectedSheet(nextSheet);
+        if (nextSheet) {
+          localStorage.setItem(sheetStorageKey, nextSheet);
+        } else {
+          localStorage.removeItem(sheetStorageKey);
+        }
+      });
     }
-  }, [loginToken]);
+  }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
   const handleSelectSheetDropdown = (value: string) => {
     setSelectedSheet(value);
-    localStorage.setItem('sheetName', value);
+    localStorage.setItem(sheetStorageKey, value);
   };
 
   const handleUpdateExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     const result = window.confirm(
-      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+      `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
-      const allData = await fetchAllData(CATEGORY, setProgress);
+      const allData = await fetchAllData(
+        CATEGORY,
+        setProgress,
+        undefined,
+        apiInstance
+      );
       const duplicateData = await findChangedData(allData);
       await addMissingRows(
         allData,
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
-      localStorage.setItem('sheetName', 'Episode_Logs');
-      setSelectedSheet('Episode_Logs');
+
+      localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
+      setSelectedSheet(getSheetName('Episode_Logs'));
       await addMissingRows(
         duplicateData,
         loginToken,
         setProgress,
         CATEGORY,
-        setAllLoading
+        setAllLoading,
+        spreadsheetId
       );
     }
   };
@@ -73,7 +123,7 @@ const EpisodeLayout = () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
     // 선택된 시트에 새 데이터 추가
-    const currentSheet = localStorage.getItem('sheetName') || '';
+    const currentSheet = localStorage.getItem(sheetStorageKey) || selectedSheet;
     if (!currentSheet) {
       return toast.warn('시트를 먼저 선택해주세요!');
     }
@@ -87,7 +137,8 @@ const EpisodeLayout = () => {
         CATEGORY,
         setExcelLoading,
         currentSheet,
-        false // 토스트 메시지 표시 안 함
+        false, // 토스트 메시지 표시 안 함
+        spreadsheetId
       );
 
       // Episode_Logs 시트에 변경된 데이터 추가
@@ -95,16 +146,18 @@ const EpisodeLayout = () => {
         setProgress(
           `Episode_Logs 시트에 변경된 데이터 ${duplicateNewEpi.length}개 추가 중...`
         );
-        localStorage.setItem('sheetName', 'Episode_Logs');
-        setSelectedSheet('Episode_Logs');
+
+        localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
+        setSelectedSheet(getSheetName('Episode_Logs'));
 
         await appendNewDataToTop(
           duplicateNewEpi,
           setProgress,
           CATEGORY,
           setExcelLoading,
-          'Episode_Logs',
-          false // 토스트 메시지 표시 안 함
+          getSheetName('Episode_Logs'),
+          false,
+          spreadsheetId
         );
       }
 
@@ -124,7 +177,11 @@ const EpisodeLayout = () => {
   const handleSearchNew = async () => {
     setLoading(true);
     setSyncCompleted(false);
-    const newList = await getNewDataWithExcel(setProgress);
+    const newList = await getNewDataWithExcel(
+      setProgress,
+      apiInstance,
+      spreadsheetId
+    );
     const duplicateNewData = await findUpdateData(newList, setProgress);
     setProgress('');
     setNewEpi(newList);
@@ -134,15 +191,21 @@ const EpisodeLayout = () => {
 
   return (
     <div className='p-10 flex flex-col h-screen'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>에피소드 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>
+        에피소드 관리{isStaging ? ' (스테이징)' : ''}
+      </h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 에피소드 시트로 변환</Button>
         <Button
-          href={import.meta.env.VITE_ADMIN_EPI_URL}
+          href={
+            isStaging
+              ? `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_STG_SPREADSHEET_ID}/edit?gid=418216794#gid=418216794`
+              : `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_SPREADSHEET_ID}/edit?gid=1925187377#gid=1925187377`
+          }
           target='_blank'
           rel='noopener noreferrer'
         >
-          대시보드 이동
+          Excel 바로가기
         </Button>
         <LoadingOverlay
           progress={progress}
@@ -162,14 +225,24 @@ const EpisodeLayout = () => {
               vertical={false}
               loading={excelLoading}
             />
-            <Dropdown
+            <select
               value={selectedSheet}
-              options={sheetList.map((sheet) => ({
-                value: sheet.name,
-                label: sheet.name,
-              }))}
-              onChange={handleSelectSheetDropdown}
-            />
+              onChange={(e) => handleSelectSheetDropdown(e.target.value)}
+              className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
+            >
+              <option value=''>시트 선택</option>
+              {sheetList
+                .filter((sheet) =>
+                  isStaging
+                    ? sheet.name.startsWith('stg_')
+                    : !sheet.name.startsWith('stg_')
+                )
+                .map((sheet) => (
+                  <option key={sheet.id} value={sheet.name}>
+                    {sheet.name}
+                  </option>
+                ))}
+            </select>
             <button
               onClick={() => handleSearchNew()}
               className='cursor-pointer'
