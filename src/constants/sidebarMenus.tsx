@@ -89,7 +89,7 @@ export const MENU_GROUPS: MenuGroup[] = [
         alt='검증 어드민 바로가기'
       />
     ),
-    to: import.meta.env.VITE_ADMIN_EPI_URL,
+    to: import.meta.env.VITE_ADMIN_EPI_URL_STG,
     openInNewTab: true,
   },
 ];

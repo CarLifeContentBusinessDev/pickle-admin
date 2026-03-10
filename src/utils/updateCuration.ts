@@ -156,7 +156,7 @@ export async function addMissingCurationRows(
       await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
         range,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         resource: { values },
       });
     } catch (err: unknown) {
@@ -171,7 +171,7 @@ export async function addMissingCurationRows(
         await sheets.spreadsheets.values.update({
           spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
           range,
-          valueInputOption: 'USER_ENTERED',
+          valueInputOption: 'RAW',
           resource: { values },
         });
       } else {

@@ -10,20 +10,8 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function excelDateToJSDate(serial: number): Date {
-  const excelEpoch = new Date(1899, 11, 30);
-  const millisPerDay = 24 * 60 * 60 * 1000;
-  return new Date(excelEpoch.getTime() + serial * millisPerDay);
-}
-
-function excelDateTime(date: string | number) {
+function excelDateTime(date?: string | number) {
   if (!date) return '';
-  if (typeof date === 'number') {
-    return formatDateString(excelDateToJSDate(date).toISOString());
-  }
-  if (!isNaN(Number(date))) {
-    return formatDateString(excelDateToJSDate(Number(date)).toISOString());
-  }
   const d = new Date(date);
   return isNaN(d.getTime()) ? '' : formatDateString(d.toISOString());
 }
@@ -172,7 +160,7 @@ export async function appendNewDataToTop(
       await sheets.spreadsheets.values.update({
         spreadsheetId,
         range,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         resource: { values: batchData },
       });
 
@@ -248,6 +236,6 @@ async function isSheetEmpty(
     return !values || values.length === 0;
   } catch (err) {
     console.error('시트 빈 상태 확인 실패:', err);
-    return true; // 에러 시 안전하게 비어있다고 가정하거나 로직에 맞게 처리
+    return false;
   }
 }

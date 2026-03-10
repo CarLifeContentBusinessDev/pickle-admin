@@ -115,7 +115,7 @@ export async function appendNewCurationToExcel(
       await sheets.spreadsheets.values.append({
         spreadsheetId,
         range: `${sheetName}!B${nextRow}`,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         resource: { values },
       });
 

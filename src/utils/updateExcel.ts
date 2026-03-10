@@ -315,7 +315,7 @@ export async function addMissingRows(
       await sheets.spreadsheets.values.update({
         spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
         range,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         resource: { values },
       });
     }
@@ -416,7 +416,7 @@ export async function overwriteExcelData(
     await sheets.spreadsheets.values.update({
       spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
       range,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       resource: { values },
     });
 
