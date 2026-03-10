@@ -66,7 +66,14 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
       );
     }
 
-    return Array.isArray(row[key]) ? row[key].join(', ') : row[key];
+    const value = row[key];
+
+    // boolean 타입 처리
+    if (typeof value === 'boolean') {
+      return value ? 'O' : 'X';
+    }
+
+    return Array.isArray(value) ? value.join(', ') : value;
   };
 
   return (

@@ -1,3 +1,15 @@
+export interface Program {
+  id: number;
+  title: string;
+  subtitle: string;
+  img_url: string;
+  type: string;
+  category_id: number;
+  broadcasting_id: number;
+  language: string[];
+  is_sequential: boolean;
+}
+
 export interface Category {
   id: number;
   title: string;

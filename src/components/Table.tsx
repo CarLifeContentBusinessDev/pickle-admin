@@ -46,7 +46,7 @@ function Table<T>({
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className='px-2 py-2 truncate flex items-center'
+                  className='px-3 py-2 truncate flex items-center'
                 >
                   {renderCell(col.key, row)}
                 </div>

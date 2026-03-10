@@ -9,7 +9,7 @@ interface DemoListLayoutProps {
   selectedLang: LanguageCode;
   onLangChange: (lang: LanguageCode) => void;
   addLabel: string;
-  onAdd?: () => void;
+  onAdd: () => void;
   children?: React.ReactNode;
 }
 
