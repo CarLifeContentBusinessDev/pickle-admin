@@ -70,9 +70,22 @@ export async function getExcelData(
   spreadSheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const targetSheet =
-      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
-    const totalRows = await getUsedRange(targetSheet);
+    // sheetName이 제공되지 않으면 localStorage에서 찾기
+    let targetSheet = sheetName;
+    if (!targetSheet) {
+      // 현재 경로가 staging인지 확인
+      const isStaging = window.location.pathname.startsWith('/stg');
+      const storageKey = isStaging
+        ? `sheetName:${category}:stg`
+        : `sheetName:${category}:prod`;
+
+      targetSheet =
+        localStorage.getItem(storageKey) ||
+        localStorage.getItem('sheetName') ||
+        'Sheet1';
+    }
+
+    const totalRows = await getUsedRange(targetSheet, spreadSheetId);
 
     if (!totalRows || totalRows < STARTROW) {
       return [];
@@ -227,7 +240,12 @@ export async function addMissingRows(
 ) {
   try {
     setAllLoading(true);
-    const existingData = await getExcelData(token, category);
+    const existingData = await getExcelData(
+      token,
+      category,
+      undefined,
+      spreadsheetId
+    );
 
     const missingRows = allData.filter(
       (item) =>
@@ -249,7 +267,17 @@ export async function addMissingRows(
     }
 
     const batchSize = 10000;
-    const sheetName = localStorage.getItem('sheetName') || 'Sheet1';
+
+    // localStorage에서 적절한 키로 시트 이름 가져오기
+    const isStaging = window.location.pathname.startsWith('/stg');
+    const storageKey = isStaging
+      ? `sheetName:${category}:stg`
+      : `sheetName:${category}:prod`;
+    const sheetName =
+      localStorage.getItem(storageKey) ||
+      localStorage.getItem('sheetName') ||
+      'Sheet1';
+
     const sheets = getSheetsClient();
 
     for (let i = 0; i < missingRows.length; i += batchSize) {
