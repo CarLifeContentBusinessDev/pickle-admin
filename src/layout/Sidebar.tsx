@@ -37,7 +37,7 @@ const Sidebar = () => {
 
           return (
             <div key={group.id}>
-              {index > 0 && <hr className='border-white/10 mx-4' />}
+              {index > 0 && <hr className='mx-4' />}
 
               {group.children ? (
                 // 서브메뉴가 있는 경우
@@ -50,7 +50,11 @@ const Sidebar = () => {
                 />
               ) : (
                 // 단일 메뉴 버튼인 경우
-                <MenuButton to={group.to!} isOpen={isOpen}>
+                <MenuButton
+                  to={group.to!}
+                  isOpen={isOpen}
+                  openInNewTab={group.openInNewTab}
+                >
                   {group.icon}
                   {isOpen && <span>{group.label}</span>}
                 </MenuButton>

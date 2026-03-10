@@ -1,18 +1,17 @@
+import { toast } from 'react-toastify';
 import type { usingCurationExcelProps } from '../type';
+import { getGoogleToken, getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime, parsePlayTime } from './formatPlayTime';
-import { getGoogleToken, getSheetsClient } from './auth';
-import { toast } from 'react-toastify';
 import { getUsedRange } from './updateExcel';
-
-const spreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
 
 export async function getCurationExcelData(
   _token: string,
+  spreadsheetId: string
 ): Promise<usingCurationExcelProps[]> {
   const batchSize = 1000;
   const allRows: (string | number)[][] = [];
-  let totalRows = await getUsedRange();
+  let totalRows = await getUsedRange(undefined, spreadsheetId);
 
   if (totalRows === null || totalRows < 4) {
     totalRows = 4;
@@ -48,7 +47,10 @@ export async function getCurationExcelData(
           range,
         });
 
-        const retryValues = retryResponse.result.values as (string | number)[][];
+        const retryValues = retryResponse.result.values as (
+          | string
+          | number
+        )[][];
         if (retryValues && retryValues.length > 0) allRows.push(...retryValues);
       } else {
         console.error('엑셀 조회 실패:', err);
@@ -92,9 +94,13 @@ export async function getCurationExcelData(
 export async function addMissingCurationRows(
   allData: usingCurationExcelProps[],
   token: string,
-  setProgress: (message: string) => void
+  setProgress: (message: string) => void,
+  spreadsheetId?: string
 ) {
-  const existingData = await getCurationExcelData(token);
+  const existingData = await getCurationExcelData(
+    token,
+    spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID
+  );
 
   const missingRows = allData.filter(
     (item) => !existingData.some((row) => row.episodeId === item.episodeId)
@@ -148,9 +154,9 @@ export async function addMissingCurationRows(
     try {
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
       await sheets.spreadsheets.values.update({
-        spreadsheetId,
+        spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
         range,
-        valueInputOption: 'USER_ENTERED',
+        valueInputOption: 'RAW',
         resource: { values },
       });
     } catch (err: unknown) {
@@ -163,9 +169,9 @@ export async function addMissingCurationRows(
         localStorage.setItem('loginToken', token);
 
         await sheets.spreadsheets.values.update({
-          spreadsheetId,
+          spreadsheetId: spreadsheetId || import.meta.env.VITE_SPREADSHEET_ID,
           range,
-          valueInputOption: 'USER_ENTERED',
+          valueInputOption: 'RAW',
           resource: { values },
         });
       } else {
