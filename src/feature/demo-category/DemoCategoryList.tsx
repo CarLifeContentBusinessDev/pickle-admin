@@ -31,7 +31,7 @@ const DemoCategoryList: React.FC<DemoCategoryListProps> = ({
       selectedLang={selectedLang}
       onDeleted={onDeleted}
       tableName='categories'
-      editPath='/demo/category-list/edit'
+      editPath='/demo/category'
       columns={columns}
       gridCols={gridCols}
     />

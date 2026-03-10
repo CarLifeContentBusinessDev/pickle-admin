@@ -76,14 +76,14 @@ export const MENU_GROUPS: MenuGroup[] = [
       />
     ),
     children: [
-      { id: 'programs', to: '/demo/program-list', label: '프로그램 관리' },
-      { id: 'episodes', to: '/demo/episode-list', label: '에피소드 관리' },
-      { id: 'series', to: '/demo/series-list', label: '시리즈 관리' },
-      { id: 'themes', to: '/demo/theme-list', label: '테마 관리' },
-      { id: 'categories', to: '/demo/category-list', label: '카테고리 관리' },
+      { id: 'programs', to: '/demo/program', label: '프로그램 관리' },
+      { id: 'episodes', to: '/demo/episode', label: '에피소드 관리' },
+      { id: 'series', to: '/demo/series', label: '시리즈 관리' },
+      { id: 'themes', to: '/demo/theme', label: '테마 관리' },
+      { id: 'categories', to: '/demo/category', label: '카테고리 관리' },
       {
         id: 'broadcastings',
-        to: '/demo/broadcasting-list',
+        to: '/demo/broadcasting',
         label: '방송사 관리',
       },
     ],

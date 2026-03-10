@@ -78,12 +78,13 @@ const DemoBroadcastingLayout = () => {
 
   return (
     <DemoListLayout
-      title='데모 방송사 관리'
+      parentMenu='데모 콘텐츠 관리'
+      childMenu='방송사 관리'
       count={filteredBroadcasting.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
       addLabel='방송사 추가'
-      onAdd={() => navigate('/demo/broadcasting-list/add')}
+      onAdd={() => navigate('/demo/broadcasting/new')}
     >
       <LoadingOverlay loading={loading}>
         방송사 목록을 불러오는 중입니다.

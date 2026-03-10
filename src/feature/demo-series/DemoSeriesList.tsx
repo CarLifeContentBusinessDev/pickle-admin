@@ -1,7 +1,7 @@
 import React from 'react';
 import DemoTableList from '../../components/DemoTableList';
 
-interface DemoBroadcastingListProps {
+interface DemoSeriesListProps {
   broadcasting: any[];
   selectedLang: string;
   onDeleted?: () => void;
@@ -22,7 +22,7 @@ const columns = [
   { key: 'actions', label: '' },
 ];
 
-const DemoBroadcastingList: React.FC<DemoBroadcastingListProps> = ({
+const DemoSeriesList: React.FC<DemoSeriesListProps> = ({
   broadcasting,
   selectedLang,
   onDeleted,
@@ -33,11 +33,11 @@ const DemoBroadcastingList: React.FC<DemoBroadcastingListProps> = ({
       selectedLang={selectedLang}
       onDeleted={onDeleted}
       tableName='broadcastings'
-      editPath='/demo/broadcasting'
+      editPath='/demo/program'
       columns={columns}
       gridCols={gridCols}
     />
   );
 };
 
-export default DemoBroadcastingList;
+export default DemoSeriesList;

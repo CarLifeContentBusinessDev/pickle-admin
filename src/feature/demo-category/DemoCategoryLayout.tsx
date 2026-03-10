@@ -90,12 +90,13 @@ const DemoCategoryLayout = () => {
 
   return (
     <DemoListLayout
-      title='데모 카테고리 관리'
+      parentMenu='데모 콘텐츠 관리'
+      childMenu='카테고리 관리'
       count={categories.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
       addLabel='카테고리 추가'
-      onAdd={() => navigate('/demo/category-list/add')}
+      onAdd={() => navigate('/demo/category/new')}
     >
       <LoadingOverlay loading={loading}>
         카테고리 목록을 불러오는 중입니다.

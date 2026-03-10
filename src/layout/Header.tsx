@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { getGoogleToken, googleLogout, initializeGoogleAPI, initializeGIS } from '../utils/auth';
+import {
+  getGoogleToken,
+  googleLogout,
+  initializeGoogleAPI,
+  initializeGIS,
+} from '../utils/auth';
 import LoginPopup from '../feature/login/Login';
 import Button from '../components/Button';
 import type { LoginResponseData } from '../type';
@@ -10,7 +15,8 @@ import { useAccessTokenStore } from '../store/useAccessTokenStore';
 const Header = () => {
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const { loginToken, setLoginToken } = useLoginTokenStore();
-  const { accessToken, setAccessToken, clearAccessToken } = useAccessTokenStore();
+  const { accessToken, setAccessToken, clearAccessToken } =
+    useAccessTokenStore();
 
   useEffect(() => {
     const initGoogle = async () => {
@@ -51,7 +57,7 @@ const Header = () => {
       <div className='w-full h-[10%] flex justify-between items-center mb-0 px-10 bg-white'>
         <h1 className='text-4xl font-bold flex gap-4'>
           <img src='/logo.svg' alt='로고' width={40} height={40} />
-          PICKLE
+          PICKLE (데모)
         </h1>
         <div className='flex gap-4'>
           {!accessToken && (

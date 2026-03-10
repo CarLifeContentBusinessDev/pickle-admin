@@ -3,17 +3,19 @@ import Dropdown from '../components/Dropdown';
 import { LANGUAGES, type LanguageCode } from '../constants/languages';
 
 interface DemoListLayoutProps {
-  title: string;
-  count: number;
+  parentMenu: string;
+  childMenu: string;
+  count?: number;
   selectedLang: LanguageCode;
   onLangChange: (lang: LanguageCode) => void;
   addLabel: string;
-  onAdd: () => void;
-  children: React.ReactNode;
+  onAdd?: () => void;
+  children?: React.ReactNode;
 }
 
 const DemoListLayout = ({
-  title,
+  parentMenu,
+  childMenu,
   count,
   selectedLang,
   onLangChange,
@@ -23,7 +25,10 @@ const DemoListLayout = ({
 }: DemoListLayoutProps) => {
   return (
     <div className='p-10 flex flex-col'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>{title}</h1>
+      <h1 className='mb-4 indent-1' style={{ fontSize: '16px' }}>
+        <span className='text-gray-500'>{parentMenu} / </span>
+        <span className='font-bold'>{childMenu}</span>
+      </h1>
 
       <div className='w-full rounded-2xl bg-white mt-4 p-8 flex flex-col'>
         <div className='flex justify-between items-center'>
