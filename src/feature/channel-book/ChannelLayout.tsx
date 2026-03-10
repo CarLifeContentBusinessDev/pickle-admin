@@ -20,7 +20,10 @@ const ChannelLayout = () => {
   const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
   const { accessToken } = useAccessTokenStore();
-  const [newChannels, setNewChannels] = useState<usingChannelProps[]>([]);
+  const isStaging = pathname.startsWith('/stg');
+  const [newChannels, setNewChannels] = useState<usingChannelProps[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [excelLoading, setExcelLoading] = useState(false);
   const [allLoading, setAllLoading] = useState(false);
@@ -28,12 +31,15 @@ const ChannelLayout = () => {
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
+  const defaultSheetName = isStaging ? 'stg_채널 DB' : '채널 DB';
+  const sheetStorageKey = isStaging
+    ? 'sheetName:channel:stg'
+    : 'sheetName:channel:prod';
   const [selectedSheet, setSelectedSheet] = useState(
-    localStorage.getItem('sheetName') || ''
+    localStorage.getItem(sheetStorageKey) || defaultSheetName
   );
   const [addData, setAddData] = useState<usingChannelProps[]>([]);
 
-  const isStaging = pathname.startsWith('/stg');
   const apiInstance = isStaging ? stgApi : api;
 
   const spreadsheetId = isStaging
@@ -45,9 +51,37 @@ const ChannelLayout = () => {
 
   useEffect(() => {
     if (loginToken) {
-      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
+      getSheetList(spreadsheetId).then((list) => {
+        setSheetList(list);
+
+        const filteredSheets = list.filter((sheet) =>
+          isStaging
+            ? sheet.name.startsWith('stg_')
+            : !sheet.name.startsWith('stg_')
+        );
+        const savedSheet = localStorage.getItem(sheetStorageKey);
+        const isSavedSheetValid = filteredSheets.some(
+          (sheet) => sheet.name === savedSheet
+        );
+        const hasDefaultSheet = filteredSheets.some(
+          (sheet) => sheet.name === defaultSheetName
+        );
+
+        const nextSheet = isSavedSheetValid
+          ? savedSheet!
+          : hasDefaultSheet
+            ? defaultSheetName
+            : '';
+
+        setSelectedSheet(nextSheet);
+        if (nextSheet) {
+          localStorage.setItem(sheetStorageKey, nextSheet);
+        } else {
+          localStorage.removeItem(sheetStorageKey);
+        }
+      });
     }
-  }, []);
+  }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
   const cancelOngoingWork = () => {
     if (abortControllerRef.current) {
@@ -78,13 +112,13 @@ const ChannelLayout = () => {
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedSheet(value);
-    localStorage.setItem('sheetName', value);
+    localStorage.setItem(sheetStorageKey, value);
   };
 
   const handleUpdateExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     const result = window.confirm(
-      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+      `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
       cancelOngoingWork();
@@ -110,8 +144,9 @@ const ChannelLayout = () => {
 
   const handleSyncExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
+    if (!newChannels) return toast.warn('먼저 새로운 채널을 검색해주세요!');
 
-    const currentSheet = localStorage.getItem('sheetName') || '';
+    const currentSheet = localStorage.getItem(sheetStorageKey) || selectedSheet;
     if (!currentSheet) {
       return toast.warn('시트를 먼저 선택해주세요!');
     }
@@ -138,6 +173,7 @@ const ChannelLayout = () => {
   };
 
   const handleSearchNew = async (token: string, accessToken: string) => {
+    setNewChannels(null);
     cancelOngoingWork();
 
     setLoading(true);
@@ -178,7 +214,7 @@ const ChannelLayout = () => {
         <div className='flex justify-between items-center flex-shrink-0'>
           <h3 className='text-point-color font-semibold'>
             새로운 채널·도서 총{' '}
-            <span className='font-extrabold'>{newChannels.length}</span>개
+            <span className='font-extrabold'>{newChannels?.length ?? 0}</span>개
           </h3>
           <div className='flex gap-8 items-center'>
             <LoadingOverlay
@@ -219,10 +255,8 @@ const ChannelLayout = () => {
             <br />
             잠시만 기다려주세요!
           </LoadingOverlay>
-          {!loading && newChannels.length === 0 && (
-            <ChannelList data={addData} />
-          )}
-          {!loading && newChannels.length > 0 && (
+          {!loading && newChannels === null && <ChannelList data={addData} />}
+          {!loading && newChannels !== null && (
             <ChannelList data={newChannels} />
           )}
         </div>

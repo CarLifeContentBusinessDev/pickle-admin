@@ -14,6 +14,11 @@ let gapiInited = false;
 
 let gisInited = false;
 
+const clearSavedGoogleToken = () => {
+  localStorage.removeItem('loginToken');
+  useLoginTokenStore.getState().clearLoginToken();
+};
+
 // Google API 클라이언트 초기화
 
 export function initializeGoogleAPI(): Promise<void> {
@@ -149,7 +154,7 @@ export async function getGoogleToken(): Promise<string | null> {
         if (error?.status === 401) {
           console.log('토큰이 만료되어 새로 요청합니다');
 
-          localStorage.removeItem('loginToken');
+          clearSavedGoogleToken();
 
           gapi.client.setToken(null);
         } else {
@@ -174,6 +179,8 @@ export async function getGoogleToken(): Promise<string | null> {
       ) => {
         if (response.error) {
           console.error('Google 인증 실패:', response);
+
+          clearSavedGoogleToken();
 
           reject(new Error(response.error));
 
@@ -200,6 +207,8 @@ export async function getGoogleToken(): Promise<string | null> {
   } catch (error) {
     console.error('Google 인증 실패:', error);
 
+    clearSavedGoogleToken();
+
     return null;
   }
 }
@@ -217,9 +226,7 @@ export function googleLogout() {
     gapi.client.setToken(null);
   }
 
-  localStorage.removeItem('loginToken');
-
-  useLoginTokenStore.getState().setLoginToken('');
+  clearSavedGoogleToken();
 }
 
 // Google Sheets API 클라이언트 가져오기

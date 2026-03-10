@@ -19,6 +19,7 @@ const CATEGORY = 'episode';
 const EpisodeLayout = () => {
   const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
+  const isStaging = pathname.startsWith('/stg');
   const [newEpi, setNewEpi] = useState<usingDataProps[]>([]);
   const [duplicateNewEpi, setDuplicateNewEpi] = useState<usingDataProps[]>([]);
   const [loading, setLoading] = useState(false);
@@ -29,11 +30,14 @@ const EpisodeLayout = () => {
   const [sheetList, setSheetList] = useState<{ id: string; name: string }[]>(
     []
   );
+  const defaultSheetName = isStaging ? 'stg_에피소드 DB' : '에피소드 DB';
+  const sheetStorageKey = isStaging
+    ? 'sheetName:episode:stg'
+    : 'sheetName:episode:prod';
   const [selectedSheet, setSelectedSheet] = useState(
-    localStorage.getItem('sheetName') || ''
+    localStorage.getItem(sheetStorageKey) || defaultSheetName
   );
 
-  const isStaging = pathname.startsWith('/stg');
   const apiInstance = isStaging ? stgApi : api;
 
   const getSheetName = (name: string) => (isStaging ? `stg_${name}` : name);
@@ -43,20 +47,48 @@ const EpisodeLayout = () => {
 
   useEffect(() => {
     if (loginToken) {
-      getSheetList(loginToken, import.meta.env.VITE_FILE_ID).then(setSheetList);
+      getSheetList(spreadsheetId).then((list) => {
+        setSheetList(list);
+
+        const filteredSheets = list.filter((sheet) =>
+          isStaging
+            ? sheet.name.startsWith('stg_')
+            : !sheet.name.startsWith('stg_')
+        );
+        const savedSheet = localStorage.getItem(sheetStorageKey);
+        const isSavedSheetValid = filteredSheets.some(
+          (sheet) => sheet.name === savedSheet
+        );
+        const hasDefaultSheet = filteredSheets.some(
+          (sheet) => sheet.name === defaultSheetName
+        );
+
+        const nextSheet = isSavedSheetValid
+          ? savedSheet!
+          : hasDefaultSheet
+            ? defaultSheetName
+            : '';
+
+        setSelectedSheet(nextSheet);
+        if (nextSheet) {
+          localStorage.setItem(sheetStorageKey, nextSheet);
+        } else {
+          localStorage.removeItem(sheetStorageKey);
+        }
+      });
     }
-  }, [loginToken]);
+  }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
   const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
     setSelectedSheet(value);
-    localStorage.setItem('sheetName', value);
+    localStorage.setItem(sheetStorageKey, value);
   };
 
   const handleUpdateExcel = async () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
     const result = window.confirm(
-      `${localStorage.getItem('sheetName')} 시트에 누락된 데이터를 추가합니다.`
+      `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
       const allData = await fetchAllData(
@@ -75,7 +107,7 @@ const EpisodeLayout = () => {
         spreadsheetId
       );
 
-      localStorage.setItem('sheetName', getSheetName('Episode_Logs'));
+      localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
       setSelectedSheet(getSheetName('Episode_Logs'));
       await addMissingRows(
         duplicateData,
@@ -92,7 +124,7 @@ const EpisodeLayout = () => {
     if (!loginToken) return toast.warn('로그인을 먼저 해주세요!');
 
     // 선택된 시트에 새 데이터 추가
-    const currentSheet = localStorage.getItem('sheetName') || '';
+    const currentSheet = localStorage.getItem(sheetStorageKey) || selectedSheet;
     if (!currentSheet) {
       return toast.warn('시트를 먼저 선택해주세요!');
     }
@@ -116,7 +148,7 @@ const EpisodeLayout = () => {
           `Episode_Logs 시트에 변경된 데이터 ${duplicateNewEpi.length}개 추가 중...`
         );
 
-        localStorage.setItem('sheetName', getSheetName('Episode_Logs'));
+        localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
         setSelectedSheet(getSheetName('Episode_Logs'));
 
         await appendNewDataToTop(
