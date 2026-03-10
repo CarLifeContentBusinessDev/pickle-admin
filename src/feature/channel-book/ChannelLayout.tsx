@@ -194,15 +194,21 @@ const ChannelLayout = () => {
 
   return (
     <div className='p-10 flex flex-col h-[90vh]'>
-      <h1 className='text-3xl font-bold mb-4 indent-1'>채널·도서 관리</h1>
+      <h1 className='text-3xl font-bold mb-4 indent-1'>
+        채널·도서 관리{isStaging ? ' (스테이징)' : ''}
+      </h1>
       <div className='flex gap-2'>
         <Button onClick={handleUpdateExcel}>전체 채널·도서 시트로 변환</Button>
         <Button
-          href={import.meta.env.VITE_ADMIN_EPI_URL}
+          href={
+            isStaging
+              ? `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_STG_SPREADSHEET_ID}/edit?gid=902383353#gid=902383353`
+              : `https://docs.google.com/spreadsheets/d/${import.meta.env.VITE_SPREADSHEET_ID}/edit?gid=934666118#gid=934666118`
+          }
           target='_blank'
           rel='noopener noreferrer'
         >
-          대시보드 이동
+          Excel 바로가기
         </Button>
         <LoadingOverlay
           progress={progress}
