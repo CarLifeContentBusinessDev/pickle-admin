@@ -11,7 +11,7 @@ const LoadingOverlay = ({
   vertical = true,
   loading,
 }: LoadingOverlayProps) => {
-  let boxStyle = 'flex-col flex-1 text-white bg-black/30';
+  let boxStyle = 'flex-col flex-1 text-white bg-black/30 min-h-[400px]';
   let spinnerStyle = 'w-12 h-12 border-white';
 
   if (!vertical) {

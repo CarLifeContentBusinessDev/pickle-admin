@@ -10,6 +10,18 @@ export interface Program {
   is_sequential: boolean;
 }
 
+export interface Episode {
+  id: number;
+  title: string;
+  img_url: string;
+  program_id: number;
+  date: string;
+  durtaion: string;
+  audio_file: string;
+  audioFile_dubbing: string;
+  language: string[];
+}
+
 export interface Category {
   id: number;
   title: string;
