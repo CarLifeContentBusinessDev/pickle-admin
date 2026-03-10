@@ -4,28 +4,29 @@ import LoadingOverlay from '../../components/LoadingOverlay';
 import { type LanguageCode } from '../../constants/languages';
 import { useNavigate } from 'react-router-dom';
 import type { Episode } from '../../types/demoContents';
-import { supabase } from '../../lib/supabase';
 import parseLanguages from '../../utils/parseLanguages';
 import DemoEpisodeList from './DemoEpisodeList';
+import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 
 const DemoEpisodeLayout = () => {
   const navigate = useNavigate();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>('ko');
+  const [selectedLang, setSelectedLang] = useState<LanguageCode>('all');
 
   const fetchEpisodes = async () => {
     setLoading(true);
     setError('');
-    const { data, error } = await supabase
-      .from('episodes')
-      .select('*')
-      .order('id', { ascending: true });
-    if (error) {
-      setError(error.message);
-    } else {
-      setEpisodes(data || []);
+    try {
+      const data = await fetchAllSupabaseRows<Episode>({
+        table: 'episodes',
+        select: '*',
+        orderColumn: 'id',
+      });
+      setEpisodes(data);
+    } catch (error) {
+      setError((error as Error).message);
     }
     setLoading(false);
   };
@@ -34,10 +35,13 @@ const DemoEpisodeLayout = () => {
     fetchEpisodes();
   }, []);
 
-  const filteredEpisodes = episodes.filter((ep) => {
-    const langs = parseLanguages(ep.language);
-    return langs.includes(selectedLang);
-  });
+  const filteredEpisodes =
+    selectedLang === 'all'
+      ? episodes
+      : episodes.filter((ep) => {
+          const langs = parseLanguages(ep.language);
+          return langs.includes(selectedLang);
+        });
 
   return (
     <DemoListLayout

@@ -3,28 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { type LanguageCode } from '../../constants/languages';
 import DemoListLayout from '../../components/DemoListLayout';
-import { supabase } from '../../lib/supabase';
 import type { Broadcasting } from '../../types/demoContents';
 import parseLanguages from '../../utils/parseLanguages';
 import DemoBroadcastingList from './DemoBroadcastingList';
+import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 
 const DemoBroadcastingLayout = () => {
   const navigate = useNavigate();
   const [broadcasting, setBroadcasting] = useState<Broadcasting[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>('ko');
+  const [selectedLang, setSelectedLang] = useState<LanguageCode>('all');
   const [programCounts, setProgramCounts] = useState<Record<number, number>>(
     {}
   );
 
   useEffect(() => {
     const fetchProgramCounts = async () => {
-      const { data, error } = await supabase
-        .from('programs')
-        .select('broadcasting_id, language')
-        .returns<{ broadcasting_id: number; language: string | string[] }[]>();
-      if (error || !data) return;
+      const data = await fetchAllSupabaseRows<{
+        broadcasting_id: number;
+        language: string | string[];
+      }>({
+        table: 'programs',
+        select: 'broadcasting_id, language',
+        orderColumn: 'broadcasting_id',
+      });
+
       const counts: Record<number, number> = {};
       data.forEach((row) => {
         let langs: string[] = [];
@@ -37,7 +41,7 @@ const DemoBroadcastingLayout = () => {
             langs = [row.language];
           }
         }
-        if (langs.includes(selectedLang)) {
+        if (selectedLang === 'all' || langs.includes(selectedLang)) {
           counts[row.broadcasting_id] = (counts[row.broadcasting_id] || 0) + 1;
         }
       });
@@ -46,28 +50,30 @@ const DemoBroadcastingLayout = () => {
     fetchProgramCounts();
   }, [selectedLang]);
 
-  const filteredBroadcasting = broadcasting
-    .filter((brod) => {
-      const langs = parseLanguages(brod.language);
-      return langs.includes(selectedLang);
-    })
-    .map((brod) => ({
-      ...brod,
-      programsCount: programCounts[brod.id] || 0,
-    }));
+  const filteredBroadcasting = (
+    selectedLang === 'all'
+      ? broadcasting
+      : broadcasting.filter((brod) => {
+          const langs = parseLanguages(brod.language);
+          return langs.includes(selectedLang);
+        })
+  ).map((brod) => ({
+    ...brod,
+    programsCount: programCounts[brod.id] || 0,
+  }));
 
   const fetchBroadcasting = async () => {
     setLoading(true);
     setError('');
-    const { data, error } = await supabase
-      .from('broadcastings')
-      .select('*')
-      .order('order', { ascending: true })
-      .order('id', { ascending: true });
-    if (error) {
-      setError(error.message);
-    } else {
-      setBroadcasting(data || []);
+    try {
+      const data = await fetchAllSupabaseRows<Broadcasting>({
+        table: 'broadcastings',
+        select: '*',
+        orderColumn: 'id',
+      });
+      setBroadcasting(data);
+    } catch (error) {
+      setError((error as Error).message);
     }
     setLoading(false);
   };

@@ -1,5 +1,10 @@
 import React from 'react';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import {
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
+} from 'react-icons/fi';
 
 interface PaginationProps {
   page: number;
@@ -24,11 +29,22 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className='flex justify-center items-center gap-2 mt-6'>
+      {/* 맨 처음 */}
+      <button
+        disabled={page === 1}
+        onClick={() => onChange(1)}
+        className='flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 disabled:opacity-40'
+        title='맨 처음'
+      >
+        <FiChevronsLeft size={18} />
+      </button>
+
       {/* 이전 */}
       <button
         disabled={page === 1}
         onClick={() => onChange(page - 1)}
         className='flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 disabled:opacity-40'
+        title='이전'
       >
         <FiChevronLeft size={18} />
       </button>
@@ -50,8 +66,19 @@ const Pagination: React.FC<PaginationProps> = ({
         disabled={page === totalPages}
         onClick={() => onChange(page + 1)}
         className='flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 disabled:opacity-40'
+        title='다음'
       >
         <FiChevronRight size={18} />
+      </button>
+
+      {/* 맨 끝 */}
+      <button
+        disabled={page === totalPages}
+        onClick={() => onChange(totalPages)}
+        className='flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 disabled:opacity-40'
+        title='맨 끝'
+      >
+        <FiChevronsRight size={18} />
       </button>
     </div>
   );

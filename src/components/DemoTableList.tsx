@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import usePagination from '../hook/usePagination';
 import { deleteRow } from '../utils/deleteRow';
@@ -28,6 +28,11 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
 }) => {
   const navigate = useNavigate();
   const { page, setPage, totalPages, pagedData } = usePagination(data);
+
+  // 언어 변경 시 1페이지로 이동
+  useEffect(() => {
+    setPage(1);
+  }, [selectedLang, setPage]);
 
   const handleDelete = async (id: number) => {
     const ok = await deleteRow(tableName, id);

@@ -5,27 +5,28 @@ import DemoProgramList from './DemoProgramList';
 import type { LanguageCode } from '../../constants/languages';
 import { useNavigate } from 'react-router-dom';
 import type { Program } from '../../types/demoContents';
-import { supabase } from '../../lib/supabase';
 import parseLanguages from '../../utils/parseLanguages';
+import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 
 const DemoProgramLayout = () => {
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>('ko');
+  const [selectedLang, setSelectedLang] = useState<LanguageCode>('all');
 
   const fetchPrograms = async () => {
     setLoading(true);
     setError('');
-    const { data, error } = await supabase
-      .from('programs')
-      .select('*')
-      .order('id', { ascending: true });
-    if (error) {
-      setError(error.message);
-    } else {
-      setPrograms(data || []);
+    try {
+      const data = await fetchAllSupabaseRows<Program>({
+        table: 'programs',
+        select: '*',
+        orderColumn: 'id',
+      });
+      setPrograms(data);
+    } catch (error) {
+      setError((error as Error).message);
     }
     setLoading(false);
   };
@@ -34,10 +35,13 @@ const DemoProgramLayout = () => {
     fetchPrograms();
   }, []);
 
-  const filteredPrograms = programs.filter((prog) => {
-    const langs = parseLanguages(prog.language);
-    return langs.includes(selectedLang);
-  });
+  const filteredPrograms =
+    selectedLang === 'all'
+      ? programs
+      : programs.filter((prog) => {
+          const langs = parseLanguages(prog.language);
+          return langs.includes(selectedLang);
+        });
 
   return (
     <DemoListLayout

@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { LANG_COLUMN_MAP, type LanguageCode } from '../../constants/languages';
 import DemoListLayout from '../../components/DemoListLayout';
-import { supabase } from '../../lib/supabase';
 import DemoCategoryList from './DemoCategoryList';
+import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 
 interface Category {
   id: number;
@@ -29,11 +29,15 @@ const DemoCategoryLayout = () => {
   // programs 테이블에서 category_id별 프로그램 수 조회
   useEffect(() => {
     const fetchProgramCounts = async () => {
-      const { data, error } = await supabase
-        .from('programs')
-        .select('category_id, language')
-        .returns<{ category_id: number; language: string | string[] }[]>();
-      if (error || !data) return;
+      const data = await fetchAllSupabaseRows<{
+        category_id: number;
+        language: string | string[];
+      }>({
+        table: 'programs',
+        select: 'category_id, language',
+        orderColumn: 'category_id',
+      });
+
       const counts: Record<number, number> = {};
       data.forEach((row) => {
         let langs: string[] = [];
@@ -46,7 +50,7 @@ const DemoCategoryLayout = () => {
             langs = [row.language];
           }
         }
-        if (langs.includes(selectedLang)) {
+        if (selectedLang === 'all' || langs.includes(selectedLang)) {
           counts[row.category_id] = (counts[row.category_id] || 0) + 1;
         }
       });
@@ -70,15 +74,15 @@ const DemoCategoryLayout = () => {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('order', { ascending: true });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      setCategories(data || []);
+    try {
+      const data = await fetchAllSupabaseRows<Category>({
+        table: 'categories',
+        select: '*',
+        orderColumn: 'order',
+      });
+      setCategories(data);
+    } catch (error) {
+      setError((error as Error).message);
     }
 
     setLoading(false);

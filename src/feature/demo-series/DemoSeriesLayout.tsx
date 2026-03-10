@@ -1,13 +1,11 @@
-import { useState } from 'react';
 import DemoListLayout from '../../components/DemoListLayout';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import DemoProgramList from './DemoSeriesList';
 import type { LanguageCode } from '../../constants/languages';
+import { useState } from 'react';
 
 const DemoSeriesLayout = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedLang, setSelectedLang] = useState<LanguageCode>('ko');
+  const [loading] = useState(false);
+  const [selectedLang, setSelectedLang] = useState<LanguageCode>('all');
 
   return (
     <DemoListLayout
@@ -17,7 +15,7 @@ const DemoSeriesLayout = () => {
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
       addLabel='시리즈 추가'
-      // onAdd={() => navigate('/demo/program/new')}
+      onAdd={() => {}}
     >
       <LoadingOverlay loading={loading}>
         시리즈 목록을 불러오는 중입니다.

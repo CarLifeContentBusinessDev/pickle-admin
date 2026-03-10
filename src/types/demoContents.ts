@@ -20,6 +20,7 @@ export interface Episode {
   audio_file: string;
   audioFile_dubbing: string;
   language: string[];
+  programs?: { title: string };
 }
 
 export interface Category {

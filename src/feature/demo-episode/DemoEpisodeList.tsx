@@ -13,7 +13,7 @@ const gridCols =
 const columns = [
   { key: 'id', label: 'ID' },
   { key: 'title', label: 'title' },
-  { key: 'program_id', label: '프로그램 ID' },
+  { key: 'programs.title', label: '프로그램' },
   { key: 'date', label: '날짜' },
   { key: 'duration', label: '길이' },
   { key: 'language', label: '국가' },
