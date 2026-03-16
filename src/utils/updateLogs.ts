@@ -1,4 +1,4 @@
-import type { usingDataProps } from '../type';
+import type { usingDataProps } from '../types/type';
 import { api } from './api';
 import { getExcelData } from './updateExcel';
 

@@ -1,6 +1,12 @@
 import type { AxiosInstance } from 'axios';
-import type { usingCurationExcelProps, usingCurationProps } from '../type';
+import type {
+  curationDetailEpisodeProps,
+  curationDetailProps,
+  curationListItemProps,
+  usingCurationExcelProps,
+} from '../types/type';
 import { api } from './api';
+import { mapCurationStatus } from './statusMapper';
 import { getCurationExcelData } from './updateCuration';
 
 function findMaxEpisodeIdInExcel(excelData: usingCurationExcelProps[]): number {
@@ -38,7 +44,7 @@ export async function getNewCurationData(
     setProgress(`${Math.min(100, Math.round(progress))}%`);
   };
 
-  let allApiData: usingCurationProps[] = [];
+  let allApiData: curationListItemProps[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
     const res = await apiInstance.get(
@@ -51,43 +57,94 @@ export async function getNewCurationData(
   let allEpiData: usingCurationExcelProps[] = [];
 
   for (let i = 0; i < allApiData.length; i++) {
+    const listItem = allApiData[i];
     const epiRes = await apiInstance.get(
-      `/admin/curation/${allApiData[i].curationId}`
+      `/admin/curation/${listItem.curationId}`
     );
     addProgress();
-    const detailData = epiRes.data.data;
-    const episodes = detailData.episodes || [];
+    const detailData = epiRes.data.data as curationDetailProps;
+    const episodes: curationDetailEpisodeProps[] = detailData.episodes || [];
 
-    for (const episode of episodes) {
-      const episodeObject: usingCurationExcelProps = {
-        thumbnailTitle: detailData.thumbnailTitle ?? '',
-        curationType: detailData.curationType,
-        curationName: detailData.curationName,
-        curationDesc: detailData.curationDesc,
-        activeState: detailData.activeState ?? '',
-        exhibitionState: detailData.exhibitionState ?? '',
-        field: detailData.field ?? '',
-        section: detailData.section ?? 0,
-        dispStartDtime: detailData.dispStartDtime,
-        dispEndDtime: detailData.dispEndDtime,
-        curationCreatedAt: detailData.createdAt,
-        channelId: episode.channelId ?? 0,
-        episodeId: episode.episodeId ?? 0,
-        usageYn: episode.usageYn ?? '',
-        channelName: episode.channelName ?? '',
-        episodeName: episode.episodeName ?? '',
-        dispDtime: episode.dispDtime ?? '',
-        createdAt: episode.createdAt ?? '',
-        playTime: episode.playTime ?? 0,
-        likeCnt: episode.likeCnt ?? 0,
-        listenCnt: episode.listenCnt ?? 0,
-      };
-      allEpiData.push(episodeObject);
+    const baseCurationData: Omit<
+      usingCurationExcelProps,
+      | 'channelId'
+      | 'episodeId'
+      | 'usageYn'
+      | 'channelName'
+      | 'episodeName'
+      | 'dispDtime'
+      | 'createdAt'
+      | 'playTime'
+      | 'likeCnt'
+      | 'listenCnt'
+      | 'uploader'
+    > = {
+      thumbnailTitle: detailData.thumbnailTitle ?? '',
+      curationType: detailData.curationType,
+      curationName: detailData.curationName,
+      curationDesc: detailData.curationDesc,
+      // 활성 상태: usageYn (Y/N)
+      activeState: detailData.usageYn ?? listItem.usageYn ?? '',
+      // 전시 상태: status (ACTIVE / INACTIVE / ACTIVE_NONE_DISPLAY)
+      exhibitionState: mapCurationStatus(
+        detailData.status ?? listItem.status ?? ''
+      ),
+      field: detailData.field ?? '',
+      section: detailData.section ?? 0,
+      dispStartDtime: detailData.dispStartDtime,
+      dispEndDtime: detailData.dispEndDtime,
+      curationCreatedAt: detailData.createdAt,
+    };
+
+    // 게시자 정보: 큐레이션 생성자
+    const creatorName = detailData.creatorName ?? listItem.creatorName ?? '';
+
+    if (episodes.length === 0) {
+      // 에피소드 없는 큐레이션도 한 행으로 포함
+      allEpiData.push({
+        ...baseCurationData,
+        channelId: 0,
+        episodeId: 0,
+        usageYn: '',
+        channelName: '',
+        episodeName: '',
+        dispDtime: '',
+        createdAt: '',
+        playTime: 0,
+        likeCnt: 0,
+        listenCnt: 0,
+        uploader: creatorName,
+      });
+    } else {
+      for (const episode of episodes) {
+        allEpiData.push({
+          ...baseCurationData,
+          channelId: episode.channelId ?? 0,
+          episodeId: episode.episodeId ?? 0,
+          usageYn: episode.usageYn ?? '',
+          channelName: episode.channelName ?? '',
+          episodeName: episode.episodeName ?? '',
+          dispDtime: episode.dispDtime ?? '',
+          createdAt: episode.createdAt ?? '',
+          playTime: episode.playTime ?? 0,
+          likeCnt: episode.likeCnt ?? 0,
+          listenCnt: episode.listenCnt ?? 0,
+          uploader: creatorName,
+        });
+      }
     }
   }
 
+  // 에피소드 있는 항목: episodeId 기준 신규 필터
+  // 에피소드 없는 항목: curationName 기준 중복 제거
+  const existingCurationNames = new Set(
+    excelData.map((item) => item.curationName)
+  );
   const newEpisodes = allEpiData.filter((item) => {
     const episodeId = item.episodeId ?? 0;
+    if (episodeId === 0) {
+      return !existingCurationNames.has(item.curationName);
+    }
     return episodeId > maxEpisodeId;
   });
 

@@ -1,11 +1,29 @@
 import { toast } from 'react-toastify';
-import type { usingChannelProps, usingDataProps } from '../type';
+import type { usingChannelProps, usingDataProps } from '../types/type';
 import { getGoogleToken, getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime, parsePlayTime } from './formatPlayTime';
 
 const MAX_ROWS = 300000;
 const STARTROW = 4;
+
+const resolveSheetName = (
+  category: 'episode' | 'channel',
+  sheetName?: string
+) => {
+  if (sheetName) return sheetName;
+
+  const isStaging = window.location.pathname.startsWith('/stg');
+  const storageKey = isStaging
+    ? `sheetName:${category}:stg`
+    : `sheetName:${category}:prod`;
+
+  return (
+    localStorage.getItem(storageKey) ||
+    localStorage.getItem('sheetName') ||
+    'Sheet1'
+  );
+};
 
 // Google Sheets에서 마지막 데이터 행 조회
 export async function getUsedRange(
@@ -70,21 +88,7 @@ export async function getExcelData(
   spreadSheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    // sheetName이 제공되지 않으면 localStorage에서 찾기
-    let targetSheet = sheetName;
-    if (!targetSheet) {
-      // 현재 경로가 staging인지 확인
-      const isStaging = window.location.pathname.startsWith('/stg');
-      const storageKey = isStaging
-        ? `sheetName:${category}:stg`
-        : `sheetName:${category}:prod`;
-
-      targetSheet =
-        localStorage.getItem(storageKey) ||
-        localStorage.getItem('sheetName') ||
-        'Sheet1';
-    }
-
+    const targetSheet = resolveSheetName(category, sheetName);
     const totalRows = await getUsedRange(targetSheet, spreadSheetId);
 
     if (!totalRows || totalRows < STARTROW) {
@@ -146,7 +150,7 @@ export async function getExcelData(
     if ((err as any)?.status === 401) {
       const newToken = await getGoogleToken();
       if (newToken) {
-        return getExcelData(newToken, category, sheetName);
+        return getExcelData(newToken, category, sheetName, spreadSheetId);
       }
     }
 
@@ -219,7 +223,8 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'channel',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ): Promise<void>;
 export async function addMissingRows(
   allData: usingDataProps[],
@@ -227,7 +232,8 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'episode',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ): Promise<void>;
 
 export async function addMissingRows(
@@ -236,14 +242,16 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ) {
   try {
     setAllLoading(true);
+    const targetSheetName = resolveSheetName(category, sheetName);
     const existingData = await getExcelData(
       token,
       category,
-      undefined,
+      targetSheetName,
       spreadsheetId
     );
 
@@ -267,17 +275,6 @@ export async function addMissingRows(
     }
 
     const batchSize = 10000;
-
-    // localStorage에서 적절한 키로 시트 이름 가져오기
-    const isStaging = window.location.pathname.startsWith('/stg');
-    const storageKey = isStaging
-      ? `sheetName:${category}:stg`
-      : `sheetName:${category}:prod`;
-    const sheetName =
-      localStorage.getItem(storageKey) ||
-      localStorage.getItem('sheetName') ||
-      'Sheet1';
-
     const sheets = getSheetsClient();
 
     for (let i = 0; i < missingRows.length; i += batchSize) {
@@ -336,7 +333,7 @@ export async function addMissingRows(
 
       const startRow = existingData.length + i + STARTROW;
       const endRow = startRow + batch.length - 1;
-      const range = `${sheetName}!B${startRow}:${lastColumn}${endRow}`;
+      const range = `${targetSheetName}!B${startRow}:${lastColumn}${endRow}`;
 
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
 
@@ -362,7 +359,9 @@ export async function addMissingRows(
             newToken,
             setProgress,
             'episode',
-            setAllLoading
+            setAllLoading,
+            spreadsheetId,
+            sheetName
           );
         } else {
           return addMissingRows(
@@ -370,7 +369,9 @@ export async function addMissingRows(
             newToken,
             setProgress,
             'channel',
-            setAllLoading
+            setAllLoading,
+            spreadsheetId,
+            sheetName
           );
         }
       }

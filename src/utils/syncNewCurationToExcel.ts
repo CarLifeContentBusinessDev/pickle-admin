@@ -1,5 +1,5 @@
 import { getUsedRange } from './updateExcel';
-import type { usingCurationExcelProps } from '../type';
+import type { usingCurationExcelProps } from '../types/type';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
 import { formatPlayTime } from './formatPlayTime';
