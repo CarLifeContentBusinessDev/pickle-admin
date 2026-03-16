@@ -16,6 +16,14 @@ import ChannelList from './ChannelList';
 
 const CATEGORY = 'channel';
 
+const sortChannelsByCreatedAtDesc = (channels: usingChannelProps[]) => {
+  return [...channels].sort((a, b) => {
+    const createdA = new Date(a.createdAt).getTime();
+    const createdB = new Date(b.createdAt).getTime();
+    return createdB - createdA;
+  });
+};
+
 const ChannelLayout = () => {
   const { pathname } = useLocation();
   const { loginToken } = useLoginTokenStore();
@@ -102,7 +110,9 @@ const ChannelLayout = () => {
         apiInstance
       );
 
-    addData().then(setAddData);
+    addData().then((data) => {
+      setAddData(sortChannelsByCreatedAtDesc(data));
+    });
 
     return () => {
       cancelOngoingWork();
@@ -188,7 +198,7 @@ const ChannelLayout = () => {
     );
 
     setProgress('');
-    setNewChannels(newList);
+    setNewChannels(sortChannelsByCreatedAtDesc(newList));
     setLoading(false);
   };
 

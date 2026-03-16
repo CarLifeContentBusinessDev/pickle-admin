@@ -38,12 +38,13 @@ export async function appendNewDataToTop(
     const sheets = getSheetsClient();
 
     const sortedData = [...newData].sort((a, b) => {
-      const dispDateA = new Date(a.dispDtime).getTime();
-      const dispDateB = new Date(b.dispDtime).getTime();
-      if (dispDateB !== dispDateA) return dispDateB - dispDateA;
       const createdDateA = new Date(a.createdAt).getTime();
       const createdDateB = new Date(b.createdAt).getTime();
-      return createdDateB - createdDateA;
+      if (createdDateB !== createdDateA) return createdDateB - createdDateA;
+
+      const dispDateA = new Date(a.dispDtime).getTime();
+      const dispDateB = new Date(b.dispDtime).getTime();
+      return dispDateB - dispDateA;
     });
 
     const filteredData = sortedData;
