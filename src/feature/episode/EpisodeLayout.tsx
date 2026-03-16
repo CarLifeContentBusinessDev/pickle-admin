@@ -91,6 +91,12 @@ const EpisodeLayout = () => {
       `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
+      const currentSheet =
+        localStorage.getItem(sheetStorageKey) || selectedSheet;
+      if (!currentSheet) {
+        return toast.warn('시트를 먼저 선택해주세요!');
+      }
+
       const allData = await fetchAllData(
         CATEGORY,
         setProgress,
@@ -104,7 +110,8 @@ const EpisodeLayout = () => {
         setProgress,
         CATEGORY,
         setAllLoading,
-        spreadsheetId
+        spreadsheetId,
+        currentSheet
       );
 
       localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
@@ -115,7 +122,8 @@ const EpisodeLayout = () => {
         setProgress,
         CATEGORY,
         setAllLoading,
-        spreadsheetId
+        spreadsheetId,
+        getSheetName('Episode_Logs')
       );
     }
   };

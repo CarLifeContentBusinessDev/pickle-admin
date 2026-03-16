@@ -206,7 +206,8 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'channel',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ): Promise<void>;
 export async function addMissingRows(
   allData: usingDataProps[],
@@ -214,7 +215,8 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'episode',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ): Promise<void>;
 
 export async function addMissingRows(
@@ -223,11 +225,19 @@ export async function addMissingRows(
   setProgress: (message: string) => void,
   category: 'episode' | 'channel',
   setAllLoading: (loading: boolean) => void,
-  spreadsheetId?: string
+  spreadsheetId?: string,
+  sheetName?: string
 ) {
   try {
     setAllLoading(true);
-    const existingData = await getExcelData(token, category);
+    const targetSheetName =
+      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const existingData = await getExcelData(
+      token,
+      category,
+      targetSheetName,
+      spreadsheetId
+    );
 
     const missingRows = allData.filter(
       (item) =>
@@ -249,7 +259,8 @@ export async function addMissingRows(
     }
 
     const batchSize = 10000;
-    const sheetName = localStorage.getItem('sheetName') || 'Sheet1';
+    const targetSheetName =
+      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
     const sheets = getSheetsClient();
 
     for (let i = 0; i < missingRows.length; i += batchSize) {
@@ -308,7 +319,7 @@ export async function addMissingRows(
 
       const startRow = existingData.length + i + STARTROW;
       const endRow = startRow + batch.length - 1;
-      const range = `${sheetName}!B${startRow}:${lastColumn}${endRow}`;
+      const range = `${targetSheetName}!B${startRow}:${lastColumn}${endRow}`;
 
       setProgress(`${Math.round((i / missingRows.length) * 100)}%`);
 
@@ -334,7 +345,9 @@ export async function addMissingRows(
             newToken,
             setProgress,
             'episode',
-            setAllLoading
+            setAllLoading,
+            spreadsheetId,
+            sheetName
           );
         } else {
           return addMissingRows(
@@ -342,7 +355,9 @@ export async function addMissingRows(
             newToken,
             setProgress,
             'channel',
-            setAllLoading
+            setAllLoading,
+            spreadsheetId,
+            sheetName
           );
         }
       }

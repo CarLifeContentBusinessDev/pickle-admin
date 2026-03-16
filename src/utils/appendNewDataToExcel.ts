@@ -38,6 +38,16 @@ export async function appendNewDataToTop(
     const sheets = getSheetsClient();
 
     const sortedData = [...newData].sort((a, b) => {
+      if (category === 'episode') {
+        const dispDateA = new Date(a.dispDtime).getTime();
+        const dispDateB = new Date(b.dispDtime).getTime();
+        if (dispDateB !== dispDateA) return dispDateB - dispDateA;
+
+        const createdDateA = new Date(a.createdAt).getTime();
+        const createdDateB = new Date(b.createdAt).getTime();
+        return createdDateB - createdDateA;
+      }
+
       const createdDateA = new Date(a.createdAt).getTime();
       const createdDateB = new Date(b.createdAt).getTime();
       if (createdDateB !== createdDateA) return createdDateB - createdDateA;
