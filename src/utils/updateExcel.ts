@@ -7,6 +7,24 @@ import { formatPlayTime, parsePlayTime } from './formatPlayTime';
 const MAX_ROWS = 300000;
 const STARTROW = 4;
 
+const resolveSheetName = (
+  category: 'episode' | 'channel',
+  sheetName?: string
+) => {
+  if (sheetName) return sheetName;
+
+  const isStaging = window.location.pathname.startsWith('/stg');
+  const storageKey = isStaging
+    ? `sheetName:${category}:stg`
+    : `sheetName:${category}:prod`;
+
+  return (
+    localStorage.getItem(storageKey) ||
+    localStorage.getItem('sheetName') ||
+    'Sheet1'
+  );
+};
+
 // Google Sheets에서 마지막 데이터 행 조회
 export async function getUsedRange(
   sheetName?: string,
@@ -70,9 +88,8 @@ export async function getExcelData(
   spreadSheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
   try {
-    const targetSheet =
-      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
-    const totalRows = await getUsedRange(targetSheet);
+    const targetSheet = resolveSheetName(category, sheetName);
+    const totalRows = await getUsedRange(targetSheet, spreadSheetId);
 
     if (!totalRows || totalRows < STARTROW) {
       return [];
@@ -133,7 +150,7 @@ export async function getExcelData(
     if ((err as any)?.status === 401) {
       const newToken = await getGoogleToken();
       if (newToken) {
-        return getExcelData(newToken, category, sheetName);
+        return getExcelData(newToken, category, sheetName, spreadSheetId);
       }
     }
 
@@ -230,8 +247,7 @@ export async function addMissingRows(
 ) {
   try {
     setAllLoading(true);
-    const targetSheetName =
-      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
+    const targetSheetName = resolveSheetName(category, sheetName);
     const existingData = await getExcelData(
       token,
       category,
@@ -259,8 +275,6 @@ export async function addMissingRows(
     }
 
     const batchSize = 10000;
-    const targetSheetName =
-      sheetName || localStorage.getItem('sheetName') || 'Sheet1';
     const sheets = getSheetsClient();
 
     for (let i = 0; i < missingRows.length; i += batchSize) {
