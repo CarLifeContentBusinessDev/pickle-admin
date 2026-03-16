@@ -113,6 +113,20 @@ export async function fetchAllData(
   }
 }
 
+function mapCurationStatus(status: string): string {
+  switch (status) {
+    case 'ACTIVE':
+      return '게시 중';
+    case 'ACTIVE_NONE_DISPLAY':
+      return '게시 대기';
+    case 'INACTIVE':
+    case 'WAITING':
+      return '게시 종료';
+    default:
+      return status;
+  }
+}
+
 export async function fetchAllCurationData(
   apiInstance: AxiosInstance = api
 ): Promise<usingCurationExcelProps[]> {
@@ -142,37 +156,62 @@ export async function fetchAllCurationData(
         `/admin/curation/${curationId}`,
         {}
       );
-      const detailData = detailRes.data.data;
+      const detailData = detailRes.data.data as any;
 
-      const episodes = detailData.episodes || [];
+      const episodes: any[] = detailData.episodes || [];
 
-      for (const episode of episodes) {
-        const episodeObject: usingCurationExcelProps = {
-          thumbnailTitle: detailData.thumbnailTitle ?? '',
-          curationType: detailData.curationType,
-          curationName: detailData.curationName,
-          curationDesc: detailData.curationDesc,
-          activeState: detailData.activeState ?? '',
-          exhibitionState: detailData.exhibitionState ?? '',
-          field: detailData.field ?? '',
-          section: detailData.section ?? undefined,
-          dispStartDtime: detailData.dispStartDtime,
-          dispEndDtime: detailData.dispEndDtime,
-          curationCreatedAt: detailData.createdAt,
-          channelId: episode.channelId ?? 0,
-          episodeId: episode.episodeId ?? 0,
-          usageYn: episode.usageYn ?? '',
-          channelName: episode.channelName ?? '',
-          episodeName: episode.episodeName ?? '',
-          dispDtime: episode.dispDtime ?? '',
-          createdAt: episode.createdAt ?? '',
-          playTime: episode.playTime ?? 0,
-          likeCnt: episode.likeCnt ?? 0,
-          listenCnt: episode.listenCnt ?? 0,
-          uploader: episode.uploader ?? '',
-        };
+      const baseCurationData = {
+        thumbnailTitle: detailData.thumbnailTitle ?? '',
+        curationType: detailData.curationType,
+        curationName: detailData.curationName,
+        curationDesc: detailData.curationDesc,
+        // 활성 상태: usageYn (Y/N)
+        activeState: detailData.usageYn ?? '',
+        // 전시 상태: status (ACTIVE / INACTIVE / ACTIVE_NONE_DISPLAY)
+        exhibitionState: mapCurationStatus(detailData.status ?? ''),
+        field: detailData.field ?? '',
+        section: detailData.section ?? undefined,
+        dispStartDtime: detailData.dispStartDtime,
+        dispEndDtime: detailData.dispEndDtime,
+        curationCreatedAt: detailData.createdAt,
+      };
 
-        allCurationData.push(episodeObject);
+      // 게시자 정보: 큐레이션 생성자
+      const creatorName = detailData.creatorName ?? '';
+
+      if (episodes.length === 0) {
+        // 에피소드 없는 큐레이션도 한 행으로 포함
+        allCurationData.push({
+          ...baseCurationData,
+          channelId: 0,
+          episodeId: 0,
+          usageYn: '',
+          channelName: '',
+          episodeName: '',
+          dispDtime: '',
+          createdAt: '',
+          playTime: 0,
+          likeCnt: 0,
+          listenCnt: 0,
+          uploader: creatorName,
+        });
+      } else {
+        for (const episode of episodes) {
+          allCurationData.push({
+            ...baseCurationData,
+            channelId: episode.channelId ?? 0,
+            episodeId: episode.episodeId ?? 0,
+            usageYn: episode.usageYn ?? '',
+            channelName: episode.channelName ?? '',
+            episodeName: episode.episodeName ?? '',
+            dispDtime: episode.dispDtime ?? '',
+            createdAt: episode.createdAt ?? '',
+            playTime: episode.playTime ?? 0,
+            likeCnt: episode.likeCnt ?? 0,
+            listenCnt: episode.listenCnt ?? 0,
+            uploader: creatorName,
+          });
+        }
       }
     }
 
