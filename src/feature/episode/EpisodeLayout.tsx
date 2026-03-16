@@ -10,6 +10,7 @@ import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { getNewDataWithExcel } from '../../utils/getNewData';
 import getSheetList from '../../utils/getSheetList';
+import { updateSheetSyncTime } from '../../utils/updateSheetSyncTime';
 import { addMissingRows } from '../../utils/updateExcel';
 import { findChangedData, findUpdateData } from '../../utils/updateLogs';
 import EpisodeList from './EpisodeList';
@@ -169,6 +170,8 @@ const EpisodeLayout = () => {
           spreadsheetId
         );
       }
+
+      await updateSheetSyncTime(defaultSheetName, spreadsheetId);
 
       // 모든 작업 완료 후 통합 토스트 메시지
       toast.success(

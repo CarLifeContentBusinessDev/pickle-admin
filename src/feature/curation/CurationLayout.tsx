@@ -10,6 +10,7 @@ import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
 import { fetchAllCurationData } from '../../utils/fetchAllData';
 import { getNewCurationData } from '../../utils/getNewCuration';
 import getSheetList from '../../utils/getSheetList';
+import { updateSheetSyncTime } from '../../utils/updateSheetSyncTime';
 import { addMissingCurationRows } from '../../utils/updateCuration';
 import CurationList from './CurationList';
 
@@ -119,6 +120,7 @@ const CurationLayout = () => {
         currentSheet,
         spreadsheetId
       );
+      await updateSheetSyncTime(defaultSheetName, spreadsheetId);
       setSyncCompleted(true);
     } catch (error) {
       console.error('Excel 동기화 실패:', error);

@@ -11,6 +11,7 @@ import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { getNewData } from '../../utils/getNewData';
 import getSheetList from '../../utils/getSheetList';
+import { updateSheetSyncTime } from '../../utils/updateSheetSyncTime';
 import { addMissingRows } from '../../utils/updateExcel';
 import ChannelList from './ChannelList';
 
@@ -174,6 +175,8 @@ const ChannelLayout = () => {
         true,
         spreadsheetId
       );
+
+      await updateSheetSyncTime(defaultSheetName, spreadsheetId);
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
     } finally {
