@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import type { usingCurationExcelProps } from '../../type';
+import type { usingCurationExcelProps } from '../../types/type';
 import { api, stgApi } from '../../utils/api';
 import { appendNewCurationToExcel } from '../../utils/appendNewCurationToExcel';
 import { fetchAllCurationData } from '../../utils/fetchAllData';

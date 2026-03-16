@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import type { usingDataProps } from '../../type';
+import type { usingDataProps } from '../../types/type';
 import { api, stgApi } from '../../utils/api';
 import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';

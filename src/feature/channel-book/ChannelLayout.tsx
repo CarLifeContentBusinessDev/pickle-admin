@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { useAccessTokenStore } from '../../store/useAccessTokenStore';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import type { usingChannelProps } from '../../type';
+import type { usingChannelProps } from '../../types/type';
 import { api, stgApi } from '../../utils/api';
 import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';

@@ -1,11 +1,14 @@
 import type { AxiosInstance } from 'axios';
 import type {
   CurationListIdProps,
+  curationDetailEpisodeProps,
+  curationDetailProps,
   usingChannelProps,
   usingCurationExcelProps,
   usingDataProps,
-} from '../type';
+} from '../types/type';
 import { api } from './api';
+import { mapCurationStatus } from './statusMapper';
 
 const SIZE = 10000;
 const CURATIONSIZE = 100;
@@ -113,20 +116,6 @@ export async function fetchAllData(
   }
 }
 
-function mapCurationStatus(status: string): string {
-  switch (status) {
-    case 'ACTIVE':
-      return '게시 중';
-    case 'ACTIVE_NONE_DISPLAY':
-      return '게시 대기';
-    case 'INACTIVE':
-    case 'WAITING':
-      return '게시 종료';
-    default:
-      return status;
-  }
-}
-
 export async function fetchAllCurationData(
   apiInstance: AxiosInstance = api
 ): Promise<usingCurationExcelProps[]> {
@@ -156,9 +145,9 @@ export async function fetchAllCurationData(
         `/admin/curation/${curationId}`,
         {}
       );
-      const detailData = detailRes.data.data as any;
+      const detailData = detailRes.data.data as curationDetailProps;
 
-      const episodes: any[] = detailData.episodes || [];
+      const episodes: curationDetailEpisodeProps[] = detailData.episodes || [];
 
       const baseCurationData = {
         thumbnailTitle: detailData.thumbnailTitle ?? '',

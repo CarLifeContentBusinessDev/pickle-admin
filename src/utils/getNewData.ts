@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import type { usingChannelProps, usingDataProps } from '../type';
+import type { usingChannelProps, usingDataProps } from '../types/type';
 import { api } from './api';
 import { getGoogleToken } from './auth';
 import { getExcelData } from './updateExcel';

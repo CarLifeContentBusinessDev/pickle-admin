@@ -1,5 +1,5 @@
 import { getExcelData, getUsedRange } from './updateExcel';
-import type { usingChannelProps, usingDataProps } from '../type';
+import type { usingChannelProps, usingDataProps } from '../types/type';
 import { toast } from 'react-toastify';
 import formatDateString from './formatDateString';
 import { formatPlayTime } from './formatPlayTime';

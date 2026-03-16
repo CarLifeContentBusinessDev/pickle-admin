@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
-import type { LoginResponseData } from '../../type';
+import type { LoginResponseData } from '../../types/type';
 
 interface LoginPopupProps {
   onClose: () => void;

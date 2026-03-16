@@ -1,21 +1,13 @@
 import type { AxiosInstance } from 'axios';
-import type { usingCurationExcelProps, usingCurationProps } from '../type';
+import type {
+  curationDetailEpisodeProps,
+  curationDetailProps,
+  curationListItemProps,
+  usingCurationExcelProps,
+} from '../types/type';
 import { api } from './api';
+import { mapCurationStatus } from './statusMapper';
 import { getCurationExcelData } from './updateCuration';
-
-function mapStatusToKorean(status: string): string {
-  switch (status) {
-    case 'ACTIVE':
-      return '게시 중';
-    case 'ACTIVE_NONE_DISPLAY':
-      return '게시 대기';
-    case 'INACTIVE':
-    case 'WAITING':
-      return '게시 종료';
-    default:
-      return status;
-  }
-}
 
 function findMaxEpisodeIdInExcel(excelData: usingCurationExcelProps[]): number {
   if (excelData.length === 0) return 0;
@@ -52,7 +44,7 @@ export async function getNewCurationData(
     setProgress(`${Math.min(100, Math.round(progress))}%`);
   };
 
-  let allApiData: usingCurationProps[] = [];
+  let allApiData: curationListItemProps[] = [];
 
   for (let page = 1; page <= totalPages; page++) {
     const res = await apiInstance.get(
@@ -65,13 +57,13 @@ export async function getNewCurationData(
   let allEpiData: usingCurationExcelProps[] = [];
 
   for (let i = 0; i < allApiData.length; i++) {
-    const listItem = allApiData[i] as any;
+    const listItem = allApiData[i];
     const epiRes = await apiInstance.get(
       `/admin/curation/${listItem.curationId}`
     );
     addProgress();
-    const detailData = epiRes.data.data as any;
-    const episodes: any[] = detailData.episodes || [];
+    const detailData = epiRes.data.data as curationDetailProps;
+    const episodes: curationDetailEpisodeProps[] = detailData.episodes || [];
 
     const baseCurationData: Omit<
       usingCurationExcelProps,
@@ -94,7 +86,7 @@ export async function getNewCurationData(
       // 활성 상태: usageYn (Y/N)
       activeState: detailData.usageYn ?? listItem.usageYn ?? '',
       // 전시 상태: status (ACTIVE / INACTIVE / ACTIVE_NONE_DISPLAY)
-      exhibitionState: mapStatusToKorean(
+      exhibitionState: mapCurationStatus(
         detailData.status ?? listItem.status ?? ''
       ),
       field: detailData.field ?? '',
