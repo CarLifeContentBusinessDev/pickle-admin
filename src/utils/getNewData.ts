@@ -29,6 +29,8 @@ export async function getNewData(
   apiInstance: AxiosInstance = api,
   spreadsheetId?: string
 ): Promise<(usingDataProps | usingChannelProps)[]> {
+  const EPISODE_FETCH_CONCURRENCY = 10;
+
   const excelData = await getExcelData(
     token,
     category,
@@ -84,6 +86,50 @@ export async function getNewData(
           : 0;
     return !excelIds.has(currentId);
   });
+
+  if (category === 'channel') {
+    const channels = newData as usingChannelProps[];
+
+    if (channels.length > 0) {
+      let completed = 0;
+      const updateChannelProgress = () => {
+        const percent = Math.round((completed / channels.length) * 100);
+        setProgress(`최근 에피소드 업로드일 조회 중... ${percent}%`);
+      };
+
+      const fetchLatestEpisodeDispDtime = async (
+        channel: usingChannelProps
+      ) => {
+        try {
+          const episodeRes = await apiInstance.get(
+            `/admin/episode?page=1&size=1&channelId=${channel.channelId}&withPlaylists=Y`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+
+          const latestEpisode = episodeRes.data?.data?.dataList?.[0];
+          channel.dispDtime = latestEpisode?.dispDtime ?? '';
+        } catch (err) {
+          console.error(
+            `채널 ${channel.channelId}의 최근 에피소드 조회 실패:`,
+            err
+          );
+          channel.dispDtime = '';
+        } finally {
+          completed += 1;
+          updateChannelProgress();
+        }
+      };
+
+      for (let i = 0; i < channels.length; i += EPISODE_FETCH_CONCURRENCY) {
+        const chunk = channels.slice(i, i + EPISODE_FETCH_CONCURRENCY);
+        await Promise.all(
+          chunk.map((channel) => fetchLatestEpisodeDispDtime(channel))
+        );
+      }
+    }
+  }
 
   return newData;
 }
