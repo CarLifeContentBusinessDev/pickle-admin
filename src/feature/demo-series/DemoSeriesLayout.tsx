@@ -3,7 +3,8 @@ import LoadingOverlay from '../../components/LoadingOverlay';
 import SortControls from '../../components/SortControls';
 import type { LanguageCode } from '../../constants/languages';
 import { useEffect, useState } from 'react';
-import type { Sereis } from '../../types/demoContents';
+import { useNavigate } from 'react-router-dom';
+import type { Series } from '../../types/demoContents';
 import useListSort from '../../hook/useListSort';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 import parseLanguages from '../../utils/parseLanguages';
@@ -15,7 +16,8 @@ const SORT_KEY_OPTIONS: Array<{ value: 'id' | 'order'; label: string }> = [
 ];
 
 const DemoSeriesLayout = () => {
-  const [series, setSeries] = useState<Sereis[]>([]);
+  const navigate = useNavigate();
+  const [series, setSeries] = useState<Series[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedLang, setSelectedLang] = useState<LanguageCode>('all');
@@ -24,7 +26,7 @@ const DemoSeriesLayout = () => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchAllSupabaseRows<Sereis>({
+      const data = await fetchAllSupabaseRows<Series>({
         table: 'series',
         select: '*, sections(title)',
         orderColumn: 'id',
@@ -80,7 +82,7 @@ const DemoSeriesLayout = () => {
         />
       }
       addLabel='시리즈 추가'
-      onAdd={() => {}}
+      onAdd={() => navigate('/demo/series/new')}
     >
       <LoadingOverlay loading={loading}>
         시리즈 목록을 불러오는 중입니다.

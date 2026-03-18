@@ -1,6 +1,6 @@
 interface FormFieldProps {
-  label: string;
-  children: React.ReactNode;
+  label: React.ReactNode;
+  children?: React.ReactNode;
   hint?: string;
 }
 

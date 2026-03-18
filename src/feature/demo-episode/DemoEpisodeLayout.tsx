@@ -79,7 +79,7 @@ const DemoEpisodeLayout = () => {
         />
       }
       addLabel='에피소드 추가'
-      onAdd={() => navigate('/demo/program/new')}
+      onAdd={() => navigate('/demo/episode/new')}
     >
       <LoadingOverlay loading={loading}>
         에피소드 목록을 불러오는 중입니다.

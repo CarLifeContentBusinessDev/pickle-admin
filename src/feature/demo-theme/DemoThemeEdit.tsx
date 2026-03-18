@@ -1,72 +1,243 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import FormActionsButton from '../../components/FormActionButton';
 import FormField from '../../components/FormField';
 import FormLayout from '../../components/FormLayout';
 import FormTabs from '../../components/FormTabs';
 import { ThumbnailPreview } from '../../components/ThumbnailPreview';
 import { supabase } from '../../lib/supabase';
-import type { Broadcasting } from '../../types/demoContents';
+
+const LANG_OPTIONS = [
+  { code: 'ko', label: '한국' },
+  { code: 'en', label: '북미' },
+  { code: 'de', label: '독일' },
+  { code: 'jp', label: '일본' },
+] as const;
+
+interface ThemeForm {
+  id: number;
+  title: string;
+  subtitle: string;
+  img_url: string;
+  section_id: number | null;
+  order: number | null;
+  language: string[];
+}
+
+interface SectionOption {
+  id: number;
+  title: string;
+}
+
+interface ProgramOption {
+  id: number;
+  title: string;
+}
+
+interface ThemeProgramMapRow {
+  program_id: number;
+  order: number | null;
+}
 
 const DemoThemeEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
-  // URL의 lang 파라미터로 초기 탭 결정
-  const initLang = searchParams.get('lang') ?? 'ko';
-  const [activeTab, setActiveTab] = useState(
-    initLang === 'ko' ? 'basic' : 'localize'
-  );
+  const [activeTab, setActiveTab] = useState('basic');
 
-  const [broadcasting, setBroadcasting] = useState<Broadcasting | null>(null);
+  const [theme, setTheme] = useState<ThemeForm | null>(null);
+  const [sections, setSections] = useState<SectionOption[]>([]);
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
+  const [sectionQuery, setSectionQuery] = useState('');
+  const [isSectionSearchOpen, setIsSectionSearchOpen] = useState(false);
+  const [programIdsInput, setProgramIdsInput] = useState('');
+  const [programQuery, setProgramQuery] = useState('');
+  const [isProgramSearchOpen, setIsProgramSearchOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const filteredSections = sections
+    .filter((section) => {
+      const query = sectionQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        String(section.id).includes(query) ||
+        section.title.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 30);
+
+  const selectedSection =
+    theme == null
+      ? undefined
+      : sections.find((section) => section.id === theme.section_id);
+
+  const parseIdCsv = (value: string) =>
+    Array.from(
+      new Set(
+        value
+          .split(',')
+          .map((v) => Number(v.trim()))
+          .filter((v) => Number.isInteger(v) && v > 0)
+      )
+    );
+
+  const mappedProgramIds = parseIdCsv(programIdsInput);
+
+  const filteredPrograms = programs
+    .filter((program) => {
+      const query = programQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        String(program.id).includes(query) ||
+        program.title.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 30);
+
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    supabase
-      .from('broadcastings')
-      .select('*')
-      .eq('id', id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setError('방송사 정보를 불러올 수 없습니다.');
-        } else {
-          setBroadcasting(data);
-        }
-        setLoading(false);
-      });
+    const fetchData = async () => {
+      setLoading(true);
+
+      const [themeRes, sectionRes, programRes, mappingRes] = await Promise.all([
+        supabase.from('themes').select('*').eq('id', id).single(),
+        supabase.from('sections').select('id, title').order('id'),
+        supabase.from('programs').select('id, title').order('id'),
+        supabase
+          .from('themes_programs')
+          .select('program_id, order')
+          .eq('theme_id', id)
+          .order('order', { ascending: true }),
+      ]);
+
+      if (themeRes.error || !themeRes.data) {
+        setError('테마 정보를 불러올 수 없습니다.');
+      } else {
+        setTheme(themeRes.data as ThemeForm);
+      }
+
+      setSections((sectionRes.data ?? []) as SectionOption[]);
+      setPrograms((programRes.data ?? []) as ProgramOption[]);
+
+      const mappingRows = (mappingRes.data ?? []) as ThemeProgramMapRow[];
+      const mappedIds = mappingRows
+        .map((row) => Number(row.program_id))
+        .filter((value) => Number.isInteger(value) && value > 0);
+      setProgramIdsInput(Array.from(new Set(mappedIds)).join(','));
+
+      setLoading(false);
+    };
+
+    fetchData();
   }, [id]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!broadcasting) return;
-    setBroadcasting({ ...broadcasting, [e.target.name]: e.target.value });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    if (!theme) return;
+    const { name, value } = e.target;
+
+    setTheme({
+      ...theme,
+      [name]:
+        name === 'section_id'
+          ? value === ''
+            ? null
+            : Number(value)
+          : name === 'order'
+            ? value === ''
+              ? null
+              : Number(value)
+            : value,
+    });
   };
 
-  const handleLangChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!broadcasting) return;
-    const langs = e.target.value.split(',').map((l) => l.trim());
-    setBroadcasting({ ...broadcasting, language: langs });
+  const handleLangToggle = (lang: string) => {
+    if (!theme) return;
+    const exists = theme.language.includes(lang);
+
+    setTheme({
+      ...theme,
+      language: exists
+        ? theme.language.filter((item) => item !== lang)
+        : [...theme.language, lang],
+    });
   };
 
   const handleSave = async () => {
-    if (!broadcasting) return;
+    if (!theme) return;
+    if (!theme.title.trim()) {
+      setError('테마 제목은 필수입니다.');
+      return;
+    }
+
+    if (!theme.section_id) {
+      setError('섹션을 선택하세요.');
+      return;
+    }
+
+    if (!Number.isInteger(theme.section_id) || theme.section_id <= 0) {
+      setError('섹션 ID는 숫자로 입력하세요.');
+      return;
+    }
+
+    if (mappedProgramIds.length === 0) {
+      setError('매핑할 프로그램 ID를 하나 이상 입력하세요.');
+      return;
+    }
+
+    if (theme.order != null && !Number.isFinite(theme.order)) {
+      setError('Order는 숫자로 입력하세요.');
+      return;
+    }
+
     setSaving(true);
+    setError('');
     const { error } = await supabase
-      .from('broadcastings')
+      .from('themes')
       .update({
-        title: broadcasting.title,
-        channel: broadcasting.channel,
-        frequency: broadcasting.frequency,
-        img_url: broadcasting.img_url,
-        order: broadcasting.order,
-        language: broadcasting.language,
+        title: theme.title,
+        subtitle: theme.subtitle || null,
+        img_url: theme.img_url || null,
+        section_id: theme.section_id,
+        order: theme.order,
+        language: theme.language,
       })
-      .eq('id', broadcasting.id);
+      .eq('id', theme.id);
+
+    if (!error) {
+      const { error: deleteMappingError } = await supabase
+        .from('themes_programs')
+        .delete()
+        .eq('theme_id', theme.id);
+
+      if (deleteMappingError) {
+        setSaving(false);
+        setError(`매핑 갱신에 실패했습니다: ${deleteMappingError.message}`);
+        return;
+      }
+
+      const mappingRows = mappedProgramIds.map((programId, index) => ({
+        theme_id: theme.id,
+        program_id: programId,
+        order: index + 1,
+      }));
+
+      const { error: insertMappingError } = await supabase
+        .from('themes_programs')
+        .insert(mappingRows);
+
+      if (insertMappingError) {
+        setSaving(false);
+        setError(`매핑 갱신에 실패했습니다: ${insertMappingError.message}`);
+        return;
+      }
+    }
+
     setSaving(false);
     if (error) {
       console.error('Supabase update error:', error);
@@ -101,10 +272,10 @@ const DemoThemeEdit = () => {
       </div>
     );
 
-  if (!broadcasting) return null;
+  if (!theme) return null;
 
   return (
-    <FormLayout title='방송사 편집' id={broadcasting.id}>
+    <FormLayout title='테마 편집' id={theme.id}>
       {/* 탭 + 버튼 행 */}
       <div className='flex justify-between items-center flex-shrink-0 mb-6'>
         <FormTabs
@@ -127,36 +298,94 @@ const DemoThemeEdit = () => {
           <div className='flex flex-col gap-6'>
             <div className='flex gap-5'>
               <ThumbnailPreview
-                url={broadcasting.img_url || ''}
-                title={broadcasting.title || ''}
+                url={theme.img_url || ''}
+                title={theme.title || ''}
               />
-              <div className='flex flex-col gap-2'>
-                <FormField label='Title'>
+              <div className='flex flex-col gap-2 flex-1'>
+                <FormField label='Title (필수)'>
                   <input
                     className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
                     name='title'
-                    value={broadcasting.title || ''}
+                    value={theme.title || ''}
                     onChange={handleChange}
                     placeholder='title'
                   />
                 </FormField>
-                <FormField label='channel'>
+                <FormField label='Subtitle'>
                   <input
                     className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
-                    name='channel'
-                    value={broadcasting.channel || ''}
+                    name='subtitle'
+                    value={theme.subtitle || ''}
                     onChange={handleChange}
-                    placeholder='channel'
+                    placeholder='subtitle'
                   />
                 </FormField>
-                <FormField label='frequency'>
-                  <input
-                    className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
-                    name='frequency'
-                    value={broadcasting.frequency || ''}
-                    onChange={handleChange}
-                    placeholder='frequency'
-                  />
+                <FormField label='섹션 (필수)'>
+                  <div className='flex flex-col gap-2'>
+                    <div className='flex gap-2'>
+                      <input
+                        className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                        name='section_id'
+                        value={theme.section_id ?? ''}
+                        onChange={handleChange}
+                        inputMode='numeric'
+                        placeholder='섹션 ID 직접 입력'
+                      />
+                      <button
+                        type='button'
+                        onClick={() => setIsSectionSearchOpen((prev) => !prev)}
+                        className='px-4 h-10 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50'
+                      >
+                        {isSectionSearchOpen ? '검색 닫기' : '검색해서 선택'}
+                      </button>
+                    </div>
+
+                    {selectedSection && (
+                      <p className='text-xs text-gray-500'>
+                        선택된 섹션: #{selectedSection.id}{' '}
+                        {selectedSection.title}
+                      </p>
+                    )}
+
+                    {isSectionSearchOpen && (
+                      <div className='rounded-xl border border-gray-200 p-3 bg-white'>
+                        <input
+                          value={sectionQuery}
+                          onChange={(e) => setSectionQuery(e.target.value)}
+                          placeholder='ID 또는 제목으로 검색'
+                          className='w-full px-3 h-10 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                        />
+                        <div className='mt-2 max-h-52 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg'>
+                          {filteredSections.length === 0 && (
+                            <p className='px-3 py-2 text-sm text-gray-500'>
+                              검색 결과가 없습니다.
+                            </p>
+                          )}
+                          {filteredSections.map((section) => (
+                            <button
+                              key={section.id}
+                              type='button'
+                              onClick={() => {
+                                setTheme((prev) =>
+                                  prev
+                                    ? {
+                                        ...prev,
+                                        section_id: section.id,
+                                      }
+                                    : prev
+                                );
+                                setSectionQuery(section.title);
+                                setIsSectionSearchOpen(false);
+                              }}
+                              className='w-full text-left px-3 py-2 text-sm hover:bg-gray-50'
+                            >
+                              #{section.id} {section.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </FormField>
               </div>
             </div>
@@ -165,54 +394,106 @@ const DemoThemeEdit = () => {
               <input
                 className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition font-mono'
                 name='img_url'
-                value={broadcasting.img_url || ''}
+                value={theme.img_url || ''}
                 onChange={handleChange}
                 placeholder='https://...'
               />
             </FormField>
 
             <div className='grid grid-cols-2 gap-6'>
-              <FormField
-                label='Language'
-                hint='지원할 언어를 쉼표로 구분하여 입력하세요. 예: ko, en, de, jp'
-              >
-                <input
-                  className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
-                  name='language'
-                  value={
-                    Array.isArray(broadcasting.language)
-                      ? broadcasting.language.join(', ')
-                      : ''
-                  }
-                  onChange={handleLangChange}
-                  placeholder='ko, en, de, jp'
-                />
-                {Array.isArray(broadcasting.language) &&
-                  broadcasting.language.length > 0 && (
-                    <div className='flex gap-1.5 mt-1 flex-wrap'>
-                      {broadcasting.language.map((lang) => (
-                        <span
-                          key={lang}
-                          className='px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium'
-                        >
-                          {lang}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-              </FormField>
-
               <FormField label='Order'>
                 <input
                   className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition'
                   name='order'
                   type='number'
-                  value={broadcasting.order ?? ''}
+                  value={theme.order ?? ''}
                   onChange={handleChange}
-                  placeholder='0'
+                  placeholder='비워두면 NULL'
                 />
               </FormField>
+
+              <FormField label='Language'>
+                <div className='flex gap-3 flex-wrap'>
+                  {LANG_OPTIONS.map((lang) => {
+                    const selected = theme.language.includes(lang.code);
+
+                    return (
+                      <button
+                        key={lang.code}
+                        type='button'
+                        onClick={() => handleLangToggle(lang.code)}
+                        className={`px-4 h-10 rounded-full text-sm font-medium transition border ${
+                          selected
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                        }`}
+                      >
+                        {lang.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </FormField>
             </div>
+
+            <FormField label='프로그램 매핑 (필수)'>
+              <div className='flex flex-col gap-2'>
+                <div className='flex gap-2'>
+                  <input
+                    value={programIdsInput}
+                    onChange={(e) => setProgramIdsInput(e.target.value)}
+                    placeholder='프로그램 ID를 쉼표로 입력 (예: 10,11,12)'
+                    className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setIsProgramSearchOpen((prev) => !prev)}
+                    className='px-4 h-10 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50'
+                  >
+                    {isProgramSearchOpen ? '검색 닫기' : '검색해서 추가'}
+                  </button>
+                </div>
+
+                {mappedProgramIds.length > 0 && (
+                  <p className='text-xs text-gray-500'>
+                    선택된 프로그램 ID: {mappedProgramIds.join(', ')}
+                  </p>
+                )}
+
+                {isProgramSearchOpen && (
+                  <div className='rounded-xl border border-gray-200 p-3 bg-white'>
+                    <input
+                      value={programQuery}
+                      onChange={(e) => setProgramQuery(e.target.value)}
+                      placeholder='ID 또는 제목으로 검색'
+                      className='w-full px-3 h-10 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                    />
+                    <div className='mt-2 max-h-52 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg'>
+                      {filteredPrograms.length === 0 && (
+                        <p className='px-3 py-2 text-sm text-gray-500'>
+                          검색 결과가 없습니다.
+                        </p>
+                      )}
+                      {filteredPrograms.map((program) => (
+                        <button
+                          key={program.id}
+                          type='button'
+                          onClick={() => {
+                            const next = Array.from(
+                              new Set([...mappedProgramIds, program.id])
+                            );
+                            setProgramIdsInput(next.join(','));
+                          }}
+                          className='w-full text-left px-3 py-2 text-sm hover:bg-gray-50'
+                        >
+                          #{program.id} {program.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </FormField>
           </div>
         )}
       </div>

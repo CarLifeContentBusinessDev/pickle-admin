@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import FormActionsButton from '../../components/FormActionButton';
 import FormField from '../../components/FormField';
@@ -14,12 +14,23 @@ const LANG_OPTIONS = [
   { code: 'jp', label: '일본' },
 ] as const;
 
+interface SectionOption {
+  id: number;
+  title: string;
+}
+
+interface EpisodeOption {
+  id: number;
+  title: string;
+}
+
 const initialState = {
   title: '',
-  channel: '',
-  frequency: '',
+  subtitle: '',
   img_url: '',
+  section_id: '',
   order: '',
+  oem_key: '',
   language: [] as string[],
 };
 
@@ -28,18 +39,81 @@ const DemoSeriesAdd = () => {
   const [form, setForm] = useState(initialState);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [sections, setSections] = useState<SectionOption[]>([]);
+  const [episodes, setEpisodes] = useState<EpisodeOption[]>([]);
+  const [sectionQuery, setSectionQuery] = useState('');
+  const [isSectionSearchOpen, setIsSectionSearchOpen] = useState(false);
+  const [episodeIdsInput, setEpisodeIdsInput] = useState('');
+  const [episodeQuery, setEpisodeQuery] = useState('');
+  const [isEpisodeSearchOpen, setIsEpisodeSearchOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const initLang = searchParams.get('lang') ?? 'ko';
   const [activeTab, setActiveTab] = useState(
     initLang === 'ko' ? 'basic' : 'localize'
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const filteredSections = sections
+    .filter((section) => {
+      const query = sectionQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        String(section.id).includes(query) ||
+        section.title.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 30);
+
+  const selectedSection = sections.find(
+    (section) => String(section.id) === form.section_id
+  );
+
+  const parseIdCsv = (value: string) =>
+    Array.from(
+      new Set(
+        value
+          .split(',')
+          .map((v) => Number(v.trim()))
+          .filter((v) => Number.isInteger(v) && v > 0)
+      )
+    );
+
+  const mappedEpisodeIds = parseIdCsv(episodeIdsInput);
+
+  const filteredEpisodes = episodes
+    .filter((episode) => {
+      const query = episodeQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        String(episode.id).includes(query) ||
+        episode.title.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 30);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      const [{ data: sectionData }, { data: episodeData }] = await Promise.all([
+        supabase.from('sections').select('id, title').order('id'),
+        supabase.from('episodes').select('id, title').order('id'),
+      ]);
+
+      setSections((sectionData ?? []) as SectionOption[]);
+      setEpisodes((episodeData ?? []) as EpisodeOption[]);
+    };
+
+    fetchOptions();
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: name === 'order' ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -58,7 +132,12 @@ const DemoSeriesAdd = () => {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setError('방송사 이름은 필수입니다.');
+      setError('시리즈 제목은 필수입니다.');
+      return;
+    }
+
+    if (!form.section_id) {
+      setError('섹션을 선택하세요.');
       return;
     }
 
@@ -67,28 +146,67 @@ const DemoSeriesAdd = () => {
       return;
     }
 
+    const sectionId = Number(form.section_id);
+    if (!Number.isInteger(sectionId) || sectionId <= 0) {
+      setError('섹션 ID는 숫자로 입력하세요.');
+      return;
+    }
+
+    if (mappedEpisodeIds.length === 0) {
+      setError('매핑할 에피소드 ID를 하나 이상 입력하세요.');
+      return;
+    }
+
+    const orderValue =
+      form.order.trim() === '' ? null : Number(form.order.trim());
+    if (orderValue != null && !Number.isFinite(orderValue)) {
+      setError('Order는 숫자로 입력하세요.');
+      return;
+    }
+
     setSaving(true);
     setError('');
 
-    const { error } = await supabase.from('broadcastings').insert([
-      {
-        title: form.title,
-        channel: form.channel || null,
-        frequency: form.frequency || null,
-        img_url: form.img_url || null,
-        order: form.order || 0,
-        language: form.language,
-      },
-    ]);
+    const { data: insertedSeries, error: seriesError } = await supabase
+      .from('series')
+      .insert([
+        {
+          title: form.title,
+          subtitle: form.subtitle || null,
+          img_url: form.img_url || null,
+          section_id: sectionId,
+          order: orderValue,
+          oem_key: form.oem_key || null,
+          language: form.language,
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (seriesError || !insertedSeries) {
+      setSaving(false);
+      setError(seriesError?.message ?? '시리즈 저장에 실패했습니다.');
+      return;
+    }
+
+    const mappingRows = mappedEpisodeIds.map((episodeId, index) => ({
+      series_id: insertedSeries.id,
+      episode_id: episodeId,
+      order: index + 1,
+    }));
+
+    const { error: mappingError } = await supabase
+      .from('series_episodes')
+      .insert(mappingRows);
 
     setSaving(false);
 
-    if (error) setError(error.message);
+    if (mappingError) setError(mappingError.message);
     else navigate(-1);
   };
 
   return (
-    <FormLayout title='방송사 추가'>
+    <FormLayout title='시리즈 추가'>
       <div className='flex justify-between items-center mb-6'>
         {/* 탭 */}
         <FormTabs
@@ -137,7 +255,7 @@ const DemoSeriesAdd = () => {
             <ThumbnailPreview url={form.img_url} title={form.title} />
           </div>
 
-          <div className='flex flex-col gap-2'>
+          <div className='flex flex-col gap-2 flex-1'>
             <FormField label='Title (필수)'>
               <input
                 name='title'
@@ -146,22 +264,76 @@ const DemoSeriesAdd = () => {
                 className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
               />
             </FormField>
-            <FormField label='Channel'>
+            <FormField label='Subtitle'>
               <input
-                name='channel'
-                value={form.channel}
+                name='subtitle'
+                value={form.subtitle}
                 onChange={handleChange}
                 className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
               />
             </FormField>
 
-            <FormField label='Frequency'>
-              <input
-                name='frequency'
-                value={form.frequency}
-                onChange={handleChange}
-                className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-              />
+            <FormField label='섹션 (필수)'>
+              <div className='flex flex-col gap-2'>
+                <div className='flex gap-2'>
+                  <input
+                    name='section_id'
+                    value={form.section_id}
+                    onChange={handleChange}
+                    inputMode='numeric'
+                    placeholder='섹션 ID 직접 입력'
+                    className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setIsSectionSearchOpen((prev) => !prev)}
+                    className='px-4 h-10 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50'
+                  >
+                    {isSectionSearchOpen ? '검색 닫기' : '검색해서 선택'}
+                  </button>
+                </div>
+
+                {selectedSection && (
+                  <p className='text-xs text-gray-500'>
+                    선택된 섹션: #{selectedSection.id} {selectedSection.title}
+                  </p>
+                )}
+
+                {isSectionSearchOpen && (
+                  <div className='rounded-xl border border-gray-200 p-3 bg-white'>
+                    <input
+                      value={sectionQuery}
+                      onChange={(e) => setSectionQuery(e.target.value)}
+                      placeholder='ID 또는 제목으로 검색'
+                      className='w-full px-3 h-10 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                    />
+                    <div className='mt-2 max-h-52 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg'>
+                      {filteredSections.length === 0 && (
+                        <p className='px-3 py-2 text-sm text-gray-500'>
+                          검색 결과가 없습니다.
+                        </p>
+                      )}
+                      {filteredSections.map((section) => (
+                        <button
+                          key={section.id}
+                          type='button'
+                          onClick={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              section_id: String(section.id),
+                            }));
+                            setSectionQuery(section.title);
+                            setIsSectionSearchOpen(false);
+                          }}
+                          className='w-full text-left px-3 py-2 text-sm hover:bg-gray-50'
+                        >
+                          #{section.id} {section.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </FormField>
           </div>
         </div>
@@ -187,7 +359,75 @@ const DemoSeriesAdd = () => {
               className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
             />
           </FormField>
+
+          <FormField label='OEM Key'>
+            <input
+              name='oem_key'
+              value={form.oem_key}
+              onChange={handleChange}
+              className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+            />
+          </FormField>
         </div>
+
+        <FormField label='에피소드 매핑 (필수)'>
+          <div className='flex flex-col gap-2'>
+            <div className='flex gap-2'>
+              <input
+                value={episodeIdsInput}
+                onChange={(e) => setEpisodeIdsInput(e.target.value)}
+                placeholder='에피소드 ID를 쉼표로 입력 (예: 1,2,3)'
+                className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+              />
+              <button
+                type='button'
+                onClick={() => setIsEpisodeSearchOpen((prev) => !prev)}
+                className='px-4 h-10 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50'
+              >
+                {isEpisodeSearchOpen ? '검색 닫기' : '검색해서 추가'}
+              </button>
+            </div>
+
+            {mappedEpisodeIds.length > 0 && (
+              <p className='text-xs text-gray-500'>
+                선택된 에피소드 ID: {mappedEpisodeIds.join(', ')}
+              </p>
+            )}
+
+            {isEpisodeSearchOpen && (
+              <div className='rounded-xl border border-gray-200 p-3 bg-white'>
+                <input
+                  value={episodeQuery}
+                  onChange={(e) => setEpisodeQuery(e.target.value)}
+                  placeholder='ID 또는 제목으로 검색'
+                  className='w-full px-3 h-10 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                />
+                <div className='mt-2 max-h-52 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg'>
+                  {filteredEpisodes.length === 0 && (
+                    <p className='px-3 py-2 text-sm text-gray-500'>
+                      검색 결과가 없습니다.
+                    </p>
+                  )}
+                  {filteredEpisodes.map((episode) => (
+                    <button
+                      key={episode.id}
+                      type='button'
+                      onClick={() => {
+                        const next = Array.from(
+                          new Set([...mappedEpisodeIds, episode.id])
+                        );
+                        setEpisodeIdsInput(next.join(','));
+                      }}
+                      className='w-full text-left px-3 py-2 text-sm hover:bg-gray-50'
+                    >
+                      #{episode.id} {episode.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </FormField>
       </div>
 
       {error && <div className='text-red-500 text-sm mt-4'>{error}</div>}

@@ -3,6 +3,7 @@ import LoadingOverlay from '../../components/LoadingOverlay';
 import SortControls from '../../components/SortControls';
 import type { LanguageCode } from '../../constants/languages';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DemoThemeList from './DemoThemeList';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
 import parseLanguages from '../../utils/parseLanguages';
@@ -15,6 +16,7 @@ const SORT_KEY_OPTIONS: Array<{ value: 'id' | 'order'; label: string }> = [
 ];
 
 const DemoThemeLayout = () => {
+  const navigate = useNavigate();
   const [themes, setThemes] = useState<Theme[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -79,7 +81,7 @@ const DemoThemeLayout = () => {
         />
       }
       addLabel='테마 추가'
-      onAdd={() => {}}
+      onAdd={() => navigate('/demo/theme/new')}
     >
       <LoadingOverlay loading={loading}>
         테마 목록을 불러오는 중입니다.

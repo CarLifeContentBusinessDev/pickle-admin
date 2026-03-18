@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import FormActionsButton from '../../components/FormActionButton';
 import FormField from '../../components/FormField';
@@ -14,12 +14,21 @@ const LANG_OPTIONS = [
   { code: 'jp', label: '일본' },
 ] as const;
 
+interface ProgramOption {
+  id: number;
+  title: string;
+  img_url: string | null;
+}
+
 const initialState = {
   title: '',
-  channel: '',
-  frequency: '',
+  type: '',
   img_url: '',
-  order: '',
+  program_id: '',
+  date: '',
+  duration: '',
+  audio_file: '',
+  audioFile_dubbing: '',
   language: [] as string[],
 };
 
@@ -28,18 +37,54 @@ const DemoEpisodeAdd = () => {
   const [form, setForm] = useState(initialState);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [programs, setPrograms] = useState<ProgramOption[]>([]);
+  const [programQuery, setProgramQuery] = useState('');
+  const [isProgramSearchOpen, setIsProgramSearchOpen] = useState(false);
+  const [isDubbingEpisode, setIsDubbingEpisode] = useState(false);
   const [searchParams] = useSearchParams();
   const initLang = searchParams.get('lang') ?? 'ko';
   const [activeTab, setActiveTab] = useState(
     initLang === 'ko' ? 'basic' : 'localize'
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const filteredPrograms = programs
+    .filter((program) => {
+      const query = programQuery.trim().toLowerCase();
+      if (!query) return true;
+
+      return (
+        String(program.id).includes(query) ||
+        program.title.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 30);
+
+  const selectedProgram = programs.find(
+    (program) => String(program.id) === form.program_id
+  );
+  const thumbnailPreviewUrl =
+    form.img_url.trim() || selectedProgram?.img_url?.trim() || '';
+
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      const { data } = await supabase
+        .from('programs')
+        .select('id, title, img_url')
+        .order('id');
+      setPrograms((data ?? []) as ProgramOption[]);
+    };
+
+    fetchPrograms();
+  }, []);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
 
     setForm((prev) => ({
       ...prev,
-      [name]: name === 'order' ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -58,7 +103,12 @@ const DemoEpisodeAdd = () => {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setError('방송사 이름은 필수입니다.');
+      setError('에피소드 제목은 필수입니다.');
+      return;
+    }
+
+    if (!form.program_id) {
+      setError('프로그램을 선택하세요.');
       return;
     }
 
@@ -67,16 +117,27 @@ const DemoEpisodeAdd = () => {
       return;
     }
 
+    const programId = Number(form.program_id);
+    if (!Number.isInteger(programId) || programId <= 0) {
+      setError('프로그램 ID는 숫자로 입력하세요.');
+      return;
+    }
+
     setSaving(true);
     setError('');
 
-    const { error } = await supabase.from('broadcastings').insert([
+    const { error } = await supabase.from('episodes').insert([
       {
         title: form.title,
-        channel: form.channel || null,
-        frequency: form.frequency || null,
-        img_url: form.img_url || null,
-        order: form.order || 0,
+        type: form.type || null,
+        img_url: form.img_url.trim() || null,
+        program_id: programId,
+        date: form.date || null,
+        duration: form.duration || null,
+        audio_file: form.audio_file || null,
+        audioFile_dubbing: isDubbingEpisode
+          ? form.audioFile_dubbing || null
+          : null,
         language: form.language,
       },
     ]);
@@ -88,7 +149,7 @@ const DemoEpisodeAdd = () => {
   };
 
   return (
-    <FormLayout title='방송사 추가'>
+    <FormLayout title='에피소드 추가'>
       <div className='flex justify-between items-center mb-6'>
         {/* 탭 */}
         <FormTabs
@@ -134,10 +195,10 @@ const DemoEpisodeAdd = () => {
 
         <div className='flex gap-5'>
           <div className='flex gap-8 items-start'>
-            <ThumbnailPreview url={form.img_url} title={form.title} />
+            <ThumbnailPreview url={thumbnailPreviewUrl} title={form.title} />
           </div>
 
-          <div className='flex flex-col gap-2'>
+          <div className='flex flex-col gap-2 flex-1'>
             <FormField label='Title (필수)'>
               <input
                 name='title'
@@ -146,22 +207,76 @@ const DemoEpisodeAdd = () => {
                 className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
               />
             </FormField>
-            <FormField label='Channel'>
+            <FormField label='Type'>
               <input
-                name='channel'
-                value={form.channel}
+                name='type'
+                value={form.type}
                 onChange={handleChange}
                 className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
               />
             </FormField>
+            <FormField label='프로그램 (필수)'>
+              <div className='flex flex-col gap-2'>
+                <div className='flex gap-2'>
+                  <input
+                    name='program_id'
+                    value={form.program_id}
+                    onChange={handleChange}
+                    inputMode='numeric'
+                    placeholder='프로그램 ID 직접 입력'
+                    className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setIsProgramSearchOpen((prev) => !prev)}
+                    className='px-4 h-10 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50'
+                  >
+                    {isProgramSearchOpen ? '검색 닫기' : '검색해서 선택'}
+                  </button>
+                </div>
 
-            <FormField label='Frequency'>
-              <input
-                name='frequency'
-                value={form.frequency}
-                onChange={handleChange}
-                className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
-              />
+                {selectedProgram && (
+                  <p className='text-xs text-gray-500'>
+                    선택된 프로그램: #{selectedProgram.id}{' '}
+                    {selectedProgram.title}
+                  </p>
+                )}
+
+                {isProgramSearchOpen && (
+                  <div className='rounded-xl border border-gray-200 p-3 bg-white'>
+                    <input
+                      value={programQuery}
+                      onChange={(e) => setProgramQuery(e.target.value)}
+                      placeholder='ID 또는 제목으로 검색'
+                      className='w-full px-3 h-10 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+                    />
+                    <div className='mt-2 max-h-52 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg'>
+                      {filteredPrograms.length === 0 && (
+                        <p className='px-3 py-2 text-sm text-gray-500'>
+                          검색 결과가 없습니다.
+                        </p>
+                      )}
+                      {filteredPrograms.map((program) => (
+                        <button
+                          key={program.id}
+                          type='button'
+                          onClick={() => {
+                            setForm((prev) => ({
+                              ...prev,
+                              program_id: String(program.id),
+                            }));
+                            setProgramQuery(program.title);
+                            setIsProgramSearchOpen(false);
+                          }}
+                          className='w-full text-left px-3 py-2 text-sm hover:bg-gray-50'
+                        >
+                          #{program.id} {program.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </FormField>
           </div>
         </div>
@@ -177,16 +292,86 @@ const DemoEpisodeAdd = () => {
           </FormField>
         </div>
 
-        <div className='grid grid-cols-2 gap-8'>
-          <FormField label='Order'>
+        <div className='grid grid-cols-1 gap-8'>
+          <FormField label='날짜'>
             <input
-              type='number'
-              name='order'
-              value={form.order}
+              name='date'
+              value={form.date}
               onChange={handleChange}
+              placeholder='YY.MM.DD'
               className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
             />
           </FormField>
+
+          <FormField label='오디오 파일 URL'>
+            <div className='flex gap-2'>
+              <input
+                name='audio_file'
+                value={form.audio_file}
+                onChange={handleChange}
+                className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900'
+              />
+              <button
+                type='button'
+                onClick={() => {
+                  if (!form.audio_file.trim()) return;
+                  window.open(
+                    form.audio_file.trim(),
+                    '_blank',
+                    'noopener,noreferrer'
+                  );
+                }}
+                disabled={!form.audio_file.trim()}
+                className='px-4 py-2.5 rounded-xl border border-gray-200 text-sm whitespace-nowrap bg-white hover:bg-gray-50 disabled:opacity-50'
+              >
+                바로가기
+              </button>
+            </div>
+          </FormField>
+          <FormField label='재생 시간'>
+            <input
+              name='duration'
+              value={form.duration}
+              onChange={handleChange}
+              placeholder='H:MM:SS'
+              className='w-full px-4 h-10 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900'
+            />
+          </FormField>
+
+          <FormField
+            label={
+              <span className='inline-flex items-center gap-2'>
+                더빙
+                <input
+                  type='checkbox'
+                  checked={isDubbingEpisode}
+                  aria-label='더빙 여부'
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsDubbingEpisode(checked);
+                    if (!checked) {
+                      setForm((prev) => ({
+                        ...prev,
+                        audioFile_dubbing: '',
+                      }));
+                    }
+                  }}
+                  className='h-4 w-4 rounded border-gray-300 accent-gray-900'
+                />
+              </span>
+            }
+          />
+
+          {isDubbingEpisode && (
+            <FormField label='더빙 오디오 파일 URL'>
+              <input
+                name='audioFile_dubbing'
+                value={form.audioFile_dubbing}
+                onChange={handleChange}
+                className='w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-gray-900'
+              />
+            </FormField>
+          )}
         </div>
       </div>
 

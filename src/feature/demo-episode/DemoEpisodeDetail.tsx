@@ -3,6 +3,7 @@ import DemoEntityDetail from '../../components/DemoEntityDetail';
 const EPISODE_FIELD_LABELS = {
   id: 'ID',
   title: '제목',
+  type: '유형',
   programs: '프로그램',
   program_id: '프로그램 ID',
   img_url: '썸네일',
@@ -19,6 +20,7 @@ const EPISODE_FIELD_LABELS = {
 const EPISODE_FIELD_ORDER = [
   'id',
   'title',
+  'type',
   'programs',
   'program_id',
   'img_url',

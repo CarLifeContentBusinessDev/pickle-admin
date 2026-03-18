@@ -23,7 +23,7 @@ export interface Episode {
   programs?: { title: string };
 }
 
-export interface Sereis {
+export interface Series {
   id: string;
   title: string;
   subtitle: string;
@@ -39,7 +39,7 @@ export interface Theme {
   title: string;
   subtitle: string;
   img_url: string;
-  sections_id: number;
+  section_id: number;
   order: number;
   language: string[];
 }
