@@ -31,6 +31,7 @@ const DemoEpisodeList: React.FC<DemoEpisodeListProps> = ({
       selectedLang={selectedLang}
       onDeleted={onDeleted}
       tableName='episodes'
+      detailPath='/demo/episode/detail'
       editPath='/demo/episode'
       columns={columns}
       gridCols={gridCols}

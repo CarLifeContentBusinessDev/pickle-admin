@@ -31,6 +31,7 @@ const DemoThemeList: React.FC<DemoThemeListProps> = ({
       selectedLang={selectedLang}
       onDeleted={onDeleted}
       tableName='themes'
+      detailPath='/demo/theme/detail'
       editPath='/demo/theme'
       columns={columns}
       gridCols={gridCols}

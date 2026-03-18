@@ -27,7 +27,7 @@ const DemoProgramLayout = () => {
     try {
       const data = await fetchAllSupabaseRows<Program>({
         table: 'programs',
-        select: '*',
+        select: '*, categories(title), broadcastings(title, channel)',
         orderColumn: 'id',
       });
       setPrograms(data);
@@ -49,6 +49,18 @@ const DemoProgramLayout = () => {
           return langs.includes(selectedLang);
         });
 
+  const displayPrograms = filteredPrograms.map((prog) => {
+    const broadcasting = (prog as any).broadcastings;
+    const broadcastingLabel = [broadcasting?.title, broadcasting?.channel]
+      .filter(Boolean)
+      .join(' ');
+
+    return {
+      ...prog,
+      broadcastingLabel,
+    };
+  });
+
   const {
     sortKey,
     setSortKey,
@@ -56,7 +68,7 @@ const DemoProgramLayout = () => {
     setSortDirection,
     sortedData: sortedPrograms,
   } = useListSort({
-    data: filteredPrograms,
+    data: displayPrograms,
     sortOptions: SORT_KEY_OPTIONS,
     initialSortKey: 'id',
     initialSortDirection: 'asc',

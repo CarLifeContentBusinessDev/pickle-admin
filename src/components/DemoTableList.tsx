@@ -12,6 +12,7 @@ interface DemoTableListProps {
   columns: { key: string; label: string }[];
   gridCols: string;
   selectedLang: string;
+  detailPath?: string;
   editPath: string;
   tableName: string;
   onDeleted?: () => void;
@@ -22,6 +23,7 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
   columns,
   gridCols,
   selectedLang,
+  detailPath,
   editPath,
   tableName,
   onDeleted,
@@ -37,6 +39,11 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
   const handleDelete = async (id: number) => {
     const ok = await deleteRow(tableName, id);
     if (ok && onDeleted) onDeleted();
+  };
+
+  const handleRowClick = (row: any) => {
+    if (!detailPath) return;
+    navigate(`${detailPath}/${row.id}?lang=${selectedLang}`);
   };
 
   const getValueByPath = (obj: any, path: string): any => {
@@ -69,16 +76,20 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
         <div className='flex gap-2'>
           <button
             className='px-3 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200 transition text-sm'
-            onClick={() =>
-              navigate(`${editPath}/${row.id}?lang=${selectedLang}`)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`${editPath}/${row.id}?lang=${selectedLang}`);
+            }}
           >
             편집
           </button>
 
           <button
             className='px-3 py-1 rounded bg-red-100 text-red-600 hover:bg-red-200 transition text-sm'
-            onClick={() => handleDelete(row.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row.id);
+            }}
           >
             삭제
           </button>
@@ -103,6 +114,7 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
         data={pagedData}
         gridTemplateColumns={gridCols}
         renderCell={renderCell}
+        onRowClick={detailPath ? handleRowClick : undefined}
       />
 
       <Pagination page={page} totalPages={totalPages} onChange={setPage} />

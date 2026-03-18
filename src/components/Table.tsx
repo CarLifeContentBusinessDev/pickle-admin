@@ -10,6 +10,7 @@ interface TableProps<T> {
   data: T[];
   gridTemplateColumns: string;
   renderCell: (columnKey: string, row: T) => React.ReactNode;
+  onRowClick?: (row: T) => void;
   emptyText?: string;
 }
 
@@ -18,6 +19,7 @@ function Table<T>({
   data,
   gridTemplateColumns,
   renderCell,
+  onRowClick,
   emptyText = '데이터가 없습니다.',
 }: TableProps<T>) {
   return (
@@ -40,8 +42,11 @@ function Table<T>({
           data.map((row: T, rowIndex) => (
             <div
               key={(row as any).id ?? rowIndex}
-              className='grid border-b border-gray-200 items-center hover:bg-gray-50 transition'
+              className={`grid border-b border-gray-200 items-center hover:bg-gray-50 transition ${
+                onRowClick ? 'cursor-pointer' : ''
+              }`}
               style={{ gridTemplateColumns }}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((col) => (
                 <div

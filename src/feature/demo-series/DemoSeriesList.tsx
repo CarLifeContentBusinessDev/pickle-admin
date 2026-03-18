@@ -33,6 +33,7 @@ const DemoSeriesList: React.FC<DemoSeriesListProps> = ({
       selectedLang={selectedLang}
       onDeleted={onDeleted}
       tableName='series'
+      detailPath='/demo/series/detail'
       editPath='/demo/series'
       columns={columns}
       gridCols={gridCols}
