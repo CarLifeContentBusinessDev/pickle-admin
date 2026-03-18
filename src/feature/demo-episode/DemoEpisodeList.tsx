@@ -8,7 +8,7 @@ interface DemoEpisodeListProps {
 }
 
 const gridCols =
-  'minmax(40px,0.5fr) minmax(80px,2fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(140px,1fr)';
+  'minmax(40px,0.5fr) minmax(80px,4fr) minmax(80px,2fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,0.5fr) minmax(140px,1fr)';
 
 const columns = [
   { key: 'id', label: 'ID' },

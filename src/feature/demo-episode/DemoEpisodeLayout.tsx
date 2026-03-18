@@ -21,7 +21,7 @@ const DemoEpisodeLayout = () => {
     try {
       const data = await fetchAllSupabaseRows<Episode>({
         table: 'episodes',
-        select: '*',
+        select: '*, programs(title)',
         orderColumn: 'id',
       });
       setEpisodes(data);

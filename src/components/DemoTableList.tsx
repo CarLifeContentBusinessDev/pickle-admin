@@ -39,6 +39,21 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
     if (ok && onDeleted) onDeleted();
   };
 
+  const getValueByPath = (obj: any, path: string): any => {
+    if (!path.includes('.')) return obj?.[path];
+
+    return path.split('.').reduce((acc: any, part: string) => {
+      if (acc == null) return undefined;
+
+      // 관계 데이터가 배열로 내려오면 각 항목의 값을 추출합니다.
+      if (Array.isArray(acc)) {
+        return acc.map((item) => item?.[part]).filter((item) => item != null);
+      }
+
+      return acc[part];
+    }, obj);
+  };
+
   const renderCell = (key: string, row: any) => {
     if (key === 'img_url') {
       if (!row.img_url) return null;
@@ -71,7 +86,7 @@ const DemoTableList: React.FC<DemoTableListProps> = ({
       );
     }
 
-    const value = row[key];
+    const value = getValueByPath(row, key);
 
     // boolean 타입 처리
     if (typeof value === 'boolean') {
