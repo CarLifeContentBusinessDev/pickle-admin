@@ -8,8 +8,10 @@ interface DemoListLayoutProps {
   count?: number;
   selectedLang: LanguageCode;
   onLangChange: (lang: LanguageCode) => void;
+  languageOptions?: readonly { value: string; label: string }[];
   addLabel: string;
   onAdd: () => void;
+  extraControls?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -19,8 +21,10 @@ const DemoListLayout = ({
   count,
   selectedLang,
   onLangChange,
+  languageOptions = LANGUAGES,
   addLabel,
   onAdd,
+  extraControls,
   children,
 }: DemoListLayoutProps) => {
   return (
@@ -39,9 +43,11 @@ const DemoListLayout = ({
           <div className='flex gap-4 items-center'>
             <Dropdown
               value={selectedLang}
-              options={[...LANGUAGES]}
+              options={[...languageOptions]}
               onChange={(v) => onLangChange(v as LanguageCode)}
             />
+
+            {extraControls}
 
             <Button onClick={onAdd}>{addLabel}</Button>
           </div>

@@ -3,10 +3,16 @@ import DemoListLayout from '../../components/DemoListLayout';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { type LanguageCode } from '../../constants/languages';
 import { useNavigate } from 'react-router-dom';
+import SortControls from '../../components/SortControls';
 import type { Episode } from '../../types/demoContents';
+import useListSort from '../../hook/useListSort';
 import parseLanguages from '../../utils/parseLanguages';
 import DemoEpisodeList from './DemoEpisodeList';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
+
+const SORT_KEY_OPTIONS: Array<{ value: 'id'; label: string }> = [
+  { value: 'id', label: 'ID 기준' },
+];
 
 const DemoEpisodeLayout = () => {
   const navigate = useNavigate();
@@ -43,13 +49,35 @@ const DemoEpisodeLayout = () => {
           return langs.includes(selectedLang);
         });
 
+  const {
+    sortKey,
+    setSortKey,
+    sortDirection,
+    setSortDirection,
+    sortedData: sortedEpisodes,
+  } = useListSort({
+    data: filteredEpisodes,
+    sortOptions: SORT_KEY_OPTIONS,
+    initialSortKey: 'id',
+    initialSortDirection: 'asc',
+  });
+
   return (
     <DemoListLayout
       parentMenu='데모 콘텐츠 관리'
       childMenu='에피소드 관리'
-      count={filteredEpisodes.length}
+      count={sortedEpisodes.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
+      extraControls={
+        <SortControls
+          sortKey={sortKey}
+          sortOptions={SORT_KEY_OPTIONS}
+          onSortKeyChange={setSortKey}
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
+        />
+      }
       addLabel='에피소드 추가'
       onAdd={() => navigate('/demo/program/new')}
     >
@@ -59,7 +87,7 @@ const DemoEpisodeLayout = () => {
 
       {!loading && !error && (
         <DemoEpisodeList
-          episodes={filteredEpisodes}
+          episodes={sortedEpisodes}
           selectedLang={selectedLang}
           onDeleted={fetchEpisodes}
         />

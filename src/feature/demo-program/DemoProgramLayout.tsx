@@ -4,9 +4,15 @@ import LoadingOverlay from '../../components/LoadingOverlay';
 import DemoProgramList from './DemoProgramList';
 import type { LanguageCode } from '../../constants/languages';
 import { useNavigate } from 'react-router-dom';
+import SortControls from '../../components/SortControls';
 import type { Program } from '../../types/demoContents';
+import useListSort from '../../hook/useListSort';
 import parseLanguages from '../../utils/parseLanguages';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
+
+const SORT_KEY_OPTIONS: Array<{ value: 'id'; label: string }> = [
+  { value: 'id', label: 'ID 기준' },
+];
 
 const DemoProgramLayout = () => {
   const navigate = useNavigate();
@@ -43,13 +49,35 @@ const DemoProgramLayout = () => {
           return langs.includes(selectedLang);
         });
 
+  const {
+    sortKey,
+    setSortKey,
+    sortDirection,
+    setSortDirection,
+    sortedData: sortedPrograms,
+  } = useListSort({
+    data: filteredPrograms,
+    sortOptions: SORT_KEY_OPTIONS,
+    initialSortKey: 'id',
+    initialSortDirection: 'asc',
+  });
+
   return (
     <DemoListLayout
       parentMenu='데모 콘텐츠 관리'
       childMenu='프로그램 관리'
-      count={filteredPrograms.length}
+      count={sortedPrograms.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
+      extraControls={
+        <SortControls
+          sortKey={sortKey}
+          sortOptions={SORT_KEY_OPTIONS}
+          onSortKeyChange={setSortKey}
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
+        />
+      }
       addLabel='프로그램 추가'
       onAdd={() => navigate('/demo/program/new')}
     >
@@ -59,7 +87,7 @@ const DemoProgramLayout = () => {
 
       {!loading && !error && (
         <DemoProgramList
-          programs={filteredPrograms}
+          programs={sortedPrograms}
           selectedLang={selectedLang}
           onDeleted={fetchPrograms}
         />

@@ -1,10 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingOverlay from '../../components/LoadingOverlay';
-import { LANG_COLUMN_MAP, type LanguageCode } from '../../constants/languages';
+import {
+  LANGUAGES,
+  LANG_COLUMN_MAP,
+  type LanguageCode,
+} from '../../constants/languages';
 import DemoListLayout from '../../components/DemoListLayout';
+import SortControls from '../../components/SortControls';
 import DemoCategoryList from './DemoCategoryList';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
+import useListSort from '../../hook/useListSort';
+
+const SORT_KEY_OPTIONS: Array<{ value: 'id' | 'order'; label: string }> = [
+  { value: 'id', label: 'ID 기준' },
+  { value: 'order', label: '순위 기준' },
+];
+
+const CATEGORY_LANGUAGE_OPTIONS = LANGUAGES.filter(
+  (lang) => lang.value !== 'all'
+);
 
 interface Category {
   id: number;
@@ -70,6 +85,20 @@ const DemoCategoryLayout = () => {
     programsCount: programCounts[cat.id] || 0,
   }));
 
+  const {
+    sortKey,
+    setSortKey,
+    sortDirection,
+    setSortDirection,
+    sortedData: sortedCategories,
+  } = useListSort({
+    data: filteredCategories,
+    sortOptions: SORT_KEY_OPTIONS,
+    initialSortKey: 'id',
+    initialSortDirection: 'asc',
+    emptyLastOnAscKeys: ['order'],
+  });
+
   const fetchCategories = async () => {
     setLoading(true);
     setError('');
@@ -96,9 +125,19 @@ const DemoCategoryLayout = () => {
     <DemoListLayout
       parentMenu='데모 콘텐츠 관리'
       childMenu='카테고리 관리'
-      count={categories.length}
+      count={sortedCategories.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
+      languageOptions={CATEGORY_LANGUAGE_OPTIONS}
+      extraControls={
+        <SortControls
+          sortKey={sortKey}
+          sortOptions={SORT_KEY_OPTIONS}
+          onSortKeyChange={setSortKey}
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
+        />
+      }
       addLabel='카테고리 추가'
       onAdd={() => navigate('/demo/category/new')}
     >
@@ -108,7 +147,7 @@ const DemoCategoryLayout = () => {
 
       {!loading && !error && (
         <DemoCategoryList
-          categories={filteredCategories}
+          categories={sortedCategories}
           selectedLang={selectedLang}
           onDeleted={fetchCategories}
         />

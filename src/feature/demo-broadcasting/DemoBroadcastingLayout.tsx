@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { type LanguageCode } from '../../constants/languages';
@@ -7,6 +7,13 @@ import type { Broadcasting } from '../../types/demoContents';
 import parseLanguages from '../../utils/parseLanguages';
 import DemoBroadcastingList from './DemoBroadcastingList';
 import fetchAllSupabaseRows from '../../utils/fetchAllSupabaseRows';
+import SortControls from '../../components/SortControls';
+import useListSort from '../../hook/useListSort';
+
+const SORT_KEY_OPTIONS: Array<{ value: 'id' | 'order'; label: string }> = [
+  { value: 'id', label: 'ID 기준' },
+  { value: 'order', label: '순위 기준' },
+];
 
 const DemoBroadcastingLayout = () => {
   const navigate = useNavigate();
@@ -50,17 +57,36 @@ const DemoBroadcastingLayout = () => {
     fetchProgramCounts();
   }, [selectedLang]);
 
-  const filteredBroadcasting = (
-    selectedLang === 'all'
-      ? broadcasting
-      : broadcasting.filter((brod) => {
-          const langs = parseLanguages(brod.language);
-          return langs.includes(selectedLang);
-        })
-  ).map((brod) => ({
-    ...brod,
-    programsCount: programCounts[brod.id] || 0,
-  }));
+  const filteredBroadcasting = useMemo(() => {
+    const byLanguage =
+      selectedLang === 'all'
+        ? broadcasting
+        : broadcasting.filter((brod) => {
+            const langs = parseLanguages(brod.language);
+            return langs.includes(selectedLang);
+          });
+
+    const withCounts = byLanguage.map((brod) => ({
+      ...brod,
+      programsCount: programCounts[brod.id] || 0,
+    }));
+
+    return withCounts;
+  }, [broadcasting, selectedLang, programCounts]);
+
+  const {
+    sortKey,
+    setSortKey,
+    sortDirection,
+    setSortDirection,
+    sortedData: sortedBroadcasting,
+  } = useListSort({
+    data: filteredBroadcasting,
+    sortOptions: SORT_KEY_OPTIONS,
+    initialSortKey: 'id',
+    initialSortDirection: 'asc',
+    emptyLastOnAscKeys: ['order'],
+  });
 
   const fetchBroadcasting = async () => {
     setLoading(true);
@@ -86,9 +112,18 @@ const DemoBroadcastingLayout = () => {
     <DemoListLayout
       parentMenu='데모 콘텐츠 관리'
       childMenu='방송사 관리'
-      count={filteredBroadcasting.length}
+      count={sortedBroadcasting.length}
       selectedLang={selectedLang}
       onLangChange={setSelectedLang}
+      extraControls={
+        <SortControls
+          sortKey={sortKey}
+          sortOptions={SORT_KEY_OPTIONS}
+          onSortKeyChange={setSortKey}
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
+        />
+      }
       addLabel='방송사 추가'
       onAdd={() => navigate('/demo/broadcasting/new')}
     >
@@ -98,7 +133,7 @@ const DemoBroadcastingLayout = () => {
 
       {!loading && !error && (
         <DemoBroadcastingList
-          broadcasting={filteredBroadcasting}
+          broadcasting={sortedBroadcasting}
           selectedLang={selectedLang}
           onDeleted={fetchBroadcasting}
         />
