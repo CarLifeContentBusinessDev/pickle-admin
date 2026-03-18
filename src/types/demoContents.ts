@@ -34,6 +34,16 @@ export interface Sereis {
   language: string[];
 }
 
+export interface Theme {
+  id: string;
+  title: string;
+  subtitle: string;
+  img_url: string;
+  sections_id: number;
+  order: number;
+  language: string[];
+}
+
 export interface Category {
   id: number;
   title: string;

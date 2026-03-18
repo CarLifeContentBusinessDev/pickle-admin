@@ -2,38 +2,36 @@ import React from 'react';
 import DemoTableList from '../../components/DemoTableList';
 
 interface DemoThemeListProps {
-  broadcasting: any[];
+  themes: any[];
   selectedLang: string;
   onDeleted?: () => void;
 }
 
 const gridCols =
-  'minmax(40px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(120px,1fr) minmax(60px,1fr) minmax(80px,1fr) minmax(100px,1fr) minmax(140px,1fr)';
+  'minmax(40px,0.5fr) minmax(80px,2fr) minmax(80px,3fr) minmax(80px,2fr) minmax(120px,1fr) minmax(60px,1fr) minmax(140px,1fr)';
 
 const columns = [
   { key: 'id', label: 'ID' },
   { key: 'title', label: 'title' },
-  { key: 'channel', label: 'channel' },
-  { key: 'frequency', label: 'frequency' },
-  { key: 'img_url', label: '썸네일' },
-  { key: 'order', label: '순위' },
+  { key: 'subtitle', label: 'subtitle' },
+  { key: 'sections.title', label: '섹션' },
+  { key: 'order', label: '순서' },
   { key: 'language', label: '국가' },
-  { key: 'programsCount', label: '프로그램 수' },
   { key: 'actions', label: '' },
 ];
 
 const DemoThemeList: React.FC<DemoThemeListProps> = ({
-  broadcasting,
+  themes,
   selectedLang,
   onDeleted,
 }) => {
   return (
     <DemoTableList
-      data={broadcasting}
+      data={themes}
       selectedLang={selectedLang}
       onDeleted={onDeleted}
-      tableName='broadcastings'
-      editPath='/demo/program'
+      tableName='themes'
+      editPath='/demo/theme'
       columns={columns}
       gridCols={gridCols}
     />
