@@ -47,6 +47,12 @@ export interface usingCurationProps {
   episodes?: curationEpisodesProps[];
 }
 
+export interface curationListItemProps extends usingCurationProps {
+  usageYn?: string;
+  status?: string;
+  creatorName?: string;
+}
+
 export interface curationDetailEpisodeProps {
   channelId?: number;
   episodeId?: number;

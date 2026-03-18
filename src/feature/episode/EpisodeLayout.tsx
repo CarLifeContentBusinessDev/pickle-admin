@@ -4,12 +4,13 @@ import { toast } from 'react-toastify';
 import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import type { usingDataProps } from '../../type';
+import type { usingDataProps } from '../../types/type';
 import { api, stgApi } from '../../utils/api';
 import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { getNewDataWithExcel } from '../../utils/getNewData';
 import getSheetList from '../../utils/getSheetList';
+import { updateSheetSyncTime } from '../../utils/updateSheetSyncTime';
 import { addMissingRows } from '../../utils/updateExcel';
 import { findChangedData, findUpdateData } from '../../utils/updateLogs';
 import EpisodeList from './EpisodeList';
@@ -90,6 +91,12 @@ const EpisodeLayout = () => {
       `${selectedSheet || '선택된'} 시트에 누락된 데이터를 추가합니다.`
     );
     if (result) {
+      const currentSheet =
+        localStorage.getItem(sheetStorageKey) || selectedSheet;
+      if (!currentSheet) {
+        return toast.warn('시트를 먼저 선택해주세요!');
+      }
+
       const allData = await fetchAllData(
         CATEGORY,
         setProgress,
@@ -103,7 +110,8 @@ const EpisodeLayout = () => {
         setProgress,
         CATEGORY,
         setAllLoading,
-        spreadsheetId
+        spreadsheetId,
+        currentSheet
       );
 
       localStorage.setItem(sheetStorageKey, getSheetName('Episode_Logs'));
@@ -114,7 +122,8 @@ const EpisodeLayout = () => {
         setProgress,
         CATEGORY,
         setAllLoading,
-        spreadsheetId
+        spreadsheetId,
+        getSheetName('Episode_Logs')
       );
     }
   };
@@ -160,6 +169,8 @@ const EpisodeLayout = () => {
           spreadsheetId
         );
       }
+
+      await updateSheetSyncTime(defaultSheetName, spreadsheetId);
 
       // 모든 작업 완료 후 통합 토스트 메시지
       toast.success(

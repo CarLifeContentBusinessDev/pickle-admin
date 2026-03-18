@@ -8,7 +8,7 @@ import {
 } from '../utils/auth';
 import LoginPopup from '../feature/login/Login';
 import Button from '../components/Button';
-import type { LoginResponseData } from '../type';
+import type { LoginResponseData } from '../types/type';
 import { useLoginTokenStore } from '../store/useLoginTokenStore';
 import { useAccessTokenStore } from '../store/useAccessTokenStore';
 

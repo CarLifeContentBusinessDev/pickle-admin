@@ -1,5 +1,5 @@
 import { toast } from 'react-toastify';
-import type { usingCurationExcelProps } from '../type';
+import type { usingCurationExcelProps } from '../types/type';
 import { getGoogleToken, getSheetsClient } from './auth';
 import formatDateString from './formatDateString';
 import { formatPlayTime } from './formatPlayTime';
@@ -36,13 +36,12 @@ export async function appendNewCurationToExcel(
     const sheets = getSheetsClient();
 
     const sortedData = [...newData].sort((a, b) => {
+      const createdA = new Date(a.curationCreatedAt).getTime();
+      const createdB = new Date(b.curationCreatedAt).getTime();
+      if (createdB !== createdA) return createdB - createdA;
       const dispStartA = new Date(a.dispStartDtime).getTime();
       const dispStartB = new Date(b.dispStartDtime).getTime();
-      if (dispStartB !== dispStartA) return dispStartB - dispStartA;
-      return (
-        new Date(b.curationCreatedAt).getTime() -
-        new Date(a.curationCreatedAt).getTime()
-      );
+      return dispStartB - dispStartA;
     });
 
     // 기존 데이터 읽기 전 토큰 체크

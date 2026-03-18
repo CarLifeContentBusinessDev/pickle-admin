@@ -5,16 +5,25 @@ import Button from '../../components/Button';
 import LoadingOverlay from '../../components/LoadingOverlay';
 import { useAccessTokenStore } from '../../store/useAccessTokenStore';
 import { useLoginTokenStore } from '../../store/useLoginTokenStore';
-import type { usingChannelProps } from '../../type';
+import type { usingChannelProps } from '../../types/type';
 import { api, stgApi } from '../../utils/api';
 import { appendNewDataToTop } from '../../utils/appendNewDataToExcel';
 import { fetchAllData } from '../../utils/fetchAllData';
 import { getNewData } from '../../utils/getNewData';
 import getSheetList from '../../utils/getSheetList';
+import { updateSheetSyncTime } from '../../utils/updateSheetSyncTime';
 import { addMissingRows } from '../../utils/updateExcel';
 import ChannelList from './ChannelList';
 
 const CATEGORY = 'channel';
+
+const sortChannelsByCreatedAtDesc = (channels: usingChannelProps[]) => {
+  return [...channels].sort((a, b) => {
+    const createdA = new Date(a.createdAt).getTime();
+    const createdB = new Date(b.createdAt).getTime();
+    return createdB - createdA;
+  });
+};
 
 const ChannelLayout = () => {
   const { pathname } = useLocation();
@@ -102,7 +111,9 @@ const ChannelLayout = () => {
         apiInstance
       );
 
-    addData().then(setAddData);
+    addData().then((data) => {
+      setAddData(sortChannelsByCreatedAtDesc(data));
+    });
 
     return () => {
       cancelOngoingWork();
@@ -163,6 +174,8 @@ const ChannelLayout = () => {
         true,
         spreadsheetId
       );
+
+      await updateSheetSyncTime(defaultSheetName, spreadsheetId);
     } catch (error) {
       console.error('Excel 동기화 실패:', error);
     } finally {
@@ -187,7 +200,7 @@ const ChannelLayout = () => {
     );
 
     setProgress('');
-    setNewChannels(newList);
+    setNewChannels(sortChannelsByCreatedAtDesc(newList));
     setLoading(false);
   };
 
