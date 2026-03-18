@@ -2,38 +2,38 @@ import React from 'react';
 import DemoTableList from '../../components/DemoTableList';
 
 interface DemoSeriesListProps {
-  broadcasting: any[];
+  series: any[];
   selectedLang: string;
   onDeleted?: () => void;
 }
 
 const gridCols =
-  'minmax(40px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(80px,1fr) minmax(120px,1fr) minmax(60px,1fr) minmax(80px,1fr) minmax(100px,1fr) minmax(140px,1fr)';
+  'minmax(40px,0.5fr) minmax(80px,1fr) minmax(80px,2fr) minmax(80px,2fr) minmax(40px,0.5fr) minmax(40px,1fr) minmax(40px,1fr) minmax(80px,0.5fr) minmax(140px,1fr)';
 
 const columns = [
   { key: 'id', label: 'ID' },
-  { key: 'title', label: 'title' },
-  { key: 'channel', label: 'channel' },
-  { key: 'frequency', label: 'frequency' },
   { key: 'img_url', label: '썸네일' },
-  { key: 'order', label: '순위' },
+  { key: 'title', label: 'title' },
+  { key: 'subtitle', label: 'subtitle' },
   { key: 'language', label: '국가' },
-  { key: 'programsCount', label: '프로그램 수' },
+  { key: 'sections.title', label: '섹션' },
+  { key: 'oem_key', label: 'OEM' },
+  { key: 'order', label: '순서' },
   { key: 'actions', label: '' },
 ];
 
 const DemoSeriesList: React.FC<DemoSeriesListProps> = ({
-  broadcasting,
+  series,
   selectedLang,
   onDeleted,
 }) => {
   return (
     <DemoTableList
-      data={broadcasting}
+      data={series}
       selectedLang={selectedLang}
       onDeleted={onDeleted}
-      tableName='broadcastings'
-      editPath='/demo/program'
+      tableName='series'
+      editPath='/demo/series'
       columns={columns}
       gridCols={gridCols}
     />

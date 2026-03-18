@@ -23,6 +23,17 @@ export interface Episode {
   programs?: { title: string };
 }
 
+export interface Sereis {
+  id: string;
+  title: string;
+  subtitle: string;
+  img_url: string;
+  section_id: number;
+  order: number;
+  oem_key: string;
+  language: string[];
+}
+
 export interface Category {
   id: number;
   title: string;
