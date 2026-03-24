@@ -65,6 +65,30 @@ export const MENU_GROUPS: MenuGroup[] = [
     ],
   },
   {
+    id: 'demo-data-mannagement',
+    label: '데모 콘텐츠 관리',
+    icon: (
+      <img
+        src='/radio-fill.svg'
+        width={24}
+        height={24}
+        alt='데모 콘텐츠 관리'
+      />
+    ),
+    children: [
+      { id: 'programs', to: '/demo/program', label: '프로그램 관리' },
+      { id: 'episodes', to: '/demo/episode', label: '에피소드 관리' },
+      { id: 'series', to: '/demo/series', label: '시리즈 관리' },
+      { id: 'themes', to: '/demo/theme', label: '테마 관리' },
+      { id: 'categories', to: '/demo/category', label: '카테고리 관리' },
+      {
+        id: 'broadcastings',
+        to: '/demo/broadcasting',
+        label: '방송사 관리',
+      },
+    ],
+  },
+  {
     id: 'prod-admin',
     label: '상용 어드민 바로가기',
     icon: (

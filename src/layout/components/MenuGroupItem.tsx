@@ -44,8 +44,10 @@ const MenuGroupItem = ({
         type='button'
         aria-disabled={!isSidebarOpen}
         onClick={() => isSidebarOpen && setIsExpanded((prev) => !prev)}
-        className={`w-full flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors ${
-          isSidebarOpen ? 'justify-between' : 'justify-center cursor-default'
+        className={`w-full flex items-center p-4 text-gray-400 hover:text-white hover:bg-white/5 transition-colors ${
+          isSidebarOpen
+            ? 'justify-between cursor-pointer'
+            : 'justify-center cursor-pointer'
         }`}
       >
         <div className='flex items-center gap-3'>
@@ -66,7 +68,7 @@ const MenuGroupItem = ({
         <div
           className={`overflow-hidden transition-all duration-300 ${
             isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-          }`}
+          } bg-[#000c17]`}
         >
           <div>
             {items.map((item) => (

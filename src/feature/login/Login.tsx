@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../../utils/api';
-import type { LoginResponseData } from '../../types/type';
+import { supabase } from '../../lib/supabase';
+import type { LoginResponseData } from '../../type';
 
 interface LoginPopupProps {
   onClose: () => void;
@@ -36,6 +37,18 @@ export default function LoginPopup({
     setError('');
 
     try {
+      // supabase 로그인 시도
+      const { error: supabaseError } = await supabase.auth.signInWithPassword({
+        email: id,
+        password: password,
+      });
+      if (supabaseError) {
+        setError('Supabase 로그인 실패: ' + supabaseError.message);
+        setLoading(false);
+        return;
+      }
+
+      // 상용 API 로그인
       const res = await api.post<LoginApiResponse>(
         'https://pickle.obigo.ai/admin/login',
         {

@@ -77,8 +77,7 @@ const CurationLayout = () => {
     }
   }, [defaultSheetName, isStaging, loginToken, sheetStorageKey, spreadsheetId]);
 
-  const handleSelectSheet = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
+  const handleSelectSheetDropdown = (value: string) => {
     setSelectedSheet(value);
     localStorage.setItem(sheetStorageKey, value);
   };
@@ -182,7 +181,7 @@ const CurationLayout = () => {
             />
             <select
               value={selectedSheet}
-              onChange={handleSelectSheet}
+              onChange={(e) => handleSelectSheetDropdown(e.target.value)}
               className='w-fit appearance-none border border-gray-300 px-4 py-2 pr-10 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition cursor-pointer'
             >
               <option value=''>시트 선택</option>

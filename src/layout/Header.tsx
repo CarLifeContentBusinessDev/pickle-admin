@@ -55,9 +55,9 @@ const Header = () => {
   return (
     <>
       <div className='w-full h-[10%] flex justify-between items-center mb-0 px-10 bg-white'>
-        <h1 className='text-4xl font-bold flex gap-4'>
+        <h1 className='text-3xl font-bold flex gap-4 items-center'>
           <img src='/logo.svg' alt='로고' width={40} height={40} />
-          PICKLE
+          PICKLE (데모)
         </h1>
         <div className='flex gap-4'>
           {!accessToken && (
