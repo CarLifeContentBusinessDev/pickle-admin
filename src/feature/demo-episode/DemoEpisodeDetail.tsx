@@ -9,7 +9,6 @@ const EPISODE_FIELD_LABELS = {
   img_url: '썸네일',
   date: '게시일',
   duration: '재생 시간',
-  durtaion: '재생 시간',
   language: '국가',
   audio_file: '오디오 파일',
   audioFile_dubbing: '더빙 오디오 파일',
@@ -26,7 +25,6 @@ const EPISODE_FIELD_ORDER = [
   'img_url',
   'date',
   'duration',
-  'durtaion',
   'language',
   'audio_file',
   'audioFile_dubbing',
@@ -37,7 +35,7 @@ const EPISODE_FIELD_ORDER = [
 const EPISODE_SUMMARY_FIELDS = [
   { key: 'created_at', label: '생성일' },
   { key: 'id', label: '에피소드 ID' },
-  { key: ['duration', 'durtaion'], label: '재생 시간' },
+  { key: 'duration', label: '재생 시간' },
 ];
 
 const DemoEpisodeDetail = () => {
